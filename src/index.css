@@ -1,3 +1,6 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&family=Merriweather:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,7 +16,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 210 64% 37%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -35,47 +38,32 @@
     --radius: 0.5rem;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
-
     --card: 222.2 84% 4.9%;
     --card-foreground: 210 40% 98%;
-
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
-
     --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
-
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-
     --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 20.2% 65.1%;
-
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
-
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
@@ -95,7 +83,54 @@
     @apply border-border;
   }
 
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-source-sans;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-merriweather font-bold;
+  }
+
+  /* Focus styles */
+  *:focus-visible {
+    @apply outline-irs-blue ring-2 ring-irs-blue ring-offset-2 transition-all duration-200;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-irs-blue text-white px-4 py-2 font-semibold rounded hover:bg-irs-darkBlue transition-colors duration-200;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-irs-blue border border-irs-blue px-4 py-2 font-semibold rounded hover:bg-irs-gray transition-colors duration-200;
+  }
+
+  .nav-link {
+    @apply text-irs-darkGray hover:text-irs-blue transition-colors duration-200 px-3 py-2;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+  
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-irs-blue to-irs-lightBlue;
+  }
+
+  .glass-panel {
+    @apply bg-white/80 backdrop-blur-sm border border-white/20 rounded-lg shadow-md;
+  }
+
+  .info-card {
+    @apply p-6 rounded-lg bg-white shadow-sm border border-irs-lightGray hover:shadow-md transition-all duration-200;
+  }
+
+  .quick-link {
+    @apply flex items-center gap-2 text-irs-blue hover:text-irs-darkBlue transition-colors duration-200 font-medium;
   }
 }
