@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 export const HeroSection = () => {
@@ -13,18 +14,18 @@ export const HeroSection = () => {
             2023 Tax Filing Season
           </div>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 animate-slide-in">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit
+            Revenue Dividends - Your Tax Solution
           </h1>
           <p className="text-irs-lightGray text-lg mb-8 animate-slide-in" style={{ animationDelay: '0.1s' }}>
             Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-in" style={{ animationDelay: '0.2s' }}>
-            <a href="#" className="btn-primary flex items-center justify-center gap-2 py-3 px-6">
-              File Your Taxes <ArrowRight size={16} />
-            </a>
-            <a href="#" className="btn-secondary flex items-center justify-center gap-2 py-3 px-6">
+            <Link to="/login" className="btn-primary flex items-center justify-center gap-2 py-3 px-6">
+              Get Started <ArrowRight size={16} />
+            </Link>
+            <Link to="#" className="btn-secondary flex items-center justify-center gap-2 py-3 px-6">
               Check Refund Status
-            </a>
+            </Link>
           </div>
         </div>
       </div>

@@ -72,13 +72,13 @@ export const Header = () => {
                 "text-2xl font-bold transition-colors",
                 isScrolled ? "text-irs-darkBlue" : "text-white"
               )}>
-                IRS
+                RD
               </span>
               <span className={cn(
                 "hidden md:inline text-sm max-w-[150px] transition-colors",
                 isScrolled ? "text-irs-darkGray" : "text-irs-lightGray"
               )}>
-                Internal Revenue Service
+                Revenue Dividends
               </span>
             </Link>
           </div>
@@ -91,6 +91,7 @@ export const Header = () => {
             <NavLink href="/refunds" isScrolled={isScrolled}>Refunds</NavLink>
             <NavLink href="/credits-deductions" isScrolled={isScrolled}>Credits & Deductions</NavLink>
             <NavLink href="/forms-instructions" isScrolled={isScrolled}>Forms & Instructions</NavLink>
+            <NavLink href="/login" isScrolled={isScrolled}>Get Started</NavLink>
           </nav>
 
           {/* Search button */}
@@ -130,6 +131,7 @@ export const Header = () => {
             <MobileNavLink href="/refunds" isScrolled={isScrolled}>Refunds</MobileNavLink>
             <MobileNavLink href="/credits-deductions" isScrolled={isScrolled}>Credits & Deductions</MobileNavLink>
             <MobileNavLink href="/forms-instructions" isScrolled={isScrolled}>Forms & Instructions</MobileNavLink>
+            <MobileNavLink href="/login" isScrolled={isScrolled}>Get Started</MobileNavLink>
           </nav>
         </div>
       </div>
