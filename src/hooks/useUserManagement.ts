@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@/components/admin/user-list/types';
@@ -8,7 +7,61 @@ export const useUserManagement = () => {
   const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const activityTimerRef = useRef<number | null>(null);
+  const inactivityTimeoutMs = 30 * 60 * 1000; // 30 minutes
   
+  const resetActivityTimer = () => {
+    if (activityTimerRef.current) {
+      window.clearTimeout(activityTimerRef.current);
+    }
+    
+    activityTimerRef.current = window.setTimeout(() => {
+      supabase.auth.getSession().then(({ data }) => {
+        if (data.session) {
+          handleInactivityLogout();
+        }
+      });
+    }, inactivityTimeoutMs);
+  };
+
+  const handleInactivityLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Session expired",
+        description: "You have been logged out due to inactivity.",
+        variant: "destructive"
+      });
+      window.location.href = '/login';
+    } catch (error) {
+      console.error("Error during inactivity logout:", error);
+    }
+  };
+
+  useEffect(() => {
+    const activityEvents = ['mousedown', 'keypress', 'scroll', 'touchstart'];
+    
+    const handleUserActivity = () => {
+      resetActivityTimer();
+    };
+    
+    activityEvents.forEach(event => {
+      window.addEventListener(event, handleUserActivity);
+    });
+    
+    resetActivityTimer();
+    
+    return () => {
+      if (activityTimerRef.current) {
+        window.clearTimeout(activityTimerRef.current);
+      }
+      
+      activityEvents.forEach(event => {
+        window.removeEventListener(event, handleUserActivity);
+      });
+    };
+  }, []);
+
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
@@ -46,7 +99,6 @@ export const useUserManagement = () => {
   useEffect(() => {
     fetchUsers();
     
-    // Set up a real-time subscription to profile changes
     const channel = supabase
       .channel('public:profiles')
       .on('postgres_changes', {
@@ -54,7 +106,6 @@ export const useUserManagement = () => {
         schema: 'public',
         table: 'profiles'
       }, (payload) => {
-        // When profiles table changes, refetch the users
         fetchUsers();
       })
       .subscribe();
@@ -66,7 +117,6 @@ export const useUserManagement = () => {
 
   const handleSaveUser = async (updatedUser: User) => {
     try {
-      // Log the data that's being sent to help with debugging
       console.log("Updating user with data:", {
         first_name: updatedUser.name.split(' ')[0],
         last_name: updatedUser.name.split(' ').slice(1).join(' '),
@@ -116,7 +166,6 @@ export const useUserManagement = () => {
 
   const handleCreateUser = async (newUser: User) => {
     try {
-      // Generate a unique ID for the new user
       const userId = `USER${Math.floor(100000 + Math.random() * 900000)}`;
       
       console.log("Creating new user with data:", {
@@ -147,7 +196,6 @@ export const useUserManagement = () => {
 
       if (error) throw error;
       
-      // Add the new user to the local state with the generated ID
       const createdUser = {
         ...newUser,
         id: userId,
@@ -272,6 +320,27 @@ export const useUserManagement = () => {
     }
   };
 
+  const isAdminUser = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) return false;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+        
+      if (error) throw error;
+      
+      return data?.role === 'Admin';
+    } catch (error) {
+      console.error("Error checking admin role:", error);
+      return false;
+    }
+  };
+
   return {
     users,
     isLoading,
@@ -280,6 +349,8 @@ export const useUserManagement = () => {
     handleCreateUser,
     handleDeleteUser,
     handleToggleUserStatus,
-    handleToggleUserRole
+    handleToggleUserRole,
+    isAdminUser,
+    resetActivityTimer
   };
 };

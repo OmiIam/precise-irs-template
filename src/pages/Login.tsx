@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,6 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -21,6 +22,18 @@ const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
+  const { signIn, user, isAdmin: userIsAdmin } = useAuth();
+  
+  // Redirect if already logged in
+  useEffect(() => {
+    if (user) {
+      if (userIsAdmin) {
+        navigate('/admin-dashboard');
+      } else {
+        navigate('/dashboard');
+      }
+    }
+  }, [user, userIsAdmin, navigate]);
   
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -30,23 +43,19 @@ const Login = () => {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof loginSchema>) => {
-    console.log(values);
-    // In a real application, you would authenticate with a backend
+  const onSubmit = async (values: z.infer<typeof loginSchema>) => {
+    const { error } = await signIn(values.email, values.password);
     
-    if (isAdmin) {
+    if (error) {
       toast({
-        title: "Admin login successful",
-        description: "Welcome to the Revenue Dividends Admin Panel",
+        title: "Login failed",
+        description: error.message || "Check your email and password and try again",
+        variant: "destructive",
       });
-      navigate('/admin-dashboard');
-    } else {
-      toast({
-        title: "Login successful",
-        description: "Welcome back to Revenue Dividends",
-      });
-      navigate('/dashboard');
+      return;
     }
+    
+    // Auth state change will handle redirection
   };
 
   const toggleAdminMode = () => {
