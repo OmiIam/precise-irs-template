@@ -44,6 +44,28 @@ serve(async (req) => {
       console.log("Received invalid password object, using random password instead");
     }
     
+    // Check if email already exists before creating user
+    const { data: existingUsers, error: checkError } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('email', userData.email)
+      .limit(1);
+      
+    if (checkError) {
+      throw checkError;
+    }
+    
+    if (existingUsers && existingUsers.length > 0) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "A user with this email address already exists",
+          isExistingUser: true
+        }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     // First, create the auth user
     const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
       email: userData.email,
@@ -57,6 +79,18 @@ serve(async (req) => {
     
     if (authError) {
       console.error("Error creating auth user:", authError);
+      // Check if the error is due to existing user
+      if (authError.message.includes("already been registered")) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: "A user with this email address has already been registered",
+            isExistingUser: true
+          }),
+          { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ success: false, error: authError.message }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -78,8 +78,10 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
         lastLogin: 'Never'
       };
       
+      // First add to UI
       setUsers([...users, createdUser]);
       
+      // Then save to database
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
           userData: {
@@ -98,6 +100,24 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
 
       if (error) {
         console.error("Error from Edge Function:", error);
+        
+        // Check for duplicate email
+        if (error.message.includes("409") || 
+            (error.message.includes("Edge Function returned a non-2xx status code") &&
+             error.message.includes("already been registered") || 
+             error.message.includes("already exists"))) {
+          
+          // Remove the user we just added to UI
+          setUsers(users.filter(u => u.id !== createdUser.id));
+          
+          toast({
+            title: "Email Already Exists",
+            description: "The email address is already registered in the system. Please use a different email.",
+            variant: "destructive"
+          });
+          return false;
+        }
+        
         toast({
           title: "Warning",
           description: "User was added to the UI but there was an issue saving to the database. Changes may not persist after reload.",
