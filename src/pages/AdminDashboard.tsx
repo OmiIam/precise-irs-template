@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client'; // Add this import
+import { supabase } from '@/integrations/supabase/client'; // This import was commented out but is needed
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { useToast } from '@/hooks/use-toast';
