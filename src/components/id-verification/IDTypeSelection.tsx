@@ -3,16 +3,19 @@ import React from 'react';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { UseFormReturn } from 'react-hook-form';
-import * as z from 'zod';
+import { z } from 'zod';
 
-type IDVerificationFormValues = z.infer<typeof IDVerificationSchema>;
+// Instead of directly referencing IDVerificationSchema, use a generic type parameter
+type IDVerificationFormValues = {
+  idType: string;
+  idNumber: string;
+};
 
 type IDTypeSelectionProps = {
   form: UseFormReturn<IDVerificationFormValues>;
-  IDVerificationSchema: z.ZodObject<any>;
 };
 
-const IDTypeSelection: React.FC<IDTypeSelectionProps> = ({ form, IDVerificationSchema }) => {
+const IDTypeSelection: React.FC<IDTypeSelectionProps> = ({ form }) => {
   return (
     <FormField
       control={form.control}

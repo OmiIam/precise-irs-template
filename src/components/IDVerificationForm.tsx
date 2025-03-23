@@ -67,8 +67,8 @@ const IDVerificationForm = ({ userId, userEmail }: IDVerificationFormProps) => {
         ) : (
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <IDTypeSelection form={form} IDVerificationSchema={IDVerificationSchema} />
-              <IDNumberInput form={form} IDVerificationSchema={IDVerificationSchema} />
+              <IDTypeSelection form={form} />
+              <IDNumberInput form={form} />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Front of ID */}
