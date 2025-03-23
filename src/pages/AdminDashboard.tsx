@@ -10,7 +10,7 @@ import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/s
 import { useToast } from '@/hooks/use-toast';
 import { Plus, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { User } from '@/components/admin/user-edit-form/types';
+import { User as UserType } from '@/components/admin/user-list/types';
 
 type User = {
   id: string;
@@ -27,12 +27,12 @@ type User = {
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
 
   const fetchUsers = async () => {
     setIsLoading(true);
@@ -87,7 +87,7 @@ const AdminDashboard = () => {
     };
   }, []);
 
-  const handleEditUser = (user: User) => {
+  const handleEditUser = (user: UserType) => {
     setSelectedUser(user);
     setIsCreateMode(false);
     setDialogOpen(true);
@@ -99,14 +99,14 @@ const AdminDashboard = () => {
     setDialogOpen(true);
   };
 
-  const handleViewUser = (user: User) => {
+  const handleViewUser = (user: UserType) => {
     toast({
       title: "Viewing User Details",
       description: `Accessing detailed information for ${user.name}`
     });
   };
 
-  const handleImpersonateUser = (user: User) => {
+  const handleImpersonateUser = (user: UserType) => {
     toast({
       title: "Impersonating User",
       description: `You are now viewing the system as ${user.name}`,
@@ -115,7 +115,7 @@ const AdminDashboard = () => {
     navigate('/dashboard');
   };
 
-  const handleSaveUser = async (updatedUser: User) => {
+  const handleSaveUser = async (updatedUser: UserType) => {
     try {
       if (isCreateMode) {
         setUsers([...users, updatedUser]);
