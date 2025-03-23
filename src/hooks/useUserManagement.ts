@@ -46,6 +46,7 @@ export const useUserManagement = () => {
   useEffect(() => {
     fetchUsers();
     
+    // Set up a real-time subscription to profile changes
     const channel = supabase
       .channel('public:profiles')
       .on('postgres_changes', {
@@ -53,6 +54,7 @@ export const useUserManagement = () => {
         schema: 'public',
         table: 'profiles'
       }, (payload) => {
+        // When profiles table changes, refetch the users
         fetchUsers();
       })
       .subscribe();
