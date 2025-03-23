@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -91,7 +90,6 @@ const AdminLoginForm = ({ onToggleMode, setIsRedirecting }: AdminLoginFormProps)
                 <FormLabel>Email</FormLabel>
                 <FormControl>
                   <Input 
-                    placeholder="admin@admin.com" 
                     {...field} 
                   />
                 </FormControl>
