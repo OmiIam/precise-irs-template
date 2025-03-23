@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@/components/admin/user-list/types';
@@ -56,6 +57,9 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
 
   const handleCreateUser = async (newUser: User) => {
     try {
+      // Ensure password is a string or undefined, but not an object
+      const password = typeof newUser.password === 'string' ? newUser.password : undefined;
+      
       console.log("Creating user with data:", {
         firstName: newUser.name.split(' ')[0],
         lastName: newUser.name.split(' ').slice(1).join(' '),
@@ -65,7 +69,7 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
         taxDue: newUser.taxDue || 0,
         filingDeadline: newUser.filingDeadline?.toISOString(),
         availableCredits: newUser.availableCredits || 0,
-        password: newUser.password
+        password: password // Ensure it's a proper string
       });
 
       const createdUser = {
@@ -87,7 +91,7 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
             taxDue: newUser.taxDue || 0,
             filingDeadline: newUser.filingDeadline?.toISOString(),
             availableCredits: newUser.availableCredits || 0,
-            password: newUser.password
+            password: password // Pass properly formatted password
           }
         }
       });

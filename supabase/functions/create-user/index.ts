@@ -33,6 +33,17 @@ serve(async (req) => {
     
     console.log("Creating user with data:", userData);
     
+    // Ensure password is a string - fix for the undefined password issue
+    let password = Math.random().toString(36).slice(-8); // Default random password
+    
+    // Check if password exists and is a valid string
+    if (userData.password && typeof userData.password === 'string') {
+      password = userData.password;
+    } else if (userData.password && typeof userData.password === 'object' && userData.password._type === "undefined") {
+      // If password is received as an object with _type: "undefined", use the default random password
+      console.log("Received invalid password object, using random password instead");
+    }
+    
     // First, create the auth user
     const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
       email: userData.email,
@@ -41,7 +52,7 @@ serve(async (req) => {
         first_name: userData.firstName,
         last_name: userData.lastName
       },
-      password: userData.password || Math.random().toString(36).slice(-8)
+      password: password
     });
     
     if (authError) {
