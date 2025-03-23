@@ -1,7 +1,8 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuthCheck } from '@/hooks/useAuthCheck';
+import AuthLoading from '@/components/auth/AuthLoading';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,36 +13,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requireAdmin = false 
 }) => {
-  const { user, isAdmin, isLoading } = useAuth();
-  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
-  
-  useEffect(() => {
-    // Check for special admin authentication
-    const adminAuth = localStorage.getItem('isAdminAuthenticated');
-    setIsAdminAuthenticated(adminAuth === 'true');
-  }, []);
+  const { isLoading, checkComplete, hasAccess, isAuthenticated } = useAuthCheck(requireAdmin);
 
-  if (isLoading) {
-    // Show loading state while checking authentication
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-irs-blue"></div>
-      </div>
-    );
-  }
-
-  // Allow access if we have the special admin flag and this route requires admin
-  if (isAdminAuthenticated && requireAdmin) {
-    return <>{children}</>;
+  // Show loading state while checking authentication
+  if (isLoading || !checkComplete) {
+    return <AuthLoading />;
   }
 
   // If not authenticated, redirect to login
-  if (!user && !isAdminAuthenticated) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
-  // If requires admin but user is not admin, redirect to dashboard
-  if (requireAdmin && !isAdmin && !isAdminAuthenticated) {
+  // If requires admin but user doesn't have access, redirect to dashboard
+  if (requireAdmin && !hasAccess) {
     return <Navigate to="/dashboard" replace />;
   }
 
