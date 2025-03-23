@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 export const useActivityTimer = () => {
   const { toast } = useToast();
   const activityTimerRef = useRef<number | null>(null);
-  const inactivityTimeoutMs = 30 * 60 * 1000; // 30 minutes
+  const inactivityTimeoutMs = 60 * 1000; // 1 minute
   
   const resetActivityTimer = () => {
     if (activityTimerRef.current) {
@@ -30,7 +30,8 @@ export const useActivityTimer = () => {
         description: "You have been logged out due to inactivity.",
         variant: "destructive"
       });
-      window.location.href = '/login';
+      // Redirect to homepage instead of login
+      window.location.href = '/';
     } catch (error) {
       console.error("Error during inactivity logout:", error);
     }

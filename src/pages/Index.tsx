@@ -1,13 +1,39 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { HeroSection } from '@/components/HeroSection';
 import { QuickLinks } from '@/components/QuickLinks';
 import { InfoCard } from '@/components/InfoCard';
 import { Calendar, AlertCircle, Clock, DollarSign, Users, PiggyBank, LifeBuoy } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useActivityTimer } from '@/hooks/user-management/useActivityTimer';
 
 const Index = () => {
+  const { user } = useAuth();
+  const { resetActivityTimer } = useActivityTimer();
+  
+  // If user is logged in, monitor their activity
+  useEffect(() => {
+    if (user) {
+      const activityEvents = ['mousedown', 'keypress', 'scroll', 'touchstart'];
+      
+      const handleUserActivity = () => {
+        resetActivityTimer();
+      };
+      
+      activityEvents.forEach(event => {
+        window.addEventListener(event, handleUserActivity);
+      });
+      
+      return () => {
+        activityEvents.forEach(event => {
+          window.removeEventListener(event, handleUserActivity);
+        });
+      };
+    }
+  }, [user, resetActivityTimer]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />

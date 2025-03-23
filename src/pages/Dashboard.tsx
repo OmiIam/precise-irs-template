@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -20,8 +20,33 @@ import {
 } from 'lucide-react';
 import { InfoCard } from '@/components/InfoCard';
 import { cn } from '@/lib/utils';
+import { useActivityTimer } from '@/hooks/user-management/useActivityTimer';
 
 const Dashboard = () => {
+  const { resetActivityTimer } = useActivityTimer();
+  
+  // Reset activity timer on any user interaction with the page
+  useEffect(() => {
+    // Set up event listeners for dashboard activity
+    const activityEvents = ['mousedown', 'keypress', 'scroll', 'touchstart'];
+    
+    const handleUserActivity = () => {
+      resetActivityTimer();
+    };
+    
+    // Add event listeners
+    activityEvents.forEach(event => {
+      window.addEventListener(event, handleUserActivity);
+    });
+    
+    // Clean up event listeners on unmount
+    return () => {
+      activityEvents.forEach(event => {
+        window.removeEventListener(event, handleUserActivity);
+      });
+    };
+  }, [resetActivityTimer]);
+
   // Mock data for the tax information
   const taxData = {
     totalDue: 4250.75,

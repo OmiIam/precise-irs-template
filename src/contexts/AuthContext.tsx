@@ -148,7 +148,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       await supabase.auth.signOut();
-      navigate('/login');
+      // Navigate to home instead of login
+      navigate('/');
     } catch (error) {
       console.error("Error during sign out:", error);
       toast({
