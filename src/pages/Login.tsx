@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowRight, LogIn, UserPlus, ShieldCheck } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -21,22 +21,28 @@ const loginSchema = z.object({
 
 const Login = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
   const { signIn, user, isAdmin: userIsAdmin } = useAuth();
+  const [isRedirecting, setIsRedirecting] = useState(false);
   
-  // Redirect if already logged in - with proper error handling
+  // Prevent redirect loops
   useEffect(() => {
     try {
+      if (isRedirecting) return;
+      
       // Check for special admin authentication first
       const adminAuth = localStorage.getItem('isAdminAuthenticated');
       if (adminAuth === 'true') {
+        setIsRedirecting(true);
         navigate('/admin-dashboard', { replace: true });
         return;
       }
       
       // Then check for regular user authentication
       if (user) {
+        setIsRedirecting(true);
         if (userIsAdmin) {
           navigate('/admin-dashboard', { replace: true });
         } else {
@@ -45,9 +51,10 @@ const Login = () => {
       }
     } catch (error) {
       console.error('Navigation error:', error);
-      // Don't attempt to navigate again if there was an error
+      // Reset redirecting state if there was an error
+      setIsRedirecting(false);
     }
-  }, [user, userIsAdmin, navigate]);
+  }, [user, userIsAdmin, navigate, isRedirecting]);
   
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -64,47 +71,29 @@ const Login = () => {
         // Check if the credentials match the specific admin credentials
         if (values.email === "admin@admin.com" && values.password === "iXOeNiRqvO2QiN4t") {
           try {
-            // First check if this admin user exists
-            const { data: existingUser } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('email', 'admin@admin.com')
-              .eq('role', 'Admin')
-              .single();
+            console.log('Admin credentials accepted. Redirecting to admin dashboard...');
             
-            if (!existingUser) {
-              // If admin doesn't exist in auth, we need a different approach
-              // Let's create a fake admin session
-              console.log('Admin credentials accepted. Redirecting to admin dashboard...');
-              
-              // Store admin status in localStorage
-              localStorage.setItem('isAdminAuthenticated', 'true');
-              
-              // Redirect to admin dashboard directly with replace to avoid navigation stack issues
-              navigate('/admin-dashboard', { replace: true });
-              return;
-            } else {
-              // Try normal sign in if the user exists
-              const { error } = await signIn(values.email, values.password);
-              
-              if (error) {
-                toast({
-                  title: "Admin Login failed",
-                  description: error.message || "Check your admin credentials and try again",
-                  variant: "destructive",
-                });
-              } else {
-                // Successful sign in with existing admin account - redirect directly with replace
-                navigate('/admin-dashboard', { replace: true });
-              }
-            }
+            // Store admin status in localStorage
+            localStorage.setItem('isAdminAuthenticated', 'true');
+            
+            // Show success toast
+            toast({
+              title: "Admin Login successful",
+              description: "Welcome to the admin dashboard",
+            });
+            
+            // Redirect to admin dashboard directly with replace to avoid navigation stack issues
+            setIsRedirecting(true);
+            navigate('/admin-dashboard', { replace: true });
+            return;
           } catch (error) {
-            console.error('Error checking admin credentials:', error);
+            console.error('Error during admin login redirect:', error);
             toast({
               title: "Admin Login failed",
-              description: "An error occurred while processing your request",
+              description: "Error during redirect. Please try again.",
               variant: "destructive",
             });
+            setIsRedirecting(false);
           }
         } else {
           // Show error for invalid admin credentials
@@ -130,6 +119,10 @@ const Login = () => {
       }
       
       // Auth state change will handle redirection for regular users
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
     } catch (error) {
       console.error('Login submission error:', error);
       toast({

@@ -73,11 +73,14 @@ const AdminSidebar = ({ activePage }: AdminSidebarProps) => {
   const { toast } = useToast();
 
   const handleLogout = () => {
+    // Clear the admin authentication flag
+    localStorage.removeItem('isAdminAuthenticated');
+    
     toast({
       title: "Logged out",
       description: "You have been logged out of the admin panel",
     });
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   return (
