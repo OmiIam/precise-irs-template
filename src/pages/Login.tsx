@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -27,6 +26,14 @@ const Login = () => {
   
   // Redirect if already logged in
   useEffect(() => {
+    // Check for special admin authentication first
+    const adminAuth = localStorage.getItem('isAdminAuthenticated');
+    if (adminAuth === 'true') {
+      navigate('/admin-dashboard');
+      return;
+    }
+    
+    // Then check for regular user authentication
     if (user) {
       if (userIsAdmin) {
         navigate('/admin-dashboard');
@@ -66,7 +73,7 @@ const Login = () => {
             // Store admin status in localStorage
             localStorage.setItem('isAdminAuthenticated', 'true');
             
-            // Redirect to admin dashboard
+            // Redirect to admin dashboard directly - don't rely on the useEffect
             navigate('/admin-dashboard');
             return;
           } else {
@@ -79,6 +86,9 @@ const Login = () => {
                 description: error.message || "Check your admin credentials and try again",
                 variant: "destructive",
               });
+            } else {
+              // Successful sign in with existing admin account - redirect directly
+              navigate('/admin-dashboard');
             }
           }
         } catch (error) {
@@ -112,7 +122,7 @@ const Login = () => {
       return;
     }
     
-    // Auth state change will handle redirection
+    // Auth state change will handle redirection for regular users
   };
 
   const toggleAdminMode = () => {
