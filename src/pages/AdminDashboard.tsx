@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '@/components/admin/AdminSidebar';
@@ -11,6 +10,7 @@ import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/s
 import { useToast } from '@/hooks/use-toast';
 import { Plus, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { User } from '@/components/admin/user-edit-form/types';
 
 type User = {
   id: string;
@@ -32,10 +32,8 @@ const AdminDashboard = () => {
   const [isCreateMode, setIsCreateMode] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // State to store all users
   const [users, setUsers] = useState<User[]>([]);
 
-  // Fetch users from Supabase
   const fetchUsers = async () => {
     setIsLoading(true);
     try {
@@ -70,11 +68,9 @@ const AdminDashboard = () => {
     }
   };
 
-  // Initial data fetch
   useEffect(() => {
     fetchUsers();
     
-    // Set up realtime subscription for profiles
     const channel = supabase
       .channel('public:profiles')
       .on('postgres_changes', {
@@ -82,7 +78,7 @@ const AdminDashboard = () => {
         schema: 'public',
         table: 'profiles'
       }, (payload) => {
-        fetchUsers(); // Refresh data when changes occur
+        fetchUsers();
       })
       .subscribe();
 
@@ -108,7 +104,6 @@ const AdminDashboard = () => {
       title: "Viewing User Details",
       description: `Accessing detailed information for ${user.name}`
     });
-    // In a real app, this would navigate to a detailed user view
   };
 
   const handleImpersonateUser = (user: User) => {
@@ -117,15 +112,12 @@ const AdminDashboard = () => {
       description: `You are now viewing the system as ${user.name}`,
       variant: "default"
     });
-    // In a real app, this would set up an impersonation session
     navigate('/dashboard');
   };
 
   const handleSaveUser = async (updatedUser: User) => {
     try {
       if (isCreateMode) {
-        // This would be handled through auth in a real implementation
-        // For demo, we'll just add to the local state
         setUsers([...users, updatedUser]);
         
         toast({
@@ -133,7 +125,6 @@ const AdminDashboard = () => {
           description: "New user has been created successfully."
         });
       } else {
-        // Update existing user in Supabase
         const { error } = await supabase
           .from('profiles')
           .update({
@@ -150,7 +141,6 @@ const AdminDashboard = () => {
 
         if (error) throw error;
         
-        // Update local state
         setUsers(users.map(user => 
           user.id === updatedUser.id ? updatedUser : user
         ));
@@ -172,8 +162,6 @@ const AdminDashboard = () => {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      // Note: In a real application, you would delete the user from auth.users
-      // Here we just update the profile status since we can't delete auth users directly
       const { error } = await supabase
         .from('profiles')
         .update({ status: 'Deleted' })
@@ -181,7 +169,6 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
-      // Update the local state
       setUsers(users.filter(user => user.id !== userId));
       
       toast({
@@ -212,7 +199,6 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
-      // Update local state
       setUsers(users.map(user => {
         if (user.id === userId) {
           toast({
@@ -247,7 +233,6 @@ const AdminDashboard = () => {
 
       if (error) throw error;
 
-      // Update local state
       setUsers(users.map(user => {
         if (user.id === userId) {
           toast({
