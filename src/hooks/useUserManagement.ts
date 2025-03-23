@@ -116,7 +116,46 @@ export const useUserManagement = () => {
 
   const handleCreateUser = async (newUser: User) => {
     try {
-      setUsers([...users, newUser]);
+      // Generate a unique ID for the new user
+      const userId = `USER${Math.floor(100000 + Math.random() * 900000)}`;
+      
+      console.log("Creating new user with data:", {
+        id: userId,
+        first_name: newUser.name.split(' ')[0],
+        last_name: newUser.name.split(' ').slice(1).join(' '),
+        email: newUser.email,
+        role: newUser.role,
+        status: 'Active',
+        tax_due: newUser.taxDue || 0,
+        filing_deadline: newUser.filingDeadline?.toISOString(),
+        available_credits: newUser.availableCredits || 0
+      });
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert({
+          id: userId,
+          first_name: newUser.name.split(' ')[0],
+          last_name: newUser.name.split(' ').slice(1).join(' '),
+          email: newUser.email,
+          role: newUser.role,
+          status: 'Active',
+          tax_due: newUser.taxDue || 0,
+          filing_deadline: newUser.filingDeadline?.toISOString(),
+          available_credits: newUser.availableCredits || 0
+        });
+
+      if (error) throw error;
+      
+      // Add the new user to the local state with the generated ID
+      const createdUser = {
+        ...newUser,
+        id: userId,
+        status: 'Active',
+        lastLogin: 'Never'
+      };
+      
+      setUsers([...users, createdUser]);
       
       toast({
         title: "User Created",
