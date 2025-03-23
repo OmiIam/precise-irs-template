@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface ProtectedRouteProps {
@@ -14,11 +14,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { user, isAdmin, isLoading } = useAuth();
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  const navigate = useNavigate();
   
   useEffect(() => {
-    // Check for special admin authentication
-    const adminAuth = localStorage.getItem('isAdminAuthenticated');
-    setIsAdminAuthenticated(adminAuth === 'true');
+    try {
+      // Check for special admin authentication
+      const adminAuth = localStorage.getItem('isAdminAuthenticated');
+      setIsAdminAuthenticated(adminAuth === 'true');
+    } catch (error) {
+      console.error('Error checking admin authentication:', error);
+    }
   }, []);
 
   if (isLoading) {
@@ -30,23 +35,29 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  // Allow access if we have the special admin flag and this route requires admin
-  if (isAdminAuthenticated && requireAdmin) {
+  try {
+    // Allow access if we have the special admin flag and this route requires admin
+    if (isAdminAuthenticated && requireAdmin) {
+      return <>{children}</>;
+    }
+
+    // If not authenticated, redirect to login
+    if (!user && !isAdminAuthenticated) {
+      return <Navigate to="/login" replace />;
+    }
+
+    // If requires admin but user is not admin, redirect to dashboard
+    if (requireAdmin && !isAdmin && !isAdminAuthenticated) {
+      return <Navigate to="/dashboard" replace />;
+    }
+
+    // Render the protected content
     return <>{children}</>;
+  } catch (error) {
+    console.error('Protected route navigation error:', error);
+    // Return a fallback if navigation fails
+    return <div>Authentication error. Please try again later.</div>;
   }
-
-  // If not authenticated, redirect to login
-  if (!user && !isAdminAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // If requires admin but user is not admin, redirect to dashboard
-  if (requireAdmin && !isAdmin && !isAdminAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  // Render the protected content
-  return <>{children}</>;
 };
 
 export default ProtectedRoute;

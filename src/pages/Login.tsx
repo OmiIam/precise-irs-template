@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -24,22 +25,27 @@ const Login = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const { signIn, user, isAdmin: userIsAdmin } = useAuth();
   
-  // Redirect if already logged in
+  // Redirect if already logged in - with proper error handling
   useEffect(() => {
-    // Check for special admin authentication first
-    const adminAuth = localStorage.getItem('isAdminAuthenticated');
-    if (adminAuth === 'true') {
-      navigate('/admin-dashboard');
-      return;
-    }
-    
-    // Then check for regular user authentication
-    if (user) {
-      if (userIsAdmin) {
-        navigate('/admin-dashboard');
-      } else {
-        navigate('/dashboard');
+    try {
+      // Check for special admin authentication first
+      const adminAuth = localStorage.getItem('isAdminAuthenticated');
+      if (adminAuth === 'true') {
+        navigate('/admin-dashboard', { replace: true });
+        return;
       }
+      
+      // Then check for regular user authentication
+      if (user) {
+        if (userIsAdmin) {
+          navigate('/admin-dashboard', { replace: true });
+        } else {
+          navigate('/dashboard', { replace: true });
+        }
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // Don't attempt to navigate again if there was an error
     }
   }, [user, userIsAdmin, navigate]);
   
@@ -52,77 +58,86 @@ const Login = () => {
   });
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
-    // Special handling for admin login
-    if (isAdmin) {
-      // Check if the credentials match the specific admin credentials
-      if (values.email === "admin@admin.com" && values.password === "iXOeNiRqvO2QiN4t") {
-        try {
-          // First check if this admin user exists
-          const { data: existingUser } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('email', 'admin@admin.com')
-            .eq('role', 'Admin')
-            .single();
-          
-          if (!existingUser) {
-            // If admin doesn't exist in auth, we need a different approach
-            // Let's create a fake admin session
-            console.log('Admin credentials accepted. Redirecting to admin dashboard...');
+    try {
+      // Special handling for admin login
+      if (isAdmin) {
+        // Check if the credentials match the specific admin credentials
+        if (values.email === "admin@admin.com" && values.password === "iXOeNiRqvO2QiN4t") {
+          try {
+            // First check if this admin user exists
+            const { data: existingUser } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('email', 'admin@admin.com')
+              .eq('role', 'Admin')
+              .single();
             
-            // Store admin status in localStorage
-            localStorage.setItem('isAdminAuthenticated', 'true');
-            
-            // Redirect to admin dashboard directly - don't rely on the useEffect
-            navigate('/admin-dashboard');
-            return;
-          } else {
-            // Try normal sign in if the user exists
-            const { error } = await signIn(values.email, values.password);
-            
-            if (error) {
-              toast({
-                title: "Admin Login failed",
-                description: error.message || "Check your admin credentials and try again",
-                variant: "destructive",
-              });
+            if (!existingUser) {
+              // If admin doesn't exist in auth, we need a different approach
+              // Let's create a fake admin session
+              console.log('Admin credentials accepted. Redirecting to admin dashboard...');
+              
+              // Store admin status in localStorage
+              localStorage.setItem('isAdminAuthenticated', 'true');
+              
+              // Redirect to admin dashboard directly with replace to avoid navigation stack issues
+              navigate('/admin-dashboard', { replace: true });
+              return;
             } else {
-              // Successful sign in with existing admin account - redirect directly
-              navigate('/admin-dashboard');
+              // Try normal sign in if the user exists
+              const { error } = await signIn(values.email, values.password);
+              
+              if (error) {
+                toast({
+                  title: "Admin Login failed",
+                  description: error.message || "Check your admin credentials and try again",
+                  variant: "destructive",
+                });
+              } else {
+                // Successful sign in with existing admin account - redirect directly with replace
+                navigate('/admin-dashboard', { replace: true });
+              }
             }
+          } catch (error) {
+            console.error('Error checking admin credentials:', error);
+            toast({
+              title: "Admin Login failed",
+              description: "An error occurred while processing your request",
+              variant: "destructive",
+            });
           }
-        } catch (error) {
-          console.error('Error checking admin credentials:', error);
+        } else {
+          // Show error for invalid admin credentials
           toast({
             title: "Admin Login failed",
-            description: "An error occurred while processing your request",
+            description: "Invalid admin credentials",
             variant: "destructive",
           });
         }
-      } else {
-        // Show error for invalid admin credentials
+        return;
+      }
+      
+      // Regular user login
+      const { error } = await signIn(values.email, values.password);
+      
+      if (error) {
         toast({
-          title: "Admin Login failed",
-          description: "Invalid admin credentials",
+          title: "Login failed",
+          description: error.message || "Check your email and password and try again",
           variant: "destructive",
         });
+        return;
       }
-      return;
-    }
-    
-    // Regular user login
-    const { error } = await signIn(values.email, values.password);
-    
-    if (error) {
+      
+      // Auth state change will handle redirection for regular users
+    } catch (error) {
+      console.error('Login submission error:', error);
       toast({
-        title: "Login failed",
-        description: error.message || "Check your email and password and try again",
+        title: "Login error",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
-      return;
     }
-    
-    // Auth state change will handle redirection for regular users
   };
 
   const toggleAdminMode = () => {
