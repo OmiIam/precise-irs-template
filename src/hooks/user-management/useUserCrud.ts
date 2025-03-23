@@ -2,7 +2,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@/components/admin/user-list/types';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetStateAction<User[]>>) => {
   const { toast } = useToast();
@@ -63,7 +62,7 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
       const createdUser = {
         ...newUser,
         id: tempId,
-        status: 'Active',
+        status: newUser.status || 'Active',
         lastLogin: 'Never'
       };
       
@@ -72,8 +71,8 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
         firstName: newUser.name.split(' ')[0],
         lastName: newUser.name.split(' ').slice(1).join(' '),
         email: newUser.email,
-        role: newUser.role,
-        status: 'Active',
+        role: newUser.role || 'User',
+        status: newUser.status || 'Active',
         taxDue: newUser.taxDue || 0,
         filingDeadline: newUser.filingDeadline?.toISOString(),
         availableCredits: newUser.availableCredits || 0
@@ -83,7 +82,11 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
       if (typeof newUser.password === 'string' && newUser.password.length >= 6) {
         Object.assign(userData, { password: newUser.password });
       } else {
-        console.error("Invalid password format:", newUser.password);
+        console.error("Invalid password format:", {
+          passwordType: typeof newUser.password,
+          passwordLength: newUser.password ? newUser.password.length : 0
+        });
+        
         toast({
           title: "Invalid Password",
           description: "Password must be at least 6 characters long.",
@@ -92,27 +95,32 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
         return false;
       }
       
-      console.log("Creating user with data:", userData);
+      console.log("Creating user with data:", {
+        ...userData,
+        password: userData.password ? "******" : undefined
+      });
       
       // First add to UI for better UX
-      setUsers([...users, createdUser]);
+      setUsers(prevUsers => [...prevUsers, createdUser]);
       
       // Then save to database
-      const { data, error } = await supabase.functions.invoke('create-user', {
+      const response = await supabase.functions.invoke('create-user', {
         body: { userData }
       });
       
-      if (error) {
-        console.error("Error from Edge Function:", error);
+      console.log("Edge Function response:", response);
+      
+      if (response.error) {
+        console.error("Error from Edge Function:", response.error);
         
         // Remove the temporary user from UI
-        setUsers(users);
+        setUsers(prevUsers => prevUsers.filter(user => user.id !== tempId));
         
         // Handle specific error cases
-        if (error.message && (
-            error.message.includes("409") || 
-            error.message.includes("already been registered") || 
-            error.message.includes("already exists"))) {
+        if (response.error.message && (
+            response.error.message.includes("409") || 
+            response.error.message.includes("already been registered") || 
+            response.error.message.includes("already exists"))) {
           
           toast({
             title: "Email Already Exists",
@@ -130,10 +138,12 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
         return false;
       }
       
+      const data = response.data;
+      
       if (!data || !data.success) {
         console.error("Unsuccessful response from Edge Function:", data);
         // Remove the temporary user from UI
-        setUsers(users);
+        setUsers(prevUsers => prevUsers.filter(user => user.id !== tempId));
         
         // Check for specific error messages
         if (data?.isExistingUser) {
@@ -151,8 +161,6 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
         }
         return false;
       }
-      
-      console.log("Edge Function response:", data);
       
       // Update the users array with the correct ID from the server response
       if (data.data && data.data.user && data.data.user.id) {
@@ -172,8 +180,16 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
     } catch (error) {
       console.error("Error creating user:", error);
       
+      // Get the tempId from the error context if possible
+      const tempId = error.tempId || "";
+      
       // Remove the temporary user from UI in case of exception
-      setUsers(users);
+      if (tempId) {
+        setUsers(prevUsers => prevUsers.filter(user => user.id !== tempId));
+      } else {
+        // If we can't identify the specific user, refresh the user list
+        setUsers(users);
+      }
       
       toast({
         title: "Error",

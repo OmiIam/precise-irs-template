@@ -30,16 +30,31 @@ serve(async (req) => {
     const { userData } = await req.json();
     
     if (!userData) {
+      console.error("Missing userData in request body");
       return new Response(
-        JSON.stringify({ error: "User data is required" }),
+        JSON.stringify({ error: "User data is required", success: false }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
     
-    console.log("Creating user with data:", userData);
+    console.log("Create user request received with data:", {
+      email: userData.email,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      role: userData.role,
+      status: userData.status,
+      hasPassword: !!userData.password,
+      passwordLength: userData.password ? userData.password.length : 0
+    });
     
-    // Ensure we have a valid password
+    // Validate password
     if (!userData.password || typeof userData.password !== 'string' || userData.password.length < 6) {
+      console.error("Invalid password format:", { 
+        passwordProvided: !!userData.password,
+        passwordType: typeof userData.password,
+        passwordLength: userData.password ? userData.password.length : 0
+      });
+      
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -62,6 +77,7 @@ serve(async (req) => {
     }
     
     if (existingUsers && existingUsers.length > 0) {
+      console.log("User with email already exists:", userData.email);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -73,6 +89,7 @@ serve(async (req) => {
     }
     
     // First, create the auth user
+    console.log("Creating auth user with email:", userData.email);
     const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
       email: userData.email,
       email_confirm: true,
@@ -103,6 +120,15 @@ serve(async (req) => {
     console.log("Auth user created successfully:", authUser.user.id);
     
     // Now insert/update the profile data
+    console.log("Creating user profile with data:", {
+      id: authUser.user.id,
+      first_name: userData.firstName,
+      last_name: userData.lastName,
+      email: userData.email,
+      role: userData.role,
+      status: userData.status
+    });
+    
     const { data, error } = await supabase
       .from('profiles')
       .upsert({
@@ -110,8 +136,8 @@ serve(async (req) => {
         first_name: userData.firstName,
         last_name: userData.lastName,
         email: userData.email,
-        role: userData.role,
-        status: userData.status,
+        role: userData.role || 'User',
+        status: userData.status || 'Active',
         tax_due: userData.taxDue || 0,
         filing_deadline: userData.filingDeadline,
         available_credits: userData.availableCredits || 0
@@ -122,6 +148,7 @@ serve(async (req) => {
       console.error("Error updating profile:", error);
       // If profile creation fails, attempt to clean up by deleting the auth user
       try {
+        console.log("Cleaning up auth user after profile creation failure");
         await supabase.auth.admin.deleteUser(authUser.user.id);
         console.log("Cleaned up auth user after profile creation failure");
       } catch (cleanupError) {
