@@ -23,11 +23,6 @@ const AdminDashboard = () => {
   } = useUserManagement();
   const { handleViewUser, handleImpersonateUser } = useUserActions();
 
-  const userDialogContainer = UserDialogContainer({
-    onSaveUser: handleSaveUser,
-    onCreateUser: handleCreateUser
-  });
-
   const handleRefresh = () => {
     fetchUsers();
     toast({
@@ -42,23 +37,32 @@ const AdminDashboard = () => {
         <AdminSidebar activePage="dashboard" />
         
         <SidebarInset className="p-0">
-          <DashboardHeader 
-            onRefresh={handleRefresh}
-            onAddUser={userDialogContainer.handleAddUser}
-            isLoading={isLoading}
-          />
-          
-          <DashboardContent 
-            users={users}
-            onEditUser={userDialogContainer.handleEditUser}
-            onViewUser={handleViewUser}
-            onImpersonateUser={handleImpersonateUser}
-            onDeleteUser={handleDeleteUser}
-            onToggleUserStatus={handleToggleUserStatus}
-            onToggleUserRole={handleToggleUserRole}
-          />
-          
-          {userDialogContainer.dialogComponent}
+          <UserDialogContainer
+            onSaveUser={handleSaveUser}
+            onCreateUser={handleCreateUser}
+          >
+            {({ handleAddUser, handleEditUser, dialogComponent }) => (
+              <>
+                <DashboardHeader 
+                  onRefresh={handleRefresh}
+                  onAddUser={handleAddUser}
+                  isLoading={isLoading}
+                />
+                
+                <DashboardContent 
+                  users={users}
+                  onEditUser={handleEditUser}
+                  onViewUser={handleViewUser}
+                  onImpersonateUser={handleImpersonateUser}
+                  onDeleteUser={handleDeleteUser}
+                  onToggleUserStatus={handleToggleUserStatus}
+                  onToggleUserRole={handleToggleUserRole}
+                />
+                
+                {dialogComponent}
+              </>
+            )}
+          </UserDialogContainer>
         </SidebarInset>
       </div>
     </SidebarProvider>

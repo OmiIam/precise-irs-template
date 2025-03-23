@@ -7,11 +7,17 @@ import { useToast } from '@/hooks/use-toast';
 interface UserDialogContainerProps {
   onSaveUser: (user: User) => Promise<boolean>;
   onCreateUser: (user: User) => Promise<boolean>;
+  children: (handlers: {
+    handleEditUser: (user: User) => void;
+    handleAddUser: () => void;
+    dialogComponent: React.ReactNode;
+  }) => React.ReactNode;
 }
 
 const UserDialogContainer: React.FC<UserDialogContainerProps> = ({ 
   onSaveUser,
-  onCreateUser
+  onCreateUser,
+  children
 }) => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -43,19 +49,25 @@ const UserDialogContainer: React.FC<UserDialogContainerProps> = ({
     }
   };
 
-  return {
-    dialogComponent: (
-      <UserEditDialog 
-        user={selectedUser} 
-        open={dialogOpen} 
-        onOpenChange={setDialogOpen}
-        onSave={handleSaveUser}
-        isCreateMode={isCreateMode}
-      />
-    ),
-    handleEditUser,
-    handleAddUser
-  };
+  const dialogComponent = (
+    <UserEditDialog 
+      user={selectedUser} 
+      open={dialogOpen} 
+      onOpenChange={setDialogOpen}
+      onSave={handleSaveUser}
+      isCreateMode={isCreateMode}
+    />
+  );
+
+  return (
+    <>
+      {children({
+        handleEditUser,
+        handleAddUser,
+        dialogComponent
+      })}
+    </>
+  );
 };
 
 export default UserDialogContainer;
