@@ -33,11 +33,32 @@ serve(async (req) => {
     
     console.log("Creating user with data:", userData);
     
-    // Insert the user into the profiles table with admin privileges
+    // First, create the auth user
+    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+      email: userData.email,
+      email_confirm: true,
+      user_metadata: { 
+        first_name: userData.firstName,
+        last_name: userData.lastName
+      },
+      password: userData.password || Math.random().toString(36).slice(-8)
+    });
+    
+    if (authError) {
+      console.error("Error creating auth user:", authError);
+      return new Response(
+        JSON.stringify({ success: false, error: authError.message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    console.log("Auth user created successfully:", authUser);
+    
+    // Now insert/update the profile data
     const { data, error } = await supabase
       .from('profiles')
-      .insert({
-        id: userData.id,
+      .upsert({
+        id: authUser.user.id,
         first_name: userData.firstName,
         last_name: userData.lastName,
         email: userData.email,
@@ -49,12 +70,15 @@ serve(async (req) => {
       })
       .select();
       
-    if (error) throw error;
+    if (error) {
+      console.error("Error updating profile:", error);
+      throw error;
+    }
     
-    console.log("User created successfully:", data);
+    console.log("User profile created/updated successfully:", data);
     
     return new Response(
-      JSON.stringify({ success: true, data }),
+      JSON.stringify({ success: true, data: { ...authUser, profile: data } }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

@@ -58,7 +58,6 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
   const handleCreateUser = async (newUser: User) => {
     try {
       console.log("Creating user with data:", {
-        id: newUser.id,
         firstName: newUser.name.split(' ')[0],
         lastName: newUser.name.split(' ').slice(1).join(' '),
         email: newUser.email,
@@ -66,7 +65,8 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
         status: 'Active',
         taxDue: newUser.taxDue || 0,
         filingDeadline: newUser.filingDeadline?.toISOString(),
-        availableCredits: newUser.availableCredits || 0
+        availableCredits: newUser.availableCredits || 0,
+        password: newUser.password  // Pass the generated password to the edge function
       });
 
       // Add user to the UI optimistically
@@ -82,7 +82,6 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
           userData: {
-            id: newUser.id,
             firstName: newUser.name.split(' ')[0],
             lastName: newUser.name.split(' ').slice(1).join(' '),
             email: newUser.email,
@@ -90,7 +89,8 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
             status: 'Active',
             taxDue: newUser.taxDue || 0,
             filingDeadline: newUser.filingDeadline?.toISOString(),
-            availableCredits: newUser.availableCredits || 0
+            availableCredits: newUser.availableCredits || 0,
+            password: newUser.password  // Pass the generated password
           }
         }
       });
