@@ -57,24 +57,11 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
 
   const handleCreateUser = async (newUser: User) => {
     try {
-      const userId = `USER${Math.floor(100000 + Math.random() * 900000)}`;
-      
-      console.log("Creating new user with data:", {
-        id: userId,
-        first_name: newUser.name.split(' ')[0],
-        last_name: newUser.name.split(' ').slice(1).join(' '),
-        email: newUser.email,
-        role: newUser.role,
-        status: 'Active',
-        tax_due: newUser.taxDue || 0,
-        filing_deadline: newUser.filingDeadline?.toISOString(),
-        available_credits: newUser.availableCredits || 0
-      });
-
-      const { data, error } = await supabase
+      // Generate a standard UUID instead of a custom format that might cause issues
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .insert({
-          id: userId,
+          id: newUser.id, // Use the ID already generated in the form
           first_name: newUser.name.split(' ')[0],
           last_name: newUser.name.split(' ').slice(1).join(' '),
           email: newUser.email,
@@ -83,13 +70,15 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
           tax_due: newUser.taxDue || 0,
           filing_deadline: newUser.filingDeadline?.toISOString(),
           available_credits: newUser.availableCredits || 0
-        });
+        })
+        .select();
 
-      if (error) throw error;
+      if (profileError) throw profileError;
+      
+      console.log("User created successfully:", profileData);
       
       const createdUser = {
         ...newUser,
-        id: userId,
         status: 'Active',
         lastLogin: 'Never'
       };

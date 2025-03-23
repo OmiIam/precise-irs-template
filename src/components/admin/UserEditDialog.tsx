@@ -49,7 +49,8 @@ const UserEditDialog = ({
         availableCredits: user.availableCredits || 0
       });
     } else if (isCreateMode) {
-      const newUserId = `USER${Math.floor(100000 + Math.random() * 900000)}`;
+      // Generate a proper UUID for new users
+      const newUserId = crypto.randomUUID();
       setFormData({
         id: newUserId,
         name: '',
