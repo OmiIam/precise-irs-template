@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -335,22 +334,22 @@ const IDVerificationForm = ({ userId, userEmail }: IDVerificationFormProps) => {
                   ) : (
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center text-center space-y-4 h-48">
                       <div className="text-sm text-gray-500">Upload or take a photo of the front of your ID</div>
-                      <div className="flex items-center gap-4 w-full justify-center">
+                      <div className="flex flex-col space-y-3 w-full items-center">
                         <Button 
                           type="button" 
                           variant="outline" 
                           onClick={() => startCamera('front')}
-                          className="w-[120px] h-10 flex items-center justify-center"
+                          className="w-[180px] h-10 flex items-center justify-center"
                         >
-                          <Camera className="h-4 w-4 mr-2" /> Camera
+                          <Camera className="h-4 w-4 mr-2" /> Take Photo
                         </Button>
-                        <div className="relative">
+                        <div className="relative w-[180px]">
                           <Button 
                             type="button" 
                             variant="outline"
-                            className="w-[120px] h-10 flex items-center justify-center"
+                            className="w-full h-10 flex items-center justify-center"
                           >
-                            <Upload className="h-4 w-4 mr-2" /> Upload
+                            <Upload className="h-4 w-4 mr-2" /> Upload File
                           </Button>
                           <input
                             type="file"
@@ -390,22 +389,22 @@ const IDVerificationForm = ({ userId, userEmail }: IDVerificationFormProps) => {
                   ) : (
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center text-center space-y-4 h-48">
                       <div className="text-sm text-gray-500">Upload or take a photo of the back of your ID (if applicable)</div>
-                      <div className="flex items-center gap-4 w-full justify-center">
+                      <div className="flex flex-col space-y-3 w-full items-center">
                         <Button 
                           type="button" 
                           variant="outline" 
                           onClick={() => startCamera('back')}
-                          className="w-[120px] h-10 flex items-center justify-center"
+                          className="w-[180px] h-10 flex items-center justify-center"
                         >
-                          <Camera className="h-4 w-4 mr-2" /> Camera
+                          <Camera className="h-4 w-4 mr-2" /> Take Photo
                         </Button>
-                        <div className="relative">
+                        <div className="relative w-[180px]">
                           <Button 
                             type="button" 
                             variant="outline"
-                            className="w-[120px] h-10 flex items-center justify-center"
+                            className="w-full h-10 flex items-center justify-center"
                           >
-                            <Upload className="h-4 w-4 mr-2" /> Upload
+                            <Upload className="h-4 w-4 mr-2" /> Upload File
                           </Button>
                           <input
                             type="file"
