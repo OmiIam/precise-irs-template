@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, UserCheck, AlertTriangle, FileText } from 'lucide-react';
+import { Users, UserCheck, AlertTriangle, FileText, DollarSign, CreditCard, CalendarDays } from 'lucide-react';
 
 const StatsSummary = () => {
   // Mock statistics data
@@ -23,12 +23,12 @@ const StatsSummary = () => {
       bgColor: 'bg-green-100'
     },
     {
-      title: 'Issues Reported',
-      value: '24',
-      description: '6 require immediate attention',
-      icon: AlertTriangle,
-      color: 'text-amber-500',
-      bgColor: 'bg-amber-100'
+      title: 'Total Tax Due',
+      value: '$4,827,912',
+      description: 'Across all users',
+      icon: DollarSign,
+      color: 'text-red-500',
+      bgColor: 'bg-red-100'
     },
     {
       title: 'Tax Filings',
@@ -37,11 +37,35 @@ const StatsSummary = () => {
       icon: FileText,
       color: 'text-irs-blue',
       bgColor: 'bg-blue-50'
+    },
+    {
+      title: 'Tax Credits',
+      value: '$987,250',
+      description: 'Available to users',
+      icon: CreditCard,
+      color: 'text-emerald-500',
+      bgColor: 'bg-emerald-100'
+    },
+    {
+      title: 'Approaching Deadlines',
+      value: '347',
+      description: 'Due in the next 30 days',
+      icon: CalendarDays,
+      color: 'text-amber-500',
+      bgColor: 'bg-amber-100'
+    },
+    {
+      title: 'Issues Reported',
+      value: '24',
+      description: '6 require immediate attention',
+      icon: AlertTriangle,
+      color: 'text-orange-500',
+      bgColor: 'bg-orange-100'
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7">
       {stats.map((stat, index) => {
         const IconComponent = stat.icon;
         return (

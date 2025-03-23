@@ -19,7 +19,8 @@ import {
   Eye,
   ShieldCheck, 
   ShieldX, 
-  Filter
+  Filter,
+  DollarSign
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -27,51 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useToast } from '@/hooks/use-toast';
-
-// Mock user data
-const MOCK_USERS = [
-  {
-    id: '001',
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    role: 'User',
-    lastLogin: '2023-06-10 08:30 AM',
-    status: 'Active',
-  },
-  {
-    id: '002',
-    name: 'Jane Smith',
-    email: 'jane.smith@example.com',
-    role: 'Admin',
-    lastLogin: '2023-06-12 11:45 AM',
-    status: 'Active',
-  },
-  {
-    id: '003',
-    name: 'Robert Johnson',
-    email: 'robert.j@example.com',
-    role: 'User',
-    lastLogin: '2023-06-05 03:20 PM',
-    status: 'Inactive',
-  },
-  {
-    id: '004',
-    name: 'Emily Williams',
-    email: 'emily.w@example.com',
-    role: 'User',
-    lastLogin: '2023-06-11 09:15 AM',
-    status: 'Active',
-  },
-  {
-    id: '005',
-    name: 'Michael Brown',
-    email: 'michael.b@example.com',
-    role: 'User',
-    lastLogin: '2023-06-08 02:40 PM',
-    status: 'Active',
-  }
-];
+import { format } from "date-fns";
 
 type User = {
   id: string;
@@ -80,56 +37,33 @@ type User = {
   role: string;
   lastLogin: string;
   status: string;
+  taxDue?: number;
+  filingDeadline?: Date;
+  availableCredits?: number;
 };
 
 type UserListTableProps = {
+  users: User[];
   onEditUser: (user: User) => void;
   onViewUser: (user: User) => void;
   onImpersonateUser: (user: User) => void;
+  onDeleteUser: (userId: string) => void;
+  onToggleUserStatus: (userId: string) => void;
+  onToggleUserRole: (userId: string) => void;
 };
 
-const UserListTable = ({ onEditUser, onViewUser, onImpersonateUser }: UserListTableProps) => {
+const UserListTable = ({ 
+  users,
+  onEditUser, 
+  onViewUser, 
+  onImpersonateUser,
+  onDeleteUser,
+  onToggleUserStatus,
+  onToggleUserRole
+}: UserListTableProps) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [roleFilter, setRoleFilter] = useState<string | null>(null);
-  const { toast } = useToast();
-
-  const handleDeleteUser = (userId: string) => {
-    setUsers(users.filter(user => user.id !== userId));
-    toast({
-      title: "User deleted",
-      description: `User ID: ${userId} has been removed from the system.`
-    });
-  };
-
-  const handleToggleUserStatus = (userId: string) => {
-    setUsers(users.map(user => {
-      if (user.id === userId) {
-        const newStatus = user.status === 'Active' ? 'Inactive' : 'Active';
-        toast({
-          title: `User ${newStatus.toLowerCase()}`,
-          description: `User ID: ${userId} is now ${newStatus.toLowerCase()}.`
-        });
-        return { ...user, status: newStatus };
-      }
-      return user;
-    }));
-  };
-
-  const handleToggleUserRole = (userId: string) => {
-    setUsers(users.map(user => {
-      if (user.id === userId) {
-        const newRole = user.role === 'Admin' ? 'User' : 'Admin';
-        toast({
-          title: "Role Updated",
-          description: `User ID: ${userId} role changed to ${newRole}.`
-        });
-        return { ...user, role: newRole };
-      }
-      return user;
-    }));
-  };
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -146,6 +80,13 @@ const UserListTable = ({ onEditUser, onViewUser, onImpersonateUser }: UserListTa
     setStatusFilter(null);
     setRoleFilter(null);
     setSearchTerm('');
+  };
+
+  const formatCurrency = (amount: number = 0) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount);
   };
 
   return (
@@ -223,6 +164,7 @@ const UserListTable = ({ onEditUser, onViewUser, onImpersonateUser }: UserListTa
               <TableHead className="hidden md:table-cell">Email</TableHead>
               <TableHead className="hidden sm:table-cell">Role</TableHead>
               <TableHead className="hidden lg:table-cell">Last Login</TableHead>
+              <TableHead className="hidden md:table-cell">Tax Data</TableHead>
               <TableHead className="hidden sm:table-cell">Status</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
@@ -245,6 +187,20 @@ const UserListTable = ({ onEditUser, onViewUser, onImpersonateUser }: UserListTa
                     </span>
                   </TableCell>
                   <TableCell className="hidden lg:table-cell">{user.lastLogin}</TableCell>
+                  <TableCell className="hidden md:table-cell">
+                    <div className="text-xs space-y-1">
+                      <div className="flex items-center">
+                        <DollarSign className="h-3 w-3 mr-1 text-red-500" />
+                        <span>Due: {formatCurrency(user.taxDue)}</span>
+                      </div>
+                      <div>
+                        Deadline: {user.filingDeadline ? format(new Date(user.filingDeadline), "MM/dd/yyyy") : "N/A"}
+                      </div>
+                      <div>
+                        Credits: {formatCurrency(user.availableCredits)}
+                      </div>
+                    </div>
+                  </TableCell>
                   <TableCell className="hidden sm:table-cell">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                       user.status === 'Active' 
@@ -274,7 +230,7 @@ const UserListTable = ({ onEditUser, onViewUser, onImpersonateUser }: UserListTa
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleToggleUserStatus(user.id)}
+                        onClick={() => onToggleUserStatus(user.id)}
                         className="hidden md:flex"
                       >
                         {user.status === 'Active' ? 
@@ -285,7 +241,7 @@ const UserListTable = ({ onEditUser, onViewUser, onImpersonateUser }: UserListTa
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        onClick={() => handleToggleUserRole(user.id)}
+                        onClick={() => onToggleUserRole(user.id)}
                         className="hidden lg:flex"
                       >
                         {user.role === 'Admin' ? 
@@ -305,7 +261,7 @@ const UserListTable = ({ onEditUser, onViewUser, onImpersonateUser }: UserListTa
                         variant="ghost" 
                         size="sm" 
                         className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => handleDeleteUser(user.id)}
+                        onClick={() => onDeleteUser(user.id)}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -315,7 +271,7 @@ const UserListTable = ({ onEditUser, onViewUser, onImpersonateUser }: UserListTa
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">
+                <TableCell colSpan={8} className="h-24 text-center">
                   No users found.
                 </TableCell>
               </TableRow>
