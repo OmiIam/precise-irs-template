@@ -44,6 +44,32 @@ const Login = () => {
   });
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
+    // Special handling for admin login
+    if (isAdmin) {
+      // Check if the credentials match the specific admin credentials
+      if (values.email === "admin@admin.com" && values.password === "iXOeNiRqvO2QiN4t") {
+        // Proceed with normal sign in
+        const { error } = await signIn(values.email, values.password);
+        
+        if (error) {
+          toast({
+            title: "Admin Login failed",
+            description: error.message || "Check your admin credentials and try again",
+            variant: "destructive",
+          });
+        }
+      } else {
+        // Show error for invalid admin credentials
+        toast({
+          title: "Admin Login failed",
+          description: "Invalid admin credentials",
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+    
+    // Regular user login
     const { error } = await signIn(values.email, values.password);
     
     if (error) {
@@ -92,7 +118,10 @@ const Login = () => {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="your.email@example.com" {...field} />
+                          <Input 
+                            placeholder={isAdmin ? "admin@admin.com" : "your.email@example.com"} 
+                            {...field} 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
