@@ -160,7 +160,13 @@ serve(async (req) => {
     console.log("User profile created/updated successfully:", data);
     
     return new Response(
-      JSON.stringify({ success: true, data: { ...authUser, profile: data } }),
+      JSON.stringify({ 
+        success: true, 
+        data: { 
+          user: authUser.user,
+          profile: data?.[0] || null 
+        } 
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

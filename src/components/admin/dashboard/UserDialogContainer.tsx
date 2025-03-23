@@ -37,15 +37,35 @@ const UserDialogContainer: React.FC<UserDialogContainerProps> = ({
   };
 
   const handleSaveUser = async (updatedUser: User) => {
-    let success;
-    if (isCreateMode) {
-      success = await onCreateUser(updatedUser);
-    } else {
-      success = await onSaveUser(updatedUser);
-    }
-    
-    if (success) {
-      setDialogOpen(false);
+    try {
+      let success;
+      
+      if (isCreateMode) {
+        // Ensure password exists for create mode
+        if (!updatedUser.password) {
+          toast({
+            title: "Error",
+            description: "Password is required when creating a new user",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        success = await onCreateUser(updatedUser);
+      } else {
+        success = await onSaveUser(updatedUser);
+      }
+      
+      if (success) {
+        setDialogOpen(false);
+      }
+    } catch (error) {
+      console.error("Error saving user:", error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 

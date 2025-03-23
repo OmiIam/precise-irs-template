@@ -8,6 +8,26 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
 
   const handleCreateUser = async (newUser: User) => {
     try {
+      // Validate required fields
+      if (!newUser.name || !newUser.email) {
+        toast({
+          title: "Missing Required Fields",
+          description: "Name and email are required.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      // Validate password
+      if (!newUser.password || typeof newUser.password !== 'string' || newUser.password.length < 6) {
+        toast({
+          title: "Invalid Password",
+          description: "Password must be at least 6 characters long.",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
       // Start by creating a temporary ID for UI
       const tempId = crypto.randomUUID();
       const createdUser = {
@@ -18,43 +38,17 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       };
       
       // Prepare user data for the API call
-      const userData: {
-        firstName: string;
-        lastName: string;
-        email: string;
-        role: string;
-        status: string;
-        taxDue: number;
-        filingDeadline?: string;
-        availableCredits: number;
-        password?: string;
-      } = {
+      const userData = {
         firstName: newUser.name.split(' ')[0],
-        lastName: newUser.name.split(' ').slice(1).join(' '),
+        lastName: newUser.name.split(' ').slice(1).join(' ') || 'User',
         email: newUser.email,
         role: newUser.role || 'User',
         status: newUser.status || 'Active',
         taxDue: newUser.taxDue || 0,
         filingDeadline: newUser.filingDeadline?.toISOString(),
-        availableCredits: newUser.availableCredits || 0
+        availableCredits: newUser.availableCredits || 0,
+        password: newUser.password
       };
-      
-      // Only add password if it's a valid string with minimum length
-      if (typeof newUser.password === 'string' && newUser.password.length >= 6) {
-        userData.password = newUser.password;
-      } else {
-        console.error("Invalid password format:", {
-          passwordType: typeof newUser.password,
-          passwordLength: newUser.password ? newUser.password.length : 0
-        });
-        
-        toast({
-          title: "Invalid Password",
-          description: "Password must be at least 6 characters long.",
-          variant: "destructive"
-        });
-        return false;
-      }
       
       console.log("Creating user with data:", {
         ...userData,

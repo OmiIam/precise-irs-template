@@ -48,9 +48,11 @@ const UserEditDialog = ({
         filingDeadline: user.filingDeadline ? new Date(user.filingDeadline) : new Date(),
         availableCredits: user.availableCredits || 0
       });
+      setShowResetPassword(false);
     } else if (isCreateMode) {
       // Generate a proper UUID for new users
       const newUserId = crypto.randomUUID();
+      const initialPassword = generateRandomPassword();
       setFormData({
         id: newUserId,
         name: '',
@@ -61,7 +63,7 @@ const UserEditDialog = ({
         taxDue: 0,
         filingDeadline: new Date(),
         availableCredits: 0,
-        password: generateRandomPassword()
+        password: initialPassword
       });
       setShowResetPassword(true);
     }
