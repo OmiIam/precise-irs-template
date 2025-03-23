@@ -66,6 +66,18 @@ export const useUserManagement = () => {
 
   const handleSaveUser = async (updatedUser: User) => {
     try {
+      // Log the data that's being sent to help with debugging
+      console.log("Updating user with data:", {
+        first_name: updatedUser.name.split(' ')[0],
+        last_name: updatedUser.name.split(' ').slice(1).join(' '),
+        email: updatedUser.email,
+        role: updatedUser.role,
+        status: updatedUser.status,
+        tax_due: updatedUser.taxDue,
+        filing_deadline: updatedUser.filingDeadline?.toISOString(),
+        available_credits: updatedUser.availableCredits
+      });
+      
       const { error } = await supabase
         .from('profiles')
         .update({

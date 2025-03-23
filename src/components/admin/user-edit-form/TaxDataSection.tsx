@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, DollarSign, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { UserFormData } from './types';
 
@@ -19,21 +19,24 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
   return (
     <>
       <div className="border-t pt-4 mt-2">
-        <h3 className="font-medium mb-2 text-sm">Dashboard Data</h3>
+        <h3 className="font-medium mb-2 text-sm">Financial Information</h3>
       </div>
 
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="taxDue" className="text-right">
           Tax Due ($)
         </Label>
-        <Input
-          id="taxDue"
-          name="taxDue"
-          type="number"
-          value={formData.taxDue}
-          onChange={handleChange}
-          className="col-span-3"
-        />
+        <div className="col-span-3 relative">
+          <DollarSign className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+          <Input
+            id="taxDue"
+            name="taxDue"
+            type="number"
+            value={formData.taxDue}
+            onChange={handleChange}
+            className="pl-8"
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-4 items-center gap-4">
@@ -47,7 +50,7 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
                 variant="outline"
                 className="w-full justify-start text-left font-normal"
               >
-                <CalendarIcon className="mr-2 h-4 w-4" />
+                <Clock className="mr-2 h-4 w-4" />
                 {formData.filingDeadline ? (
                   format(formData.filingDeadline, "PPP")
                 ) : (
@@ -71,14 +74,17 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
         <Label htmlFor="availableCredits" className="text-right">
           Available Credits ($)
         </Label>
-        <Input
-          id="availableCredits"
-          name="availableCredits"
-          type="number"
-          value={formData.availableCredits}
-          onChange={handleChange}
-          className="col-span-3"
-        />
+        <div className="col-span-3 relative">
+          <DollarSign className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+          <Input
+            id="availableCredits"
+            name="availableCredits"
+            type="number"
+            value={formData.availableCredits}
+            onChange={handleChange}
+            className="pl-8"
+          />
+        </div>
       </div>
     </>
   );
