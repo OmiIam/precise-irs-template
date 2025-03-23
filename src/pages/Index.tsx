@@ -46,23 +46,23 @@ const Index = () => {
           <div className="container mx-auto px-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <InfoCard
-                title="Lorem Ipsum Dolor"
-                description="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis."
+                title="Tax Filing Made Easy"
+                description="File your taxes with confidence using our step-by-step guidance and smart tools designed to maximize your refund."
                 ctaText="Learn More"
                 icon={<Calendar size={24} />}
               />
               
               <InfoCard
-                title="Consectetur Adipiscing"
-                description="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis."
+                title="Tax Deadline Approaching"
+                description="Don't miss important tax deadlines. Stay on track with our tax calendar and timely reminders for filing and payments."
                 ctaText="View Details"
                 variant="featured"
                 icon={<AlertCircle size={24} />}
               />
               
               <InfoCard
-                title="Ut Elit Tellus"
-                description="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis."
+                title="Track Your Refund"
+                description="Check the status of your tax refund in real-time. Know exactly when your money will arrive with our accurate tracking system."
                 ctaText="Get Started"
                 icon={<Clock size={24} />}
               />
@@ -80,27 +80,27 @@ const Index = () => {
                 News & Updates
               </h2>
               <p className="text-irs-darkGray max-w-2xl mx-auto">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis.
+                Stay informed with the latest tax news, updates, and changes that may affect your filing status and tax situation.
               </p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <NewsCard
                 date="March 15, 2023"
-                title="Lorem ipsum dolor sit amet, consectetur adipiscing"
-                excerpt="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo."
+                title="New Tax Credits Available for Qualified Families"
+                excerpt="The IRS has announced new tax credits for families with children under 17. Find out if you qualify and how to claim these credits on your next tax return."
               />
               
               <NewsCard
                 date="March 10, 2023"
-                title="Ut elit tellus, luctus nec ullamcorper mattis"
-                excerpt="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo."
+                title="Extended Filing Deadline for Natural Disaster Areas"
+                excerpt="Taxpayers in federally declared disaster areas now have additional time to file their tax returns. Check if your location qualifies for this extension."
               />
               
               <NewsCard
                 date="March 5, 2023"
-                title="Pulvinar dapibus leo, consectetur adipiscing elit"
-                excerpt="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo."
+                title="Important Changes to Retirement Account Contributions"
+                excerpt="New legislation has modified contribution limits for 401(k)s and IRAs. Learn about these changes and how they might impact your retirement planning."
               />
             </div>
             
@@ -120,7 +120,7 @@ const Index = () => {
                 Resources & Tools
               </h2>
               <p className="text-irs-darkGray max-w-2xl mx-auto">
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis.
+                Take advantage of our comprehensive resources and interactive tools designed to simplify your tax experience.
               </p>
             </div>
             
@@ -128,25 +128,25 @@ const Index = () => {
               <ResourceCard
                 icon={<DollarSign size={24} />}
                 title="Tax Estimator"
-                description="Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+                description="Calculate your potential tax liability or refund with our easy-to-use tax estimation tool."
               />
               
               <ResourceCard
                 icon={<Users size={24} />}
                 title="Find a Tax Professional"
-                description="Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+                description="Connect with certified tax professionals in your area who can help with complex tax situations."
               />
               
               <ResourceCard
                 icon={<PiggyBank size={24} />}
                 title="Retirement Calculator"
-                description="Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+                description="Plan for your future with our retirement calculator and tax-advantaged investment options."
               />
               
               <ResourceCard
                 icon={<LifeBuoy size={24} />}
                 title="Get Help"
-                description="Lorem ipsum dolor sit amet, consectetur adipiscing elit."
+                description="Access our comprehensive support center for answers to your tax questions and filing assistance."
               />
             </div>
           </div>
@@ -156,10 +156,10 @@ const Index = () => {
         <section className="py-16 bg-irs-blue text-white">
           <div className="container mx-auto px-4 text-center">
             <h2 className="text-2xl md:text-3xl font-bold mb-4">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit
+              Take the stress out of tax season with expert guidance
             </h2>
             <p className="max-w-2xl mx-auto mb-8 opacity-90">
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo.
+              Our tax professionals are ready to help you navigate complexities, maximize deductions, and ensure accurate filing. Don't face tax season alone.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <a href="#" className="bg-white text-irs-blue hover:bg-irs-gray transition-colors duration-200 font-semibold px-6 py-3 rounded">

@@ -11,35 +11,35 @@ export const Footer = () => {
         {/* Main footer content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 py-12">
           <div className="space-y-4">
-            <h3 className="text-xl font-bold">Lorem Ipsum</h3>
+            <h3 className="text-xl font-bold">Tax Services</h3>
             <ul className="space-y-2">
-              <FooterLink href="#">Lorem ipsum dolor</FooterLink>
-              <FooterLink href="#">Consectetur adipiscing</FooterLink>
-              <FooterLink href="#">Ut elit tellus</FooterLink>
-              <FooterLink href="#">Luctus nec ullamcorper</FooterLink>
-              <FooterLink href="#">Mattis pulvinar</FooterLink>
+              <FooterLink href="#">Individual Tax Filing</FooterLink>
+              <FooterLink href="#">Business Tax Services</FooterLink>
+              <FooterLink href="#">Tax Preparation</FooterLink>
+              <FooterLink href="#">Tax Planning</FooterLink>
+              <FooterLink href="#">Audit Assistance</FooterLink>
             </ul>
           </div>
           
           <div className="space-y-4">
             <h3 className="text-xl font-bold">About Us</h3>
             <ul className="space-y-2">
-              <FooterLink href="#">Lorem ipsum dolor</FooterLink>
-              <FooterLink href="#">Consectetur adipiscing</FooterLink>
-              <FooterLink href="#">Ut elit tellus</FooterLink>
-              <FooterLink href="#">Luctus nec ullamcorper</FooterLink>
-              <FooterLink href="#">Mattis pulvinar</FooterLink>
+              <FooterLink href="#">Our Mission</FooterLink>
+              <FooterLink href="#">Leadership Team</FooterLink>
+              <FooterLink href="#">Careers</FooterLink>
+              <FooterLink href="#">Press Releases</FooterLink>
+              <FooterLink href="#">Contact Us</FooterLink>
             </ul>
           </div>
           
           <div className="space-y-4">
             <h3 className="text-xl font-bold">Resources</h3>
             <ul className="space-y-2">
-              <FooterLink href="#">Lorem ipsum dolor</FooterLink>
-              <FooterLink href="#">Consectetur adipiscing</FooterLink>
-              <FooterLink href="#">Ut elit tellus</FooterLink>
-              <FooterLink href="#">Luctus nec ullamcorper</FooterLink>
-              <FooterLink href="#">Mattis pulvinar</FooterLink>
+              <FooterLink href="#">Tax Calculators</FooterLink>
+              <FooterLink href="#">Tax Forms</FooterLink>
+              <FooterLink href="#">Filing Deadlines</FooterLink>
+              <FooterLink href="#">Tax Guides</FooterLink>
+              <FooterLink href="#">FAQ</FooterLink>
             </ul>
           </div>
           
@@ -73,7 +73,7 @@ export const Footer = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
               <p className="text-sm text-irs-lightGray">
-                © 2023 Lorem Ipsum Internal Revenue Service. All Rights Reserved.
+                © 2023 Revenue Dividends Internal Revenue Service. All Rights Reserved.
               </p>
             </div>
             <div className="flex flex-wrap gap-4 justify-center">
