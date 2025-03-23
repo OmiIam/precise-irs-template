@@ -13,7 +13,15 @@ export const IDVerificationSchema = z.object({
   idNumber: z.string().min(1, { message: "ID number is required" }),
 });
 
+// The inferred type will include required fields, while the actual form state uses optional fields
+// until they are filled in by the user
 export type IDVerificationFormValues = z.infer<typeof IDVerificationSchema>;
+
+// This is the type we'll use for the form state
+export type IDVerificationFormState = {
+  idType?: string;
+  idNumber?: string;
+};
 
 export const useIDVerification = (userId: string, userEmail: string) => {
   const { toast } = useToast();
@@ -24,7 +32,8 @@ export const useIDVerification = (userId: string, userEmail: string) => {
   const [backImageFile, setBackImageFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  const form = useForm<IDVerificationFormValues>({
+  // Use IDVerificationFormState type for the form
+  const form = useForm<IDVerificationFormState>({
     resolver: zodResolver(IDVerificationSchema),
     defaultValues: {
       idType: "",

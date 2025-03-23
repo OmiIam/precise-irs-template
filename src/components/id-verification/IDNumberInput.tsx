@@ -5,10 +5,10 @@ import { Input } from '@/components/ui/input';
 import { UseFormReturn } from 'react-hook-form';
 import { z } from 'zod';
 
-// Instead of directly referencing IDVerificationSchema, use a generic type parameter
+// Define form values with optional properties to match the actual form state
 type IDVerificationFormValues = {
-  idType: string;
-  idNumber: string;
+  idType?: string;
+  idNumber?: string;
 };
 
 type IDNumberInputProps = {
