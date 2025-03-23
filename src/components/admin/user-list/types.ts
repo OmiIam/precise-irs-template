@@ -9,6 +9,7 @@ export type User = {
   taxDue?: number;
   filingDeadline?: Date;
   availableCredits?: number;
+  password?: string; // Add the optional password property
 };
 
 export type UserListTableProps = {

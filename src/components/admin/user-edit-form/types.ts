@@ -9,8 +9,7 @@ export type User = {
   taxDue?: number;
   filingDeadline?: Date;
   availableCredits?: number;
+  password?: string; // Add the optional password property to match the updated User type
 };
 
-export type UserFormData = User & {
-  password?: string;
-};
+export type UserFormData = User;

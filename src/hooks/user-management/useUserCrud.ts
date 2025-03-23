@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@/components/admin/user-list/types';
@@ -66,10 +65,9 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
         taxDue: newUser.taxDue || 0,
         filingDeadline: newUser.filingDeadline?.toISOString(),
         availableCredits: newUser.availableCredits || 0,
-        password: newUser.password  // Pass the generated password to the edge function
+        password: newUser.password
       });
 
-      // Add user to the UI optimistically
       const createdUser = {
         ...newUser,
         status: 'Active',
@@ -78,7 +76,6 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
       
       setUsers([...users, createdUser]);
       
-      // Call the secure Edge Function to create the user in the database
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
           userData: {
@@ -90,7 +87,7 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
             taxDue: newUser.taxDue || 0,
             filingDeadline: newUser.filingDeadline?.toISOString(),
             availableCredits: newUser.availableCredits || 0,
-            password: newUser.password  // Pass the generated password
+            password: newUser.password
           }
         }
       });
@@ -102,7 +99,7 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
           description: "User was added to the UI but there was an issue saving to the database. Changes may not persist after reload.",
           variant: "destructive"
         });
-        return true; // Still return true to keep the UI updated
+        return true;
       }
       
       console.log("Edge Function response:", data);
