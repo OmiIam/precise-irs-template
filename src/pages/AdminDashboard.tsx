@@ -52,9 +52,9 @@ const AdminDashboard = () => {
         role: profile.role,
         lastLogin: profile.last_login ? new Date(profile.last_login).toLocaleString() : 'Never',
         status: profile.status,
-        taxDue: parseFloat(profile.tax_due) || 0,
+        taxDue: profile.tax_due || 0,
         filingDeadline: profile.filing_deadline ? new Date(profile.filing_deadline) : undefined,
-        availableCredits: parseFloat(profile.available_credits) || 0
+        availableCredits: profile.available_credits || 0
       }));
 
       setUsers(formattedUsers);
@@ -143,7 +143,7 @@ const AdminDashboard = () => {
             role: updatedUser.role,
             status: updatedUser.status,
             tax_due: updatedUser.taxDue,
-            filing_deadline: updatedUser.filingDeadline,
+            filing_deadline: updatedUser.filingDeadline?.toISOString(),
             available_credits: updatedUser.availableCredits
           })
           .eq('id', updatedUser.id);
