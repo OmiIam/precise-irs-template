@@ -57,10 +57,8 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
 
   const handleCreateUser = async (newUser: User) => {
     try {
-      // Ensure password is a string or undefined, but not an object
-      const password = typeof newUser.password === 'string' ? newUser.password : undefined;
-      
-      console.log("Creating user with data:", {
+      // Convert password field to a proper string value or remove it completely
+      const userData = {
         firstName: newUser.name.split(' ')[0],
         lastName: newUser.name.split(' ').slice(1).join(' '),
         email: newUser.email,
@@ -68,9 +66,15 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
         status: 'Active',
         taxDue: newUser.taxDue || 0,
         filingDeadline: newUser.filingDeadline?.toISOString(),
-        availableCredits: newUser.availableCredits || 0,
-        password: password // Ensure it's a proper string
-      });
+        availableCredits: newUser.availableCredits || 0
+      };
+      
+      // Only add password if it's a valid string
+      if (typeof newUser.password === 'string' && newUser.password.length > 0) {
+        Object.assign(userData, { password: newUser.password });
+      }
+      
+      console.log("Creating user with data:", userData);
 
       const createdUser = {
         ...newUser,
@@ -84,17 +88,7 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
       // Then save to database
       const { data, error } = await supabase.functions.invoke('create-user', {
         body: {
-          userData: {
-            firstName: newUser.name.split(' ')[0],
-            lastName: newUser.name.split(' ').slice(1).join(' '),
-            email: newUser.email,
-            role: newUser.role,
-            status: 'Active',
-            taxDue: newUser.taxDue || 0,
-            filingDeadline: newUser.filingDeadline?.toISOString(),
-            availableCredits: newUser.availableCredits || 0,
-            password: password // Pass properly formatted password
-          }
+          userData
         }
       });
 

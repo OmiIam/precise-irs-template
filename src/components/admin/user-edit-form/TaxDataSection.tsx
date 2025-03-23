@@ -1,12 +1,13 @@
 
 import React from 'react';
+import { format } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, DollarSign, Clock } from "lucide-react";
-import { format } from "date-fns";
+import { CalendarIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { UserFormData } from './types';
 
 type TaxDataSectionProps = {
@@ -16,30 +17,48 @@ type TaxDataSectionProps = {
 };
 
 const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSectionProps) => {
+  // Parse existing deadline or set to current date if undefined
+  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(
+    formData.filingDeadline || new Date()
+  );
+  
+  const handleSetDate = (date: Date | undefined) => {
+    setSelectedDate(date);
+    handleDateChange(date);
+  };
+  
   return (
     <>
-      <div className="border-t pt-4 mt-2">
-        <h3 className="font-medium mb-2 text-sm">Financial Information</h3>
-      </div>
-
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="taxDue" className="text-right">
-          Tax Due ($)
+          Tax Due
         </Label>
-        <div className="col-span-3 relative">
-          <DollarSign className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-          <Input
-            id="taxDue"
-            name="taxDue"
-            type="number"
-            value={formData.taxDue || ''}
-            onChange={handleChange}
-            className="pl-8"
-            placeholder="0.00"
-          />
-        </div>
+        <Input
+          id="taxDue"
+          name="taxDue"
+          type="number"
+          placeholder="0.00"
+          value={formData.taxDue === 0 ? '' : formData.taxDue}
+          onChange={handleChange}
+          className="col-span-3"
+        />
       </div>
-
+      
+      <div className="grid grid-cols-4 items-center gap-4">
+        <Label htmlFor="availableCredits" className="text-right">
+          Available Credits
+        </Label>
+        <Input
+          id="availableCredits"
+          name="availableCredits"
+          type="number"
+          placeholder="0.00"
+          value={formData.availableCredits === 0 ? '' : formData.availableCredits}
+          onChange={handleChange}
+          className="col-span-3"
+        />
+      </div>
+      
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="filingDeadline" className="text-right">
           Filing Deadline
@@ -48,45 +67,25 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
           <Popover>
             <PopoverTrigger asChild>
               <Button
-                variant="outline"
-                className="w-full justify-start text-left font-normal"
-              >
-                <Clock className="mr-2 h-4 w-4" />
-                {formData.filingDeadline ? (
-                  format(formData.filingDeadline, "PPP")
-                ) : (
-                  <span>Pick a date</span>
+                variant={"outline"}
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !selectedDate && "text-muted-foreground"
                 )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 mode="single"
-                selected={formData.filingDeadline}
-                onSelect={handleDateChange}
+                selected={selectedDate}
+                onSelect={handleSetDate}
                 initialFocus
-                className="pointer-events-auto"
               />
             </PopoverContent>
           </Popover>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="availableCredits" className="text-right">
-          Available Credits ($)
-        </Label>
-        <div className="col-span-3 relative">
-          <DollarSign className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
-          <Input
-            id="availableCredits"
-            name="availableCredits"
-            type="number"
-            value={formData.availableCredits || ''}
-            onChange={handleChange}
-            className="pl-8"
-            placeholder="0.00"
-          />
         </div>
       </div>
     </>
