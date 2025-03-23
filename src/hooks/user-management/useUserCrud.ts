@@ -67,7 +67,17 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
       };
       
       // Prepare user data for the API call
-      const userData = {
+      const userData: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        role: string;
+        status: string;
+        taxDue: number;
+        filingDeadline?: string;
+        availableCredits: number;
+        password?: string;
+      } = {
         firstName: newUser.name.split(' ')[0],
         lastName: newUser.name.split(' ').slice(1).join(' '),
         email: newUser.email,
@@ -80,7 +90,7 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
       
       // Only add password if it's a valid string with minimum length
       if (typeof newUser.password === 'string' && newUser.password.length >= 6) {
-        Object.assign(userData, { password: newUser.password });
+        userData.password = newUser.password;
       } else {
         console.error("Invalid password format:", {
           passwordType: typeof newUser.password,
