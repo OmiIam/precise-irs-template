@@ -28,15 +28,6 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
       
-      // Start by creating a temporary ID for UI
-      const tempId = crypto.randomUUID();
-      const createdUser = {
-        ...newUser,
-        id: tempId,
-        status: newUser.status || 'Active',
-        lastLogin: 'Never'
-      };
-      
       // Prepare user data for the API call
       const userData = {
         firstName: newUser.name.split(' ')[0],
@@ -55,10 +46,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         password: userData.password ? "******" : undefined
       });
       
-      // First add to UI for better UX
-      setUsers(prevUsers => [...prevUsers, createdUser]);
-      
-      // Then save to database
+      // Then save to database first (don't add to UI yet)
       const response = await supabase.functions.invoke('create-user', {
         body: { userData }
       });
@@ -67,9 +55,6 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       
       if (response.error) {
         console.error("Error from Edge Function:", response.error);
-        
-        // Remove the temporary user from UI
-        setUsers(prevUsers => prevUsers.filter(user => user.id !== tempId));
         
         // Handle specific error cases
         if (response.error.message && (
@@ -97,8 +82,6 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       
       if (!data || !data.success) {
         console.error("Unsuccessful response from Edge Function:", data);
-        // Remove the temporary user from UI
-        setUsers(prevUsers => prevUsers.filter(user => user.id !== tempId));
         
         // Check for specific error messages
         if (data?.isExistingUser) {
@@ -117,34 +100,26 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
       
-      // Update the users array with the correct ID from the server response
-      if (data.data && data.data.user && data.data.user.id) {
-        setUsers(currentUsers => 
-          currentUsers.map(user => 
-            user.id === tempId ? { ...user, id: data.data.user.id } : user
-          )
-        );
+      // Now add to UI after successful API call
+      if (data.data && data.data.user) {
+        const formattedUser: User = {
+          id: data.data.user.id,
+          name: `${data.data.profile?.first_name || ''} ${data.data.profile?.last_name || ''}`.trim(),
+          email: data.data.user.email,
+          role: data.data.profile?.role || 'User',
+          status: data.data.profile?.status || 'Active',
+          lastLogin: 'Never',
+          taxDue: data.data.profile?.tax_due || 0,
+          filingDeadline: data.data.profile?.filing_deadline ? new Date(data.data.profile.filing_deadline) : undefined,
+          availableCredits: data.data.profile?.available_credits || 0
+        };
+        
+        setUsers(prevUsers => [...prevUsers, formattedUser]);
       }
-      
-      toast({
-        title: "User Created",
-        description: "New user has been created successfully."
-      });
       
       return true;
     } catch (error) {
       console.error("Error creating user:", error);
-      
-      // Get the tempId from the error context if possible
-      const tempId = error.tempId || "";
-      
-      // Remove the temporary user from UI in case of exception
-      if (tempId) {
-        setUsers(prevUsers => prevUsers.filter(user => user.id !== tempId));
-      } else {
-        // If we can't identify the specific user, refresh the user list
-        setUsers(users);
-      }
       
       toast({
         title: "Error",

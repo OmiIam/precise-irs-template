@@ -26,7 +26,7 @@ const PasswordSection = ({
   const [showPassword, setShowPassword] = React.useState(false);
   const [passwordStrength, setPasswordStrength] = React.useState<'weak' | 'medium' | 'strong' | null>(null);
   
-  // Ensure password is a valid string
+  // Ensure password is a valid string when in create mode
   useEffect(() => {
     if (showResetPassword && (!formData.password || typeof formData.password !== 'string')) {
       const newPassword = generateRandomPassword();

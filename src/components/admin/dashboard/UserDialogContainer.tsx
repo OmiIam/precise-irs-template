@@ -22,6 +22,7 @@ const UserDialogContainer: React.FC<UserDialogContainerProps> = ({
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isCreateMode, setIsCreateMode] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
   
   const handleEditUser = (user: User) => {
@@ -37,7 +38,11 @@ const UserDialogContainer: React.FC<UserDialogContainerProps> = ({
   };
 
   const handleSaveUser = async (updatedUser: User) => {
+    if (isProcessing) return;
+    
     try {
+      setIsProcessing(true);
+      
       let success;
       
       if (isCreateMode) {
@@ -48,6 +53,7 @@ const UserDialogContainer: React.FC<UserDialogContainerProps> = ({
             description: "Password is required when creating a new user",
             variant: "destructive"
           });
+          setIsProcessing(false);
           return;
         }
         
@@ -58,6 +64,13 @@ const UserDialogContainer: React.FC<UserDialogContainerProps> = ({
       
       if (success) {
         setDialogOpen(false);
+        
+        toast({
+          title: isCreateMode ? "User Created" : "User Updated",
+          description: isCreateMode 
+            ? `New user ${updatedUser.name} has been created.` 
+            : `Changes to user ${updatedUser.name} have been saved.`
+        });
       }
     } catch (error) {
       console.error("Error saving user:", error);
@@ -66,6 +79,8 @@ const UserDialogContainer: React.FC<UserDialogContainerProps> = ({
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 

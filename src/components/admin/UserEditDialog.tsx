@@ -67,7 +67,7 @@ const UserEditDialog = ({
       });
       setShowResetPassword(true);
     }
-  }, [user, isCreateMode]);
+  }, [user, isCreateMode, open]);
 
   const dialogTitle = isCreateMode ? "Create New User" : "Edit User";
   const dialogDescription = isCreateMode 

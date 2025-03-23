@@ -117,6 +117,11 @@ serve(async (req) => {
       throw authError;
     }
     
+    if (!authUser || !authUser.user) {
+      console.error("Failed to create auth user - no user returned");
+      throw new Error("User creation failed");
+    }
+    
     console.log("Auth user created successfully:", authUser.user.id);
     
     // Now insert/update the profile data
@@ -129,7 +134,7 @@ serve(async (req) => {
       status: userData.status
     });
     
-    const { data, error } = await supabase
+    const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .upsert({
         id: authUser.user.id,
@@ -144,8 +149,8 @@ serve(async (req) => {
       })
       .select();
       
-    if (error) {
-      console.error("Error updating profile:", error);
+    if (profileError) {
+      console.error("Error updating profile:", profileError);
       // If profile creation fails, attempt to clean up by deleting the auth user
       try {
         console.log("Cleaning up auth user after profile creation failure");
@@ -154,17 +159,17 @@ serve(async (req) => {
       } catch (cleanupError) {
         console.error("Failed to clean up auth user:", cleanupError);
       }
-      throw error;
+      throw profileError;
     }
     
-    console.log("User profile created/updated successfully:", data);
+    console.log("User profile created/updated successfully:", profileData);
     
     return new Response(
       JSON.stringify({ 
         success: true, 
         data: { 
           user: authUser.user,
-          profile: data?.[0] || null 
+          profile: profileData?.[0] || null 
         } 
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
