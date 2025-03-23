@@ -6,7 +6,7 @@ import { HeroSection } from '@/components/HeroSection';
 import { QuickLinks } from '@/components/QuickLinks';
 import { InfoCard } from '@/components/InfoCard';
 import { Calendar, AlertCircle, Clock, DollarSign, Users, PiggyBank, LifeBuoy } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth';
 import { useActivityTimer } from '@/hooks/user-management/useActivityTimer';
 
 const Index = () => {

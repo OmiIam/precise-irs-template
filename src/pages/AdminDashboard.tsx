@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client'; // This import was commented out but is needed
 import AdminSidebar from '@/components/admin/AdminSidebar';
@@ -9,7 +8,7 @@ import { useUserActions } from '@/components/admin/dashboard/userActions';
 import DashboardHeader from '@/components/admin/dashboard/DashboardHeader';
 import DashboardContent from '@/components/admin/dashboard/DashboardContent';
 import UserDialogContainer from '@/components/admin/dashboard/UserDialogContainer';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth';
 
 const AdminDashboard = () => {
   const { toast } = useToast();
