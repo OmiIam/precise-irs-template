@@ -33,6 +33,41 @@ export type Database = {
         }
         Relationships: []
       }
+      filings: {
+        Row: {
+          amount: number
+          created_at: string | null
+          filing_date: string
+          id: string
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          filing_date: string
+          id?: string
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          filing_date?: string
+          id?: string
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "filings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           available_credits: number | null
@@ -81,6 +116,83 @@ export type Database = {
           id_type?: string | null
           last_login?: string | null
           last_name?: string
+          role?: string
+          status?: string
+          tax_due?: number | null
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          severity: string
+          status: string
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          severity?: string
+          status?: string
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          severity?: string
+          status?: string
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          credits: number | null
+          deadline: string | null
+          email: string
+          id: string
+          last_login: string | null
+          name: string
+          password: string | null
+          role: string
+          status: string
+          tax_due: number | null
+        }
+        Insert: {
+          credits?: number | null
+          deadline?: string | null
+          email: string
+          id?: string
+          last_login?: string | null
+          name: string
+          password?: string | null
+          role?: string
+          status?: string
+          tax_due?: number | null
+        }
+        Update: {
+          credits?: number | null
+          deadline?: string | null
+          email?: string
+          id?: string
+          last_login?: string | null
+          name?: string
+          password?: string | null
           role?: string
           status?: string
           tax_due?: number | null
