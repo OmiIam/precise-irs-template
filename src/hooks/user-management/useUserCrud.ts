@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@/components/admin/user-list/types';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetStateAction<User[]>>) => {
   const { toast } = useToast();
@@ -57,7 +58,16 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
 
   const handleCreateUser = async (newUser: User) => {
     try {
-      // Convert password field to a proper string value or remove it completely
+      // Start by creating a temporary ID for UI
+      const tempId = crypto.randomUUID();
+      const createdUser = {
+        ...newUser,
+        id: tempId,
+        status: 'Active',
+        lastLogin: 'Never'
+      };
+      
+      // Prepare user data for the API call
       const userData = {
         firstName: newUser.name.split(' ')[0],
         lastName: newUser.name.split(' ').slice(1).join(' '),
@@ -69,40 +79,40 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
         availableCredits: newUser.availableCredits || 0
       };
       
-      // Only add password if it's a valid string
-      if (typeof newUser.password === 'string' && newUser.password.length > 0) {
+      // Only add password if it's a valid string with minimum length
+      if (typeof newUser.password === 'string' && newUser.password.length >= 6) {
         Object.assign(userData, { password: newUser.password });
+      } else {
+        console.error("Invalid password format:", newUser.password);
+        toast({
+          title: "Invalid Password",
+          description: "Password must be at least 6 characters long.",
+          variant: "destructive"
+        });
+        return false;
       }
       
       console.log("Creating user with data:", userData);
-
-      const createdUser = {
-        ...newUser,
-        status: 'Active',
-        lastLogin: 'Never'
-      };
       
-      // First add to UI
+      // First add to UI for better UX
       setUsers([...users, createdUser]);
       
       // Then save to database
       const { data, error } = await supabase.functions.invoke('create-user', {
-        body: {
-          userData
-        }
+        body: { userData }
       });
-
+      
       if (error) {
         console.error("Error from Edge Function:", error);
         
-        // Check for duplicate email
-        if (error.message.includes("409") || 
-            (error.message.includes("Edge Function returned a non-2xx status code") &&
-             error.message.includes("already been registered") || 
-             error.message.includes("already exists"))) {
-          
-          // Remove the user we just added to UI
-          setUsers(users.filter(u => u.id !== createdUser.id));
+        // Remove the temporary user from UI
+        setUsers(users);
+        
+        // Handle specific error cases
+        if (error.message && (
+            error.message.includes("409") || 
+            error.message.includes("already been registered") || 
+            error.message.includes("already exists"))) {
           
           toast({
             title: "Email Already Exists",
@@ -113,14 +123,45 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
         }
         
         toast({
-          title: "Warning",
-          description: "User was added to the UI but there was an issue saving to the database. Changes may not persist after reload.",
+          title: "Error Creating User",
+          description: "There was a problem creating the user. Please try again.",
           variant: "destructive"
         });
-        return true;
+        return false;
+      }
+      
+      if (!data || !data.success) {
+        console.error("Unsuccessful response from Edge Function:", data);
+        // Remove the temporary user from UI
+        setUsers(users);
+        
+        // Check for specific error messages
+        if (data?.isExistingUser) {
+          toast({
+            title: "Email Already Exists",
+            description: "The email address is already registered in the system. Please use a different email.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Error Creating User",
+            description: data?.error || "There was a problem creating the user. Please try again.",
+            variant: "destructive"
+          });
+        }
+        return false;
       }
       
       console.log("Edge Function response:", data);
+      
+      // Update the users array with the correct ID from the server response
+      if (data.data && data.data.user && data.data.user.id) {
+        setUsers(currentUsers => 
+          currentUsers.map(user => 
+            user.id === tempId ? { ...user, id: data.data.user.id } : user
+          )
+        );
+      }
       
       toast({
         title: "User Created",
@@ -130,6 +171,10 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
       return true;
     } catch (error) {
       console.error("Error creating user:", error);
+      
+      // Remove the temporary user from UI in case of exception
+      setUsers(users);
+      
       toast({
         title: "Error",
         description: "Failed to create user. Please try again.",

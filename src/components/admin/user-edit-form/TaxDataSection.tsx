@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { format } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -22,9 +22,28 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
     formData.filingDeadline || new Date()
   );
   
+  // Ensure dates are synchronized
+  useEffect(() => {
+    if (formData.filingDeadline) {
+      setSelectedDate(new Date(formData.filingDeadline));
+    }
+  }, [formData.filingDeadline]);
+  
   const handleSetDate = (date: Date | undefined) => {
-    setSelectedDate(date);
-    handleDateChange(date);
+    if (date) {
+      setSelectedDate(date);
+      handleDateChange(date);
+    }
+  };
+
+  // Format function to safely format dates
+  const formatDate = (date: Date | undefined) => {
+    try {
+      return date ? format(date, "PPP") : "Select a date";
+    } catch (error) {
+      console.error("Date formatting error:", error);
+      return "Select a date";
+    }
   };
   
   return (
@@ -67,14 +86,15 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
           <Popover>
             <PopoverTrigger asChild>
               <Button
-                variant={"outline"}
+                type="button"
+                variant="outline"
                 className={cn(
                   "w-full justify-start text-left font-normal",
                   !selectedDate && "text-muted-foreground"
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
-                {selectedDate ? format(selectedDate, "PPP") : <span>Pick a date</span>}
+                {formatDate(selectedDate)}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
@@ -83,6 +103,7 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
                 selected={selectedDate}
                 onSelect={handleSetDate}
                 initialFocus
+                disabled={(date) => date < new Date('1900-01-01')}
               />
             </PopoverContent>
           </Popover>

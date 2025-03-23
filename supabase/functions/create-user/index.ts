@@ -17,7 +17,12 @@ serve(async (req) => {
   try {
     // Create a Supabase client with the service role key (admin privileges)
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    const supabaseServiceKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ob2NkcXRxb2hjbnhyeGhjemh4Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0Mjc1ODc4MiwiZXhwIjoyMDU4MzM0NzgyfQ.8MzKzCf9J0Zc1dz9Pp6aDMmSZl0Ro5PLniGsFiwRnZk";
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    
+    if (!supabaseServiceKey) {
+      console.error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable");
+      throw new Error("Server configuration error");
+    }
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
@@ -33,15 +38,15 @@ serve(async (req) => {
     
     console.log("Creating user with data:", userData);
     
-    // Ensure password is a string - fix for the undefined password issue
-    let password = Math.random().toString(36).slice(-8); // Default random password
-    
-    // Check if password exists and is a valid string
-    if (userData.password && typeof userData.password === 'string') {
-      password = userData.password;
-    } else if (userData.password && typeof userData.password === 'object' && userData.password._type === "undefined") {
-      // If password is received as an object with _type: "undefined", use the default random password
-      console.log("Received invalid password object, using random password instead");
+    // Ensure we have a valid password
+    if (!userData.password || typeof userData.password !== 'string' || userData.password.length < 6) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Valid password is required (minimum 6 characters)" 
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
     
     // Check if email already exists before creating user
@@ -52,6 +57,7 @@ serve(async (req) => {
       .limit(1);
       
     if (checkError) {
+      console.error("Error checking for existing users:", checkError);
       throw checkError;
     }
     
@@ -74,7 +80,7 @@ serve(async (req) => {
         first_name: userData.firstName,
         last_name: userData.lastName
       },
-      password: password
+      password: userData.password
     });
     
     if (authError) {
@@ -91,13 +97,10 @@ serve(async (req) => {
         );
       }
       
-      return new Response(
-        JSON.stringify({ success: false, error: authError.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      throw authError;
     }
     
-    console.log("Auth user created successfully:", authUser);
+    console.log("Auth user created successfully:", authUser.user.id);
     
     // Now insert/update the profile data
     const { data, error } = await supabase
@@ -117,6 +120,13 @@ serve(async (req) => {
       
     if (error) {
       console.error("Error updating profile:", error);
+      // If profile creation fails, attempt to clean up by deleting the auth user
+      try {
+        await supabase.auth.admin.deleteUser(authUser.user.id);
+        console.log("Cleaned up auth user after profile creation failure");
+      } catch (cleanupError) {
+        console.error("Failed to clean up auth user:", cleanupError);
+      }
       throw error;
     }
     
