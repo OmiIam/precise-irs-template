@@ -1,1 +1,5 @@
+
 project_id = "mhocdqtqohcnxrxhczhx"
+# Don't add more rules than needed in this file.
+[functions.create-user]
+verify_jwt = false

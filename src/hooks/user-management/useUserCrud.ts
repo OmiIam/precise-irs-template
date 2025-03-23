@@ -57,21 +57,16 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
 
   const handleCreateUser = async (newUser: User) => {
     try {
-      // Important: For admin users creating new profiles directly in the profiles table,
-      // we need to use the service role client or disable RLS for this operation
-      // Since we're using the client-side supabase client, we'll add the profile
-      // optimistically to the UI first, and let the backend sync handle any errors
-      
       console.log("Creating user with data:", {
         id: newUser.id,
-        first_name: newUser.name.split(' ')[0],
-        last_name: newUser.name.split(' ').slice(1).join(' '),
+        firstName: newUser.name.split(' ')[0],
+        lastName: newUser.name.split(' ').slice(1).join(' '),
         email: newUser.email,
         role: newUser.role,
         status: 'Active',
-        tax_due: newUser.taxDue || 0,
-        filing_deadline: newUser.filingDeadline?.toISOString(),
-        available_credits: newUser.availableCredits || 0
+        taxDue: newUser.taxDue || 0,
+        filingDeadline: newUser.filingDeadline?.toISOString(),
+        availableCredits: newUser.availableCredits || 0
       });
 
       // Add user to the UI optimistically
@@ -83,15 +78,39 @@ export const useUserCrud = (users: User[], setUsers: React.Dispatch<React.SetSta
       
       setUsers([...users, createdUser]);
       
-      toast({
-        title: "User Created",
-        description: "New user has been created successfully. The system will now attempt to save the user to the database."
+      // Call the secure Edge Function to create the user in the database
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: {
+          userData: {
+            id: newUser.id,
+            firstName: newUser.name.split(' ')[0],
+            lastName: newUser.name.split(' ').slice(1).join(' '),
+            email: newUser.email,
+            role: newUser.role,
+            status: 'Active',
+            taxDue: newUser.taxDue || 0,
+            filingDeadline: newUser.filingDeadline?.toISOString(),
+            availableCredits: newUser.availableCredits || 0
+          }
+        }
       });
 
-      // Now attempt to create the user in the database via an API call
-      // This would typically be an API endpoint with admin privileges
-      // For now, let's just log this need and return success to allow UI testing
-      console.log("Note: In a production environment, this should call a secure API endpoint with admin privileges to create users");
+      if (error) {
+        console.error("Error from Edge Function:", error);
+        toast({
+          title: "Warning",
+          description: "User was added to the UI but there was an issue saving to the database. Changes may not persist after reload.",
+          variant: "destructive"
+        });
+        return true; // Still return true to keep the UI updated
+      }
+      
+      console.log("Edge Function response:", data);
+      
+      toast({
+        title: "User Created",
+        description: "New user has been created successfully."
+      });
       
       return true;
     } catch (error) {
