@@ -32,9 +32,10 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
             id="taxDue"
             name="taxDue"
             type="number"
-            value={formData.taxDue}
+            value={formData.taxDue || ''}
             onChange={handleChange}
             className="pl-8"
+            placeholder="0.00"
           />
         </div>
       </div>
@@ -64,6 +65,7 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
                 selected={formData.filingDeadline}
                 onSelect={handleDateChange}
                 initialFocus
+                className="pointer-events-auto"
               />
             </PopoverContent>
           </Popover>
@@ -80,9 +82,10 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
             id="availableCredits"
             name="availableCredits"
             type="number"
-            value={formData.availableCredits}
+            value={formData.availableCredits || ''}
             onChange={handleChange}
             className="pl-8"
+            placeholder="0.00"
           />
         </div>
       </div>

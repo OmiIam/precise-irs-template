@@ -35,7 +35,8 @@ const UserEditForm = ({
     
     // Handle numeric inputs
     if (name === 'taxDue' || name === 'availableCredits') {
-      const numericValue = value === '' ? 0 : parseFloat(value);
+      // Allow empty fields to be truly empty, not zero
+      const numericValue = value === '' ? undefined : parseFloat(value);
       setFormData(prev => ({ ...prev, [name]: numericValue }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
