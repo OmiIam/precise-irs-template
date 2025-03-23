@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Header } from '@/components/Header';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/auth';
 import LoginContainer from '@/components/auth/LoginContainer';
 import UserLoginForm from '@/components/auth/UserLoginForm';
 import AdminLoginForm from '@/components/auth/AdminLoginForm';
