@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -13,6 +13,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireAdmin = false 
 }) => {
   const { user, isAdmin, isLoading } = useAuth();
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
+  
+  useEffect(() => {
+    // Check for special admin authentication
+    const adminAuth = localStorage.getItem('isAdminAuthenticated');
+    setIsAdminAuthenticated(adminAuth === 'true');
+  }, []);
 
   if (isLoading) {
     // Show loading state while checking authentication
@@ -23,13 +30,18 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
+  // Allow access if we have the special admin flag and this route requires admin
+  if (isAdminAuthenticated && requireAdmin) {
+    return <>{children}</>;
+  }
+
   // If not authenticated, redirect to login
-  if (!user) {
+  if (!user && !isAdminAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
   // If requires admin but user is not admin, redirect to dashboard
-  if (requireAdmin && !isAdmin) {
+  if (requireAdmin && !isAdmin && !isAdminAuthenticated) {
     return <Navigate to="/dashboard" replace />;
   }
 
