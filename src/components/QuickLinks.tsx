@@ -12,7 +12,7 @@ export const QuickLinks = () => {
             Quick Links
           </h2>
           <p className="text-irs-darkGray max-w-2xl mx-auto">
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis.
+            Access the resources and tools you need to file your taxes, check refund status, and manage your tax account.
           </p>
         </div>
         
@@ -20,7 +20,7 @@ export const QuickLinks = () => {
           <QuickLinkCard 
             icon={<FileText />}
             title="Forms & Instructions" 
-            description="Lorem ipsum dolor sit amet, consectetur adipiscing elit." 
+            description="Access tax forms, instructions, and publications for all filing needs." 
             links={[
               {label: "Form 1040", url: "#"},
               {label: "Form W-2", url: "#"},
@@ -32,7 +32,7 @@ export const QuickLinks = () => {
           <QuickLinkCard 
             icon={<CreditCard />}
             title="Payments" 
-            description="Lorem ipsum dolor sit amet, consectetur adipiscing elit." 
+            description="Make tax payments securely and easily with multiple payment options." 
             links={[
               {label: "Direct Pay", url: "#"},
               {label: "Payment Plans", url: "#"},
@@ -44,7 +44,7 @@ export const QuickLinks = () => {
           <QuickLinkCard 
             icon={<FileSearch />}
             title="Refunds" 
-            description="Lorem ipsum dolor sit amet, consectetur adipiscing elit." 
+            description="Check the status of your refund and explore refund options." 
             links={[
               {label: "Check Refund Status", url: "#"},
               {label: "Direct Deposit", url: "#"},
@@ -56,7 +56,7 @@ export const QuickLinks = () => {
           <QuickLinkCard 
             icon={<Calendar />}
             title="Filing Information" 
-            description="Lorem ipsum dolor sit amet, consectetur adipiscing elit." 
+            description="Get important dates, deadlines, and filing options for tax season." 
             links={[
               {label: "Filing Deadlines", url: "#"},
               {label: "Extensions", url: "#"},
@@ -68,7 +68,7 @@ export const QuickLinks = () => {
           <QuickLinkCard 
             icon={<AlertTriangle />}
             title="Tax Scam Alerts" 
-            description="Lorem ipsum dolor sit amet, consectetur adipiscing elit." 
+            description="Protect yourself from tax scams and identity theft with official guidance." 
             links={[
               {label: "Report Phishing", url: "#"},
               {label: "Identity Theft", url: "#"},
@@ -80,7 +80,7 @@ export const QuickLinks = () => {
           <QuickLinkCard 
             icon={<HelpCircle />}
             title="Help & Resources" 
-            description="Lorem ipsum dolor sit amet, consectetur adipiscing elit." 
+            description="Find assistance, answers, and resources for all your tax questions." 
             links={[
               {label: "Contact Us", url: "#"},
               {label: "Taxpayer Advocate", url: "#"},

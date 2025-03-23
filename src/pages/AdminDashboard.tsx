@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import UserListTable from '@/components/admin/UserListTable';
@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { useToast } from '@/hooks/use-toast';
 import { Plus, RefreshCw } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 type User = {
   id: string;
@@ -29,65 +30,66 @@ const AdminDashboard = () => {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isCreateMode, setIsCreateMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   // State to store all users
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: '001',
-      name: 'John Doe',
-      email: 'john.doe@example.com',
-      role: 'User',
-      lastLogin: '2023-06-10 08:30 AM',
-      status: 'Active',
-      taxDue: 3500,
-      filingDeadline: new Date(2023, 3, 15), // April 15, 2023
-      availableCredits: 750
-    },
-    {
-      id: '002',
-      name: 'Jane Smith',
-      email: 'jane.smith@example.com',
-      role: 'Admin',
-      lastLogin: '2023-06-12 11:45 AM',
-      status: 'Active',
-      taxDue: 0,
-      filingDeadline: new Date(2023, 3, 15), // April 15, 2023
-      availableCredits: 0
-    },
-    {
-      id: '003',
-      name: 'Robert Johnson',
-      email: 'robert.j@example.com',
-      role: 'User',
-      lastLogin: '2023-06-05 03:20 PM',
-      status: 'Inactive',
-      taxDue: 1200,
-      filingDeadline: new Date(2023, 3, 15), // April 15, 2023
-      availableCredits: 200
-    },
-    {
-      id: '004',
-      name: 'Emily Williams',
-      email: 'emily.w@example.com',
-      role: 'User',
-      lastLogin: '2023-06-11 09:15 AM',
-      status: 'Active',
-      taxDue: 2800,
-      filingDeadline: new Date(2023, 3, 15), // April 15, 2023
-      availableCredits: 500
-    },
-    {
-      id: '005',
-      name: 'Michael Brown',
-      email: 'michael.b@example.com',
-      role: 'User',
-      lastLogin: '2023-06-08 02:40 PM',
-      status: 'Active',
-      taxDue: 1750,
-      filingDeadline: new Date(2023, 3, 15), // April 15, 2023
-      availableCredits: 0
+  const [users, setUsers] = useState<User[]>([]);
+
+  // Fetch users from Supabase
+  const fetchUsers = async () => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*');
+
+      if (error) throw error;
+
+      const formattedUsers = data.map(profile => ({
+        id: profile.id,
+        name: `${profile.first_name} ${profile.last_name}`,
+        email: profile.email,
+        role: profile.role,
+        lastLogin: profile.last_login ? new Date(profile.last_login).toLocaleString() : 'Never',
+        status: profile.status,
+        taxDue: parseFloat(profile.tax_due) || 0,
+        filingDeadline: profile.filing_deadline ? new Date(profile.filing_deadline) : undefined,
+        availableCredits: parseFloat(profile.available_credits) || 0
+      }));
+
+      setUsers(formattedUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load user data. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
-  ]);
+  };
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchUsers();
+    
+    // Set up realtime subscription for profiles
+    const channel = supabase
+      .channel('public:profiles')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'profiles'
+      }, (payload) => {
+        fetchUsers(); // Refresh data when changes occur
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   const handleEditUser = (user: User) => {
     setSelectedUser(user);
@@ -119,55 +121,155 @@ const AdminDashboard = () => {
     navigate('/dashboard');
   };
 
-  const handleSaveUser = (updatedUser: User) => {
-    if (isCreateMode) {
-      // Add the new user to the users array
-      setUsers([...users, updatedUser]);
-    } else {
-      // Update existing user
-      setUsers(users.map(user => 
-        user.id === updatedUser.id ? updatedUser : user
-      ));
+  const handleSaveUser = async (updatedUser: User) => {
+    try {
+      if (isCreateMode) {
+        // This would be handled through auth in a real implementation
+        // For demo, we'll just add to the local state
+        setUsers([...users, updatedUser]);
+        
+        toast({
+          title: "User Created",
+          description: "New user has been created successfully."
+        });
+      } else {
+        // Update existing user in Supabase
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            first_name: updatedUser.name.split(' ')[0],
+            last_name: updatedUser.name.split(' ').slice(1).join(' '),
+            email: updatedUser.email,
+            role: updatedUser.role,
+            status: updatedUser.status,
+            tax_due: updatedUser.taxDue,
+            filing_deadline: updatedUser.filingDeadline,
+            available_credits: updatedUser.availableCredits
+          })
+          .eq('id', updatedUser.id);
+
+        if (error) throw error;
+        
+        // Update local state
+        setUsers(users.map(user => 
+          user.id === updatedUser.id ? updatedUser : user
+        ));
+        
+        toast({
+          title: "User Updated",
+          description: "User information has been updated successfully."
+        });
+      }
+    } catch (error) {
+      console.error("Error saving user:", error);
+      toast({
+        title: "Error",
+        description: "Failed to save user data. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
-  const handleDeleteUser = (userId: string) => {
-    setUsers(users.filter(user => user.id !== userId));
-    toast({
-      title: "User deleted",
-      description: `User ID: ${userId} has been removed from the system.`
-    });
+  const handleDeleteUser = async (userId: string) => {
+    try {
+      // Note: In a real application, you would delete the user from auth.users
+      // Here we just update the profile status since we can't delete auth users directly
+      const { error } = await supabase
+        .from('profiles')
+        .update({ status: 'Deleted' })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // Update the local state
+      setUsers(users.filter(user => user.id !== userId));
+      
+      toast({
+        title: "User deleted",
+        description: `User ID: ${userId} has been removed from the system.`
+      });
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete user. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleToggleUserStatus = (userId: string) => {
-    setUsers(users.map(user => {
-      if (user.id === userId) {
-        const newStatus = user.status === 'Active' ? 'Inactive' : 'Active';
-        toast({
-          title: `User ${newStatus.toLowerCase()}`,
-          description: `User ID: ${userId} is now ${newStatus.toLowerCase()}.`
-        });
-        return { ...user, status: newStatus };
-      }
-      return user;
-    }));
+  const handleToggleUserStatus = async (userId: string) => {
+    try {
+      const user = users.find(u => u.id === userId);
+      if (!user) return;
+
+      const newStatus = user.status === 'Active' ? 'Inactive' : 'Active';
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ status: newStatus })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // Update local state
+      setUsers(users.map(user => {
+        if (user.id === userId) {
+          toast({
+            title: `User ${newStatus.toLowerCase()}`,
+            description: `User ID: ${userId} is now ${newStatus.toLowerCase()}.`
+          });
+          return { ...user, status: newStatus };
+        }
+        return user;
+      }));
+    } catch (error) {
+      console.error("Error toggling user status:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update user status. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleToggleUserRole = (userId: string) => {
-    setUsers(users.map(user => {
-      if (user.id === userId) {
-        const newRole = user.role === 'Admin' ? 'User' : 'Admin';
-        toast({
-          title: "Role Updated",
-          description: `User ID: ${userId} role changed to ${newRole}.`
-        });
-        return { ...user, role: newRole };
-      }
-      return user;
-    }));
+  const handleToggleUserRole = async (userId: string) => {
+    try {
+      const user = users.find(u => u.id === userId);
+      if (!user) return;
+
+      const newRole = user.role === 'Admin' ? 'User' : 'Admin';
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role: newRole })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // Update local state
+      setUsers(users.map(user => {
+        if (user.id === userId) {
+          toast({
+            title: "Role Updated",
+            description: `User ID: ${userId} role changed to ${newRole}.`
+          });
+          return { ...user, role: newRole };
+        }
+        return user;
+      }));
+    } catch (error) {
+      console.error("Error toggling user role:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update user role. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleRefresh = () => {
+    fetchUsers();
     toast({
       title: "Data Refreshed",
       description: "Latest data has been loaded from the server."
@@ -191,9 +293,10 @@ const AdminDashboard = () => {
                 size="sm" 
                 onClick={handleRefresh} 
                 className="hidden sm:flex"
+                disabled={isLoading}
               >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Refresh
+                <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                {isLoading ? "Loading..." : "Refresh"}
               </Button>
               <Button size="sm" onClick={handleAddUser}>
                 <Plus className="mr-2 h-4 w-4" />

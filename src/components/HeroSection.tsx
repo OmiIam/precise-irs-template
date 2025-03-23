@@ -17,7 +17,7 @@ export const HeroSection = () => {
             Revenue Dividends - Your Tax Solution
           </h1>
           <p className="text-irs-lightGray text-lg mb-8 animate-slide-in" style={{ animationDelay: '0.1s' }}>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Ut elit tellus, luctus nec ullamcorper mattis, pulvinar dapibus leo.
+            Secure and simplified tax filing for individuals and businesses. Get your maximum refund with our advanced tax preparation tools and expert guidance.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-in" style={{ animationDelay: '0.2s' }}>
             <Link to="/login" className="btn-primary flex items-center justify-center gap-2 py-3 px-6">

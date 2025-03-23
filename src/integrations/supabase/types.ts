@@ -9,7 +9,84 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      activity_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: Json | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          available_credits: number | null
+          created_at: string
+          email: string
+          filing_deadline: string | null
+          first_name: string
+          id: string
+          id_back_url: string | null
+          id_front_url: string | null
+          id_number: string | null
+          id_type: string | null
+          last_login: string | null
+          last_name: string
+          role: string
+          status: string
+          tax_due: number | null
+        }
+        Insert: {
+          available_credits?: number | null
+          created_at?: string
+          email: string
+          filing_deadline?: string | null
+          first_name: string
+          id: string
+          id_back_url?: string | null
+          id_front_url?: string | null
+          id_number?: string | null
+          id_type?: string | null
+          last_login?: string | null
+          last_name: string
+          role?: string
+          status?: string
+          tax_due?: number | null
+        }
+        Update: {
+          available_credits?: number | null
+          created_at?: string
+          email?: string
+          filing_deadline?: string | null
+          first_name?: string
+          id?: string
+          id_back_url?: string | null
+          id_front_url?: string | null
+          id_number?: string | null
+          id_type?: string | null
+          last_login?: string | null
+          last_name?: string
+          role?: string
+          status?: string
+          tax_due?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
