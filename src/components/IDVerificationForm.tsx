@@ -335,13 +335,22 @@ const IDVerificationForm = ({ userId, userEmail }: IDVerificationFormProps) => {
                   ) : (
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center text-center space-y-4 h-48">
                       <div className="text-sm text-gray-500">Upload or take a photo of the front of your ID</div>
-                      <div className="flex space-x-4">
-                        <Button type="button" variant="outline" onClick={() => startCamera('front')}>
-                          <Camera className="mr-2 h-4 w-4" /> Camera
+                      <div className="flex items-center gap-4 w-full justify-center">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => startCamera('front')}
+                          className="w-[120px] h-10 flex items-center justify-center"
+                        >
+                          <Camera className="h-4 w-4 mr-2" /> Camera
                         </Button>
                         <div className="relative">
-                          <Button type="button" variant="outline">
-                            <Upload className="mr-2 h-4 w-4" /> Upload
+                          <Button 
+                            type="button" 
+                            variant="outline"
+                            className="w-[120px] h-10 flex items-center justify-center"
+                          >
+                            <Upload className="h-4 w-4 mr-2" /> Upload
                           </Button>
                           <input
                             type="file"
@@ -381,13 +390,22 @@ const IDVerificationForm = ({ userId, userEmail }: IDVerificationFormProps) => {
                   ) : (
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center text-center space-y-4 h-48">
                       <div className="text-sm text-gray-500">Upload or take a photo of the back of your ID (if applicable)</div>
-                      <div className="flex space-x-4">
-                        <Button type="button" variant="outline" onClick={() => startCamera('back')}>
-                          <Camera className="mr-2 h-4 w-4" /> Camera
+                      <div className="flex items-center gap-4 w-full justify-center">
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => startCamera('back')}
+                          className="w-[120px] h-10 flex items-center justify-center"
+                        >
+                          <Camera className="h-4 w-4 mr-2" /> Camera
                         </Button>
                         <div className="relative">
-                          <Button type="button" variant="outline">
-                            <Upload className="mr-2 h-4 w-4" /> Upload
+                          <Button 
+                            type="button" 
+                            variant="outline"
+                            className="w-[120px] h-10 flex items-center justify-center"
+                          >
+                            <Upload className="h-4 w-4 mr-2" /> Upload
                           </Button>
                           <input
                             type="file"
