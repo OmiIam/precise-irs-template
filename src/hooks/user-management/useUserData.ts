@@ -7,10 +7,10 @@ export const useUserData = () => {
   const { users, setUsers, isLoading, fetchUsers } = useFetchUsers();
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   
-  // Callback for handling user data changes
-  const handleDataChange = useCallback(() => {
+  // Update handleDataChange to be async and return a Promise
+  const handleDataChange = useCallback(async () => {
     console.log("Data change detected, refreshing users");
-    fetchUsers();
+    await fetchUsers();
     setLastRefresh(new Date());
   }, [fetchUsers]);
   
@@ -32,9 +32,9 @@ export const useUserData = () => {
 
   // Automatic refresh every 30 seconds as a fallback
   useEffect(() => {
-    const intervalId = setInterval(() => {
+    const intervalId = setInterval(async () => {
       console.log("Performing scheduled refresh of user data");
-      fetchUsers();
+      await fetchUsers();
       setLastRefresh(new Date());
     }, 30000);
     
