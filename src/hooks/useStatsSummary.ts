@@ -37,14 +37,14 @@ export const useStatsSummary = () => {
     try {
       // Get total users count
       const { count: totalUsers, error: usersError } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*', { count: 'exact', head: true });
       
       if (usersError) throw usersError;
       
       // Get active users count
       const { count: activeUsers, error: activeUsersError } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'Active');
       
@@ -52,7 +52,7 @@ export const useStatsSummary = () => {
       
       // Get total tax due
       const { data: taxData, error: taxError } = await supabase
-        .from('profiles')
+        .from('users')
         .select('tax_due');
       
       if (taxError) throw taxError;
@@ -76,22 +76,22 @@ export const useStatsSummary = () => {
       
       // Get total tax credits
       const { data: creditsData, error: creditsError } = await supabase
-        .from('profiles')
-        .select('available_credits');
+        .from('users')
+        .select('credits');
       
       if (creditsError) throw creditsError;
       
-      const taxCredits = creditsData.reduce((sum, user) => sum + (user.available_credits || 0), 0);
+      const taxCredits = creditsData.reduce((sum, user) => sum + (user.credits || 0), 0);
       
       // Get approaching deadlines (next 30 days)
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
       
       const { count: approachingDeadlines, error: deadlinesError } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*', { count: 'exact', head: true })
-        .lt('filing_deadline', thirtyDaysFromNow.toISOString())
-        .gt('filing_deadline', new Date().toISOString());
+        .lt('deadline', thirtyDaysFromNow.toISOString().split('T')[0])
+        .gt('deadline', new Date().toISOString().split('T')[0]);
       
       if (deadlinesError) throw deadlinesError;
       

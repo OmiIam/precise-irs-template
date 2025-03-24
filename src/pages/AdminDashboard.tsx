@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client'; // This import was commented out but is needed
+import { supabase } from '@/integrations/supabase/client';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { useToast } from '@/hooks/use-toast';
@@ -72,6 +72,11 @@ const AdminDashboard = () => {
       logAdminAccess();
     }
   }, [user]);
+
+  // Automatically refresh data when dashboard mounts
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleRefresh = () => {
     fetchUsers();

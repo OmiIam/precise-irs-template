@@ -9,27 +9,25 @@ export const useUserUpdate = (users: User[], setUsers: React.Dispatch<React.SetS
   const handleSaveUser = async (updatedUser: User) => {
     try {
       console.log("Updating user with data:", {
-        first_name: updatedUser.name.split(' ')[0],
-        last_name: updatedUser.name.split(' ').slice(1).join(' '),
+        name: updatedUser.name,
         email: updatedUser.email,
         role: updatedUser.role,
         status: updatedUser.status,
         tax_due: updatedUser.taxDue,
-        filing_deadline: updatedUser.filingDeadline?.toISOString(),
-        available_credits: updatedUser.availableCredits
+        deadline: updatedUser.filingDeadline?.toISOString().split('T')[0],
+        credits: updatedUser.availableCredits
       });
       
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update({
-          first_name: updatedUser.name.split(' ')[0],
-          last_name: updatedUser.name.split(' ').slice(1).join(' '),
+          name: updatedUser.name,
           email: updatedUser.email,
           role: updatedUser.role,
           status: updatedUser.status,
           tax_due: updatedUser.taxDue,
-          filing_deadline: updatedUser.filingDeadline?.toISOString(),
-          available_credits: updatedUser.availableCredits
+          deadline: updatedUser.filingDeadline?.toISOString().split('T')[0],
+          credits: updatedUser.availableCredits
         })
         .eq('id', updatedUser.id);
 

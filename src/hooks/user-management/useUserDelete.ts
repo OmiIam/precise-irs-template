@@ -9,7 +9,7 @@ export const useUserDelete = (users: User[], setUsers: React.Dispatch<React.SetS
   const handleDeleteUser = async (userId: string) => {
     try {
       const { error } = await supabase
-        .from('profiles')
+        .from('users')
         .update({ status: 'Deleted' })
         .eq('id', userId);
 

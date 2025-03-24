@@ -13,21 +13,21 @@ export const useFetchUsers = () => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('users')
         .select('*');
 
       if (error) throw error;
 
-      const formattedUsers = data.map(profile => ({
-        id: profile.id,
-        name: `${profile.first_name} ${profile.last_name}`,
-        email: profile.email,
-        role: profile.role,
-        lastLogin: profile.last_login ? new Date(profile.last_login).toLocaleString() : 'Never',
-        status: profile.status,
-        taxDue: profile.tax_due || 0,
-        filingDeadline: profile.filing_deadline ? new Date(profile.filing_deadline) : undefined,
-        availableCredits: profile.available_credits || 0
+      const formattedUsers = data.map(user => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        lastLogin: user.last_login ? new Date(user.last_login).toLocaleString() : 'Never',
+        status: user.status,
+        taxDue: user.tax_due || 0,
+        filingDeadline: user.deadline ? new Date(user.deadline) : undefined,
+        availableCredits: user.credits || 0
       }));
 
       setUsers(formattedUsers);
