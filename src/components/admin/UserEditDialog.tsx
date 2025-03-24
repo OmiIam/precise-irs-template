@@ -69,12 +69,19 @@ const UserEditDialog = ({
           taxDue: 0,
           filingDeadline: new Date(),
           availableCredits: 0,
-          password: initialPassword // Ensure password is set for new users
+          password: initialPassword // Set initial password for new users
         });
-        setShowResetPassword(true);
+        setShowResetPassword(true); // Show password field for new users
       }
     }
   }, [user, isCreateMode, open]);
+  
+  // Close dialog handler - only close if not processing
+  const handleDialogOpenChange = (newOpenState: boolean) => {
+    if (!isProcessing || newOpenState) { // Allow opening, but prevent closing during processing
+      onOpenChange(newOpenState);
+    }
+  };
 
   const dialogTitle = isCreateMode ? "Create New User" : "Edit User";
   const dialogDescription = isCreateMode 
@@ -99,7 +106,7 @@ const UserEditDialog = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>{dialogTitle}</DialogTitle>
@@ -112,7 +119,7 @@ const UserEditDialog = ({
           formData={formData}
           setFormData={setFormData}
           onSave={handleSaveWrapper}
-          onCancel={() => onOpenChange(false)}
+          onCancel={() => !isProcessing && onOpenChange(false)}
           isCreateMode={isCreateMode}
           showResetPassword={showResetPassword}
           setShowResetPassword={setShowResetPassword}

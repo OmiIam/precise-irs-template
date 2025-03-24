@@ -45,11 +45,12 @@ const UserDialogContainer: React.FC<UserDialogContainerProps> = ({
     
     try {
       setIsProcessing(true);
+      console.log("Processing user data...");
       
-      let success;
+      let success = false;
       
       if (isCreateMode) {
-        // Validate required fields
+        // Validate required fields for new users
         if (!updatedUser.name?.trim()) {
           toast({
             title: "Validation Error",
@@ -93,27 +94,11 @@ const UserDialogContainer: React.FC<UserDialogContainerProps> = ({
       }
       
       if (success) {
-        // Only close dialog and show success message if the operation was successful
+        // Only close dialog if the operation was successful
         setDialogOpen(false);
-        
-        toast({
-          title: isCreateMode ? "User Created" : "User Updated",
-          description: isCreateMode 
-            ? `New user ${updatedUser.name} has been created.` 
-            : `Changes to user ${updatedUser.name} have been saved.`
-        });
-      } else {
-        // If not successful, show an error message but don't close the dialog
-        toast({
-          title: "Operation Failed",
-          description: isCreateMode 
-            ? "Failed to create user. Please try again." 
-            : "Failed to update user. Please try again.",
-          variant: "destructive"
-        });
       }
     } catch (error) {
-      console.error("Error saving user:", error);
+      console.error("Error processing user:", error);
       toast({
         title: "Error",
         description: "An unexpected error occurred. Please try again.",

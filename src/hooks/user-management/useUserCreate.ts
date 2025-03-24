@@ -18,6 +18,20 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
 
+      // Extract first and last name
+      const nameParts = newUser.name.trim().split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+
+      if (!firstName) {
+        toast({
+          title: "Invalid Name",
+          description: "First name is required.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
       // Validate password
       if (!newUser.password || typeof newUser.password !== 'string' || newUser.password.length < 6) {
         toast({
@@ -30,9 +44,9 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       
       // Prepare user data for the API call
       const userData = {
-        firstName: newUser.name.split(' ')[0],
-        lastName: newUser.name.split(' ').slice(1).join(' ') || 'User',
-        email: newUser.email,
+        firstName: firstName,
+        lastName: lastName,
+        email: newUser.email.trim(),
         role: newUser.role || 'User',
         status: newUser.status || 'Active',
         taxDue: newUser.taxDue || 0,
@@ -101,7 +115,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       }
       
       // Now add to UI after successful API call
-      if (data.data && data.data.user) {
+      if (data.data && data.data.user && data.data.profile) {
         const formattedUser: User = {
           id: data.data.user.id,
           name: `${data.data.profile?.first_name || ''} ${data.data.profile?.last_name || ''}`.trim(),
@@ -115,11 +129,26 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         };
         
         console.log("Adding new user to UI:", formattedUser);
+        
+        // Update users list with the new user
         setUsers(prevUsers => [...prevUsers, formattedUser]);
+        
+        // Notify success
+        toast({
+          title: "User Created",
+          description: `New user ${formattedUser.name} has been created successfully.`
+        });
+        
         return true;
+      } else {
+        console.error("Missing user or profile data in response:", data);
+        toast({
+          title: "Error",
+          description: "User creation returned an incomplete response. Please check if the user was created correctly.",
+          variant: "destructive"
+        });
+        return false;
       }
-      
-      return false;
     } catch (error) {
       console.error("Error creating user:", error);
       
