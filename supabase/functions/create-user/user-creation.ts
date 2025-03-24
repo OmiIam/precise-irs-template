@@ -60,6 +60,24 @@ export async function createUserProfile(supabase: any, userId: string, userData:
       status: userData.status
     });
     
+    // First, check if a profile already exists for this user
+    const { data: existingProfile, error: checkError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .single();
+      
+    if (checkError && checkError.code !== 'PGRST116') { // Ignore "no rows returned" error
+      console.error("Error checking for existing profile:", checkError);
+      return { profile: null, error: "Failed to check for existing profile: " + checkError.message };
+    }
+    
+    if (existingProfile) {
+      console.log("Profile already exists for user:", userId);
+      return { profile: existingProfile, error: null };
+    }
+    
+    // Profile doesn't exist, create it
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .insert({
@@ -80,12 +98,17 @@ export async function createUserProfile(supabase: any, userId: string, userData:
       return { profile: null, error: "Failed to create user profile: " + profileError.message };
     }
     
+    if (!profileData || profileData.length === 0) {
+      console.error("Profile insert returned no data");
+      return { profile: null, error: "Failed to create user profile: No data returned after insert" };
+    }
+    
     // Verify the profile was created by fetching it
     const { data: verifiedProfile, error: fetchError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
       
     if (fetchError) {
       console.error("Error verifying profile creation:", fetchError);

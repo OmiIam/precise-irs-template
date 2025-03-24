@@ -21,7 +21,10 @@ serve(async (req) => {
       console.error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable");
       return new Response(
         JSON.stringify({ success: false, error: "Server configuration error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
       );
     }
     
@@ -35,7 +38,10 @@ serve(async (req) => {
       console.error("Missing userData in request body");
       return new Response(
         JSON.stringify({ error: "User data is required", success: false }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
       );
     }
     
@@ -52,9 +58,13 @@ serve(async (req) => {
     // 1. Validate user data
     const validationError = validateUserData(userData);
     if (validationError) {
+      console.error("Validation error:", validationError);
       return new Response(
         JSON.stringify({ success: false, error: validationError }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
       );
     }
     
@@ -62,20 +72,28 @@ serve(async (req) => {
     const { exists: userExists, error: checkError } = await checkExistingUser(supabase, userData.email);
     
     if (checkError) {
+      console.error("Error checking existing user:", checkError);
       return new Response(
         JSON.stringify({ success: false, error: checkError }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
       );
     }
     
     if (userExists) {
+      console.log("User already exists with email:", userData.email);
       return new Response(
         JSON.stringify({ 
           success: false, 
           error: "A user with this email address has already been registered",
           isExistingUser: true
         }),
-        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { 
+          status: 409, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
       );
     }
     
@@ -83,11 +101,31 @@ serve(async (req) => {
     const { authUser, error: authError } = await createAuthUser(supabase, userData);
     
     if (authError) {
+      console.error("Error creating auth user:", authError);
       return new Response(
         JSON.stringify({ success: false, error: authError }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
       );
     }
+    
+    if (!authUser || !authUser.id) {
+      console.error("Auth user creation failed - no user ID returned");
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "User creation failed - no user ID returned from auth system" 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+    
+    console.log("Successfully created auth user with ID:", authUser.id);
     
     // 4. Create user profile
     const { profile, error: profileError } = await createUserProfile(supabase, authUser.id, userData);
@@ -102,12 +140,40 @@ serve(async (req) => {
         console.error("Failed to clean up auth user:", cleanupError);
       }
       
+      console.error("Error creating user profile:", profileError);
       return new Response(
         JSON.stringify({ success: false, error: profileError }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
       );
     }
     
+    if (!profile) {
+      console.error("Profile creation failed - no profile data returned");
+      // Attempt to clean up the auth user
+      try {
+        await supabase.auth.admin.deleteUser(authUser.id);
+      } catch (cleanupError) {
+        console.error("Failed to clean up auth user after profile creation failure:", cleanupError);
+      }
+      
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "Profile creation failed - no profile data returned" 
+        }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+    
+    console.log("Successfully created user profile for user:", authUser.id);
+    
+    // Return success response with created user data
     return new Response(
       JSON.stringify({ 
         success: true, 
@@ -116,7 +182,10 @@ serve(async (req) => {
           profile: profile
         } 
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { 
+        status: 200, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+      }
     );
   } catch (error) {
     console.error("Uncaught error in create-user function:", error);

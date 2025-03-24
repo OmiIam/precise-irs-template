@@ -7,6 +7,11 @@
  */
 export async function checkExistingUser(supabase: any, email: string): Promise<{ exists: boolean, error: string | null }> {
   try {
+    if (!email) {
+      console.error("No email provided to checkExistingUser");
+      return { exists: false, error: "Email is required to check for existing users" };
+    }
+    
     // Check if email already exists in auth users
     console.log("Checking if email exists in auth users:", email);
     const { data: authData, error: authCheckError } = await supabase.auth.admin.listUsers({
@@ -50,6 +55,7 @@ export async function checkExistingUser(supabase: any, email: string): Promise<{
       return { exists: true, error: null };
     }
     
+    console.log("No existing user found with email:", email);
     return { exists: false, error: null };
   } catch (error) {
     console.error("Unexpected error in checkExistingUser:", error);
