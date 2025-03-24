@@ -109,10 +109,26 @@ const AdminDashboard = () => {
     logAdminAccess();
   }, [user]);
 
-  // Automatically fetch data when dashboard mounts
+  // Automatically fetch data when dashboard mounts and refresh periodically
   useEffect(() => {
+    // Initial data fetch
     fetchUsers();
+    
+    // Set up refresh interval (every 30 seconds)
+    const refreshInterval = setInterval(() => {
+      console.log("Periodic user data refresh");
+      fetchUsers();
+    }, 30000);
+    
+    return () => {
+      clearInterval(refreshInterval);
+    };
   }, [fetchUsers]);
+
+  const handleUserCreated = async () => {
+    console.log("User created, triggering data refresh");
+    await fetchUsers();
+  };
 
   return (
     <SidebarProvider>
@@ -122,7 +138,13 @@ const AdminDashboard = () => {
         <SidebarInset className="p-0">
           <UserDialogContainer
             onSaveUser={handleSaveUser}
-            onCreateUser={handleCreateUser}
+            onCreateUser={async (user) => {
+              const success = await handleCreateUser(user);
+              if (success) {
+                handleUserCreated();
+              }
+              return success;
+            }}
           >
             {({ handleAddUser, handleEditUser, dialogComponent }) => (
               <>

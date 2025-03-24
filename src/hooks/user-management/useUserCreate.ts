@@ -73,6 +73,8 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
       
+      console.log("User doesn't exist, proceeding with auth.signUp");
+      
       // Create auth user account
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUser.email,
@@ -95,6 +97,8 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
       
+      console.log("Auth.signUp response:", authData);
+      
       if (!authData.user) {
         console.error("No user returned from signUp operation");
         toast({
@@ -104,6 +108,8 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         });
         return false;
       }
+      
+      console.log("Updating profile with additional data for user ID:", authData.user.id);
       
       // Update the profile with additional data
       const { error: profileError } = await supabase
@@ -122,22 +128,27 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         toast({
           title: "Warning",
           description: "User created but profile data could not be fully updated.",
-          variant: "default" // Changed from "warning" to "default"
+          variant: "default" 
         });
       }
       
       // Log the activity
-      await supabase
-        .from('activity_logs')
-        .insert({
-          user_id: authData.user.id,
-          action: 'USER_CREATED',
-          details: {
-            email: newUser.email,
-            timestamp: new Date().toISOString(),
-            createdBy: (await supabase.auth.getUser()).data.user?.id
-          }
-        });
+      console.log("Logging activity for user creation");
+      try {
+        await supabase
+          .from('activity_logs')
+          .insert({
+            user_id: authData.user.id,
+            action: 'USER_CREATED',
+            details: {
+              email: newUser.email,
+              timestamp: new Date().toISOString(),
+              createdBy: (await supabase.auth.getUser()).data.user?.id
+            }
+          });
+      } catch (logError) {
+        console.error("Error logging activity:", logError);
+      }
       
       // Create formatted user object for the UI
       const formattedUser: User = {
@@ -152,6 +163,8 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         availableCredits: newUser.availableCredits || 0
       };
       
+      console.log("User created successfully, updating UI with formatted user:", formattedUser);
+      
       // Update UI
       setUsers(prevUsers => [...prevUsers, formattedUser]);
       
@@ -160,6 +173,12 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         title: "User Created",
         description: `New user ${formattedUser.name} has been created successfully.`
       });
+      
+      // Force a fetch from the server to ensure data consistency
+      setTimeout(() => {
+        console.log("Triggering user data refresh after creation");
+        window.dispatchEvent(new CustomEvent('refresh-users'));
+      }, 1000);
       
       return true;
     } catch (error) {

@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@/components/admin/user-list/types';
@@ -10,9 +10,10 @@ export const useFetchUsers = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [fetchInProgress, setFetchInProgress] = useState(false);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     // Prevent concurrent fetch operations
     if (fetchInProgress) {
+      console.log('Fetch already in progress, skipping...');
       return;
     }
     
@@ -77,7 +78,21 @@ export const useFetchUsers = () => {
       setIsLoading(false);
       setFetchInProgress(false);
     }
-  };
+  }, [toast]);
+
+  // Add event listener for manual refresh
+  useEffect(() => {
+    const handleRefresh = () => {
+      console.log("Manual refresh triggered");
+      fetchUsers();
+    };
+    
+    window.addEventListener('refresh-users', handleRefresh);
+    
+    return () => {
+      window.removeEventListener('refresh-users', handleRefresh);
+    };
+  }, [fetchUsers]);
 
   return { users, setUsers, isLoading, fetchUsers };
 };
