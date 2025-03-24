@@ -51,9 +51,9 @@ export const useFetchUsers = () => {
           role: user.role,
           lastLogin: user.last_login ? new Date(user.last_login).toLocaleString() : 'Never',
           status: user.status,
-          taxDue: parseFloat(user.tax_due) || 0,
+          taxDue: parseFloat(user.tax_due || '0'),
           filingDeadline: filingDeadline,
-          availableCredits: parseFloat(user.available_credits) || 0
+          availableCredits: parseFloat(user.available_credits || '0')
         };
       });
 
