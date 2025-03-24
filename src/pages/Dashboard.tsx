@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -25,21 +24,17 @@ import { useActivityTimer } from '@/hooks/user-management/useActivityTimer';
 const Dashboard = () => {
   const { resetActivityTimer } = useActivityTimer();
   
-  // Reset activity timer on any user interaction with the page
   useEffect(() => {
-    // Set up event listeners for dashboard activity
     const activityEvents = ['mousedown', 'keypress', 'scroll', 'touchstart'];
     
     const handleUserActivity = () => {
       resetActivityTimer();
     };
     
-    // Add event listeners
     activityEvents.forEach(event => {
       window.addEventListener(event, handleUserActivity);
     });
     
-    // Clean up event listeners on unmount
     return () => {
       activityEvents.forEach(event => {
         window.removeEventListener(event, handleUserActivity);
@@ -47,11 +42,10 @@ const Dashboard = () => {
     };
   }, [resetActivityTimer]);
 
-  // Mock data for the tax information
   const taxData = {
     totalDue: 4250.75,
-    lastUpdated: 'March 20, 2023',
-    filingDeadline: 'April 15, 2023',
+    lastUpdated: 'March 20, 2025',
+    filingDeadline: 'April 15, 2025',
     refundStatus: 'Pending',
     taxCredits: [
       { name: 'Earned Income Credit', amount: 1500 },
@@ -59,9 +53,9 @@ const Dashboard = () => {
       { name: 'Education Credit', amount: 500 },
     ],
     recentForms: [
-      { id: 'W-2', name: 'Wage and Tax Statement', date: 'Jan 31, 2023' },
-      { id: '1099-INT', name: 'Interest Income', date: 'Feb 10, 2023' },
-      { id: '1098-E', name: 'Student Loan Interest', date: 'Feb 15, 2023' },
+      { id: 'W-2', name: 'Wage and Tax Statement', date: 'Jan 31, 2025' },
+      { id: '1099-INT', name: 'Interest Income', date: 'Feb 10, 2025' },
+      { id: '1098-E', name: 'Student Loan Interest', date: 'Feb 15, 2025' },
     ]
   };
 
@@ -71,7 +65,6 @@ const Dashboard = () => {
       
       <div className="container mx-auto pt-32 pb-20 px-4">
         <div className="flex flex-col md:flex-row gap-6">
-          {/* Sidebar for larger screens */}
           <aside className="hidden md:block w-64 space-y-4">
             <Card className="border-irs-lightGray">
               <CardContent className="p-4">
@@ -92,7 +85,6 @@ const Dashboard = () => {
             </Card>
           </aside>
           
-          {/* Mobile sidebar */}
           <div className="md:hidden mb-4">
             <Sheet>
               <SheetTrigger asChild>
@@ -121,16 +113,14 @@ const Dashboard = () => {
             </Sheet>
           </div>
           
-          {/* Main content */}
           <main className="flex-1">
             <div className="mb-8">
               <h1 className="text-2xl md:text-3xl font-bold text-irs-darkest mb-2">Dashboard</h1>
               <p className="text-irs-darkGray">
-                Welcome back, John. Here's your tax summary for 2023.
+                Welcome back, John. Here's your tax summary for 2025.
               </p>
             </div>
             
-            {/* Tax Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
               <InfoCard 
                 title="Total Tax Due" 
@@ -158,7 +148,6 @@ const Dashboard = () => {
               />
             </div>
             
-            {/* Recent Forms and Refund Status */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               <Card className="border-irs-lightGray">
                 <CardHeader className="pb-2">
@@ -211,7 +200,6 @@ const Dashboard = () => {
               </Card>
             </div>
             
-            {/* Additional Information */}
             <Card className="border-irs-lightGray">
               <CardHeader className="pb-2">
                 <CardTitle className="text-xl">Tax Summary</CardTitle>
@@ -255,7 +243,6 @@ const Dashboard = () => {
   );
 };
 
-// Helper component for sidebar links
 const SidebarLink = ({ 
   icon: Icon, 
   href, 
