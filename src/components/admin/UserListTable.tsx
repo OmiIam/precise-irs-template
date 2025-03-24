@@ -68,7 +68,9 @@ const UserListTable: React.FC<UserListTableProps> = ({
             ) : (
               <tr>
                 <td colSpan={8} className="h-24 text-center p-4">
-                  No users found.
+                  {users.length === 0 ? 
+                    "No users found in the system. Add a user to get started." : 
+                    "No users match the current filters."}
                 </td>
               </tr>
             )}
