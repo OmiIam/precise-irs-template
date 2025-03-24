@@ -6,11 +6,11 @@ export const useUserSubscription = (fetchUsers: () => Promise<void>) => {
   useEffect(() => {
     // Set up Supabase realtime subscription
     const channel = supabase
-      .channel('public:profiles')
+      .channel('users-changes')
       .on('postgres_changes', {
         event: '*',
         schema: 'public',
-        table: 'profiles'
+        table: 'users'
       }, () => {
         fetchUsers();
       })

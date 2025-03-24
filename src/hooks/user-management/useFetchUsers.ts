@@ -7,10 +7,19 @@ import { User } from '@/components/admin/user-list/types';
 export const useFetchUsers = () => {
   const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
 
   const fetchUsers = async () => {
+    // Prevent multiple rapid fetch requests
+    const now = Date.now();
+    if (now - lastFetchTime < 1000 && isLoading) {
+      return;
+    }
+    
     setIsLoading(true);
+    setLastFetchTime(now);
+    
     try {
       const { data, error } = await supabase
         .from('users')
