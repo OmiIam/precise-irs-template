@@ -38,7 +38,10 @@ const UserDialogContainer: React.FC<UserDialogContainerProps> = ({
   };
 
   const handleSaveUser = async (updatedUser: User) => {
-    if (isProcessing) return;
+    if (isProcessing) {
+      console.log("Ignoring request - already processing");
+      return;
+    }
     
     try {
       setIsProcessing(true);
@@ -46,10 +49,31 @@ const UserDialogContainer: React.FC<UserDialogContainerProps> = ({
       let success;
       
       if (isCreateMode) {
+        // Validate required fields
+        if (!updatedUser.name?.trim()) {
+          toast({
+            title: "Validation Error",
+            description: "Name is required",
+            variant: "destructive"
+          });
+          setIsProcessing(false);
+          return;
+        }
+        
+        if (!updatedUser.email?.trim()) {
+          toast({
+            title: "Validation Error",
+            description: "Email is required",
+            variant: "destructive"
+          });
+          setIsProcessing(false);
+          return;
+        }
+        
         // Ensure password exists for create mode
         if (!updatedUser.password) {
           toast({
-            title: "Error",
+            title: "Validation Error",
             description: "Password is required when creating a new user",
             variant: "destructive"
           });
@@ -59,7 +83,7 @@ const UserDialogContainer: React.FC<UserDialogContainerProps> = ({
         
         console.log("Attempting to create user:", {
           ...updatedUser,
-          password: updatedUser.password ? "******" : undefined
+          password: updatedUser.password ? "[REDACTED]" : undefined
         });
         
         success = await onCreateUser(updatedUser);
@@ -107,6 +131,7 @@ const UserDialogContainer: React.FC<UserDialogContainerProps> = ({
       onOpenChange={setDialogOpen}
       onSave={handleSaveUser}
       isCreateMode={isCreateMode}
+      isProcessing={isProcessing}
     />
   );
 

@@ -43,7 +43,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       
       console.log("Creating user with data:", {
         ...userData,
-        password: userData.password ? "******" : undefined
+        password: "[REDACTED]"
       });
       
       // Call the edge function to create the user
@@ -72,7 +72,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         
         toast({
           title: "Error Creating User",
-          description: "There was a problem creating the user. Please try again.",
+          description: response.error.message || "There was a problem creating the user. Please try again.",
           variant: "destructive"
         });
         return false;

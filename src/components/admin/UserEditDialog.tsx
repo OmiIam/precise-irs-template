@@ -17,6 +17,7 @@ type UserEditDialogProps = {
   onOpenChange: (open: boolean) => void;
   onSave: (user: User) => void;
   isCreateMode?: boolean;
+  isProcessing?: boolean;
 };
 
 const UserEditDialog = ({
@@ -24,7 +25,8 @@ const UserEditDialog = ({
   open,
   onOpenChange,
   onSave,
-  isCreateMode = false
+  isCreateMode = false,
+  isProcessing = false
 }: UserEditDialogProps) => {
   const [formData, setFormData] = React.useState<UserFormData>({
     id: '',
@@ -90,7 +92,7 @@ const UserEditDialog = ({
     
     console.log("Submitting user data:", {
       ...userData,
-      password: userData.password ? "******" : undefined
+      password: userData.password ? "[REDACTED]" : undefined
     });
     
     onSave(userData);
@@ -114,6 +116,7 @@ const UserEditDialog = ({
           isCreateMode={isCreateMode}
           showResetPassword={showResetPassword}
           setShowResetPassword={setShowResetPassword}
+          isProcessing={isProcessing}
         />
       </DialogContent>
     </Dialog>

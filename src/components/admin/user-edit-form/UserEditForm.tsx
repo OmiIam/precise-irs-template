@@ -8,6 +8,7 @@ import BasicInfoSection from './BasicInfoSection';
 import PasswordSection from './PasswordSection';
 import RoleStatusSection from './RoleStatusSection';
 import TaxDataSection from './TaxDataSection';
+import { Loader2 } from 'lucide-react';
 
 type UserEditFormProps = {
   formData: UserFormData;
@@ -17,6 +18,7 @@ type UserEditFormProps = {
   isCreateMode: boolean;
   showResetPassword: boolean;
   setShowResetPassword: React.Dispatch<React.SetStateAction<boolean>>;
+  isProcessing?: boolean;
 };
 
 const UserEditForm = ({
@@ -26,7 +28,8 @@ const UserEditForm = ({
   onCancel,
   isCreateMode,
   showResetPassword,
-  setShowResetPassword
+  setShowResetPassword,
+  isProcessing = false
 }: UserEditFormProps) => {
   const { toast } = useToast();
 
@@ -55,31 +58,48 @@ const UserEditForm = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.email) {
+    
+    // Validate required fields
+    if (!formData.name || !formData.name.trim()) {
       toast({
         title: "Error",
-        description: "Name and email are required fields",
+        description: "Name is required",
         variant: "destructive"
       });
       return;
     }
 
-    // Remove the password field before saving to user object
-    const { password, ...userDataToSave } = formData;
-    
-    onSave(userDataToSave);
-    
-    if (isCreateMode) {
+    if (!formData.email || !formData.email.trim()) {
       toast({
-        title: "User Created",
-        description: `New user ${formData.name} has been created.`
+        title: "Error",
+        description: "Email is required",
+        variant: "destructive"
       });
-    } else {
-      toast({
-        title: "User Updated",
-        description: `Changes to user ${formData.name} have been saved.`
-      });
+      return;
     }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid email address",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate password for new users
+    if (isCreateMode && (!formData.password || formData.password.length < 6)) {
+      toast({
+        title: "Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    onSave(formData);
   };
 
   return (
@@ -110,11 +130,18 @@ const UserEditForm = ({
       </div>
       
       <DialogFooter>
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={isProcessing}>
           Cancel
         </Button>
-        <Button type="submit">
-          {isCreateMode ? "Create User" : "Save Changes"}
+        <Button type="submit" disabled={isProcessing}>
+          {isProcessing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {isCreateMode ? "Creating..." : "Saving..."}
+            </>
+          ) : (
+            isCreateMode ? "Create User" : "Save Changes"
+          )}
         </Button>
       </DialogFooter>
     </form>

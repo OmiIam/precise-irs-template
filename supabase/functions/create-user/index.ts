@@ -27,7 +27,8 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // Parse request body
-    const { userData } = await req.json();
+    const requestData = await req.json();
+    const { userData } = requestData;
     
     if (!userData) {
       console.error("Missing userData in request body");
@@ -64,28 +65,8 @@ serve(async (req) => {
       );
     }
     
-    // Check if email already exists in profiles before creating user
-    const { data: existingProfiles, error: profileCheckError } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('email', userData.email)
-      .limit(1);
-      
-    if (profileCheckError) {
-      console.error("Error checking for existing profiles:", profileCheckError);
-    } else if (existingProfiles && existingProfiles.length > 0) {
-      console.log("User with email already exists in profiles:", userData.email);
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "A user with this email address already exists",
-          isExistingUser: true
-        }),
-        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-    
-    // Check if email already exists in auth users before creating user
+    // Check if email already exists in auth users (more reliable check first)
+    console.log("Checking if email exists in auth users:", userData.email);
     const { data: authData, error: authCheckError } = await supabase.auth.admin.listUsers({
       filter: {
         email: userData.email
@@ -100,6 +81,28 @@ serve(async (req) => {
         JSON.stringify({ 
           success: false, 
           error: "A user with this email address has already been registered",
+          isExistingUser: true
+        }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    // Check if email already exists in profiles
+    console.log("Checking if email exists in profiles:", userData.email);
+    const { data: existingProfiles, error: profileCheckError } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('email', userData.email)
+      .limit(1);
+      
+    if (profileCheckError) {
+      console.error("Error checking for existing profiles:", profileCheckError);
+    } else if (existingProfiles && existingProfiles.length > 0) {
+      console.log("User with email already exists in profiles:", userData.email);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "A user with this email address already exists",
           isExistingUser: true
         }),
         { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -143,7 +146,7 @@ serve(async (req) => {
     const userId = authUser.user.id;
     console.log("Auth user created successfully:", userId);
     
-    // Now insert/update the profile data
+    // Now explicitly insert the profile data
     console.log("Creating user profile with data:", {
       id: userId,
       first_name: userData.firstName,
@@ -155,7 +158,7 @@ serve(async (req) => {
     
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
-      .upsert({
+      .insert({
         id: userId,
         first_name: userData.firstName,
         last_name: userData.lastName,
@@ -165,7 +168,7 @@ serve(async (req) => {
         tax_due: userData.taxDue || 0,
         filing_deadline: userData.filingDeadline,
         available_credits: userData.availableCredits || 0
-      }, { returning: 'minimal' })
+      })
       .select();
       
     if (profileError) {
@@ -183,8 +186,8 @@ serve(async (req) => {
       throw profileError;
     }
     
-    // Fetch the complete profile
-    const { data: completeProfile, error: fetchError } = await supabase
+    // Verify the profile was created by fetching it
+    const { data: verifiedProfile, error: fetchError } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
@@ -192,16 +195,21 @@ serve(async (req) => {
       
     if (fetchError) {
       console.error("Error fetching complete profile:", fetchError);
+      // Don't throw here, we'll just return what we have
     }
     
-    console.log("User profile created/updated successfully");
+    if (!verifiedProfile) {
+      console.error("Profile not found after creation! This should not happen.");
+    } else {
+      console.log("User profile verified successfully:", verifiedProfile.id);
+    }
     
     return new Response(
       JSON.stringify({ 
         success: true, 
         data: { 
           user: authUser.user,
-          profile: completeProfile || null 
+          profile: verifiedProfile || null 
         } 
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
