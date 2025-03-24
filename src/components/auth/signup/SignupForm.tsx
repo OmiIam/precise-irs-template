@@ -21,7 +21,6 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
-  const [documentInfo, setDocumentInfo] = useState<{ path: string; name: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   
   const form = useForm<SignupFormValues>({
@@ -49,7 +48,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
         
         toast({
           title: "Account created",
-          description: "Please upload your identification document to complete the signup.",
+          description: "Our team will contact you shortly with document verification instructions.",
         });
       }
     } catch (error: any) {
@@ -64,52 +63,20 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
     }
   };
 
-  const handleUploadComplete = async (info: { path: string; name: string }) => {
-    setDocumentInfo(info);
-    
-    try {
-      if (userId) {
-        // Update the user profile with document information
-        const { error } = await supabase
-          .from('profiles')
-          .update({
-            id_front_url: info.path
-          })
-          .eq('id', userId);
-          
-        if (error) {
-          console.error("Error updating profile with document:", error);
-          throw error;
-        }
-        
-        // Once document is uploaded, redirect to dashboard
-        toast({
-          title: "Signup complete",
-          description: "Your account has been created and document uploaded successfully.",
-        });
-        
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1500);
-      }
-    } catch (error: any) {
-      console.error("Error after document upload:", error);
-      toast({
-        title: "Error updating profile",
-        description: error.message || "There was an error saving your document information.",
-        variant: "destructive"
-      });
-    }
+  const handleVerificationComplete = (info: { path: string; name: string }) => {
+    navigate('/dashboard');
   };
 
   return (
     <Card className="border-irs-lightGray">
       <CardHeader className="space-y-1">
         <CardTitle className="text-2xl font-bold text-center text-irs-darkest">
-          Create an account
+          {!userId ? "Create an account" : "Account Created"}
         </CardTitle>
         <CardDescription className="text-center text-irs-darkGray">
-          Enter your information to create a Revenue Service Finance account
+          {!userId 
+            ? "Enter your information to create a Revenue Service Finance account" 
+            : "Please review the verification information below"}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -124,7 +91,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
             ) : (
               <DocumentUploadStep 
                 userId={userId} 
-                onUploadComplete={handleUploadComplete} 
+                onUploadComplete={handleVerificationComplete} 
               />
             )}
           </form>
