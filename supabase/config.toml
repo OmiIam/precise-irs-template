@@ -3,3 +3,7 @@ project_id = "mhocdqtqohcnxrxhczhx"
 
 [functions.create-user]
 verify_jwt = false
+
+[auth.enable.admin]
+sign_up = true
+user_management = true

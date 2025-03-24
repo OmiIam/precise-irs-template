@@ -42,119 +42,142 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
       
-      // Prepare user data for the API call
-      const userData = {
-        firstName: firstName,
-        lastName: lastName,
-        email: newUser.email.trim(),
-        role: newUser.role || 'User',
-        status: newUser.status || 'Active',
-        taxDue: newUser.taxDue || 0,
-        filingDeadline: newUser.filingDeadline?.toISOString(),
-        availableCredits: newUser.availableCredits || 0,
-        password: newUser.password
-      };
-      
       console.log("Creating user with data:", {
-        ...userData,
+        ...newUser,
         password: "[REDACTED]"
       });
       
-      // Call the edge function to create the user
-      const response = await supabase.functions.invoke('create-user', {
-        body: { userData }
-      });
+      // Step 1: Check if user already exists
+      const { data: existingProfiles, error: checkError } = await supabase
+        .from('profiles')
+        .select('email')
+        .eq('email', newUser.email)
+        .limit(1);
       
-      console.log("Edge Function response:", response);
-      
-      if (response.error) {
-        console.error("Error from Edge Function:", response.error);
-        
-        // Handle specific error cases
-        if (response.error.message && (
-            response.error.message.includes("409") || 
-            response.error.message.includes("already been registered") || 
-            response.error.message.includes("already exists"))) {
-          
-          toast({
-            title: "Email Already Exists",
-            description: "The email address is already registered in the system. Please use a different email.",
-            variant: "destructive"
-          });
-          return false;
-        }
-        
+      if (checkError) {
+        console.error("Error checking for existing user:", checkError);
         toast({
-          title: "Error Creating User",
-          description: response.error.message || "There was a problem creating the user. Please try again.",
+          title: "Error",
+          description: "Failed to check if user already exists. Please try again.",
           variant: "destructive"
         });
         return false;
       }
       
-      const data = response.data;
+      if (existingProfiles && existingProfiles.length > 0) {
+        console.log("User already exists with email:", newUser.email);
+        toast({
+          title: "User Already Exists",
+          description: "A user with this email address already exists.",
+          variant: "destructive"
+        });
+        return false;
+      }
       
-      if (!data || !data.success) {
-        console.error("Unsuccessful response from Edge Function:", data);
-        
-        // Check for specific error messages
-        if (data?.isExistingUser) {
+      // Step 2: Create auth user
+      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        email: newUser.email,
+        password: newUser.password,
+        email_confirm: true,
+        user_metadata: {
+          first_name: firstName,
+          last_name: lastName
+        }
+      });
+      
+      if (authError) {
+        console.error("Error creating auth user:", authError);
+        if (authError.message.includes("already been registered")) {
           toast({
             title: "Email Already Exists",
-            description: "The email address is already registered in the system. Please use a different email.",
+            description: "This email is already registered in the system.",
             variant: "destructive"
           });
         } else {
           toast({
             title: "Error Creating User",
-            description: data?.error || "There was a problem creating the user. Please try again.",
+            description: authError.message || "There was a problem creating the user account.",
             variant: "destructive"
           });
         }
         return false;
       }
       
-      // Now add to UI after successful API call
-      if (data.data && data.data.user && data.data.profile) {
-        const formattedUser: User = {
-          id: data.data.user.id,
-          name: `${data.data.profile?.first_name || ''} ${data.data.profile?.last_name || ''}`.trim(),
-          email: data.data.user.email,
-          role: data.data.profile?.role || 'User',
-          status: data.data.profile?.status || 'Active',
-          lastLogin: 'Never',
-          taxDue: data.data.profile?.tax_due || 0,
-          filingDeadline: data.data.profile?.filing_deadline ? new Date(data.data.profile.filing_deadline) : undefined,
-          availableCredits: data.data.profile?.available_credits || 0
-        };
-        
-        console.log("Adding new user to UI:", formattedUser);
-        
-        // Update users list with the new user
-        setUsers(prevUsers => [...prevUsers, formattedUser]);
-        
-        // Notify success
-        toast({
-          title: "User Created",
-          description: `New user ${formattedUser.name} has been created successfully.`
-        });
-        
-        return true;
-      } else {
-        console.error("Missing user or profile data in response:", data);
+      if (!authData.user) {
+        console.error("No user data returned from auth.admin.createUser");
         toast({
           title: "Error",
-          description: "User creation returned an incomplete response. Please check if the user was created correctly.",
+          description: "Failed to create user account. No user data returned.",
           variant: "destructive"
         });
         return false;
       }
+      
+      const userId = authData.user.id;
+      
+      // Step 3: Create user profile
+      const profileData = {
+        id: userId,
+        first_name: firstName,
+        last_name: lastName,
+        email: newUser.email,
+        role: newUser.role || 'User',
+        status: newUser.status || 'Active',
+        tax_due: newUser.taxDue || 0,
+        available_credits: newUser.availableCredits || 0,
+        filing_deadline: newUser.filingDeadline?.toISOString(),
+        created_at: new Date().toISOString()
+      };
+      
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .insert([profileData])
+        .select()
+        .single();
+      
+      if (profileError) {
+        console.error("Error creating user profile:", profileError);
+        
+        // Clean up the auth user if profile creation fails
+        await supabase.auth.admin.deleteUser(userId);
+        
+        toast({
+          title: "Error Creating User",
+          description: "Failed to create user profile. The user account has been removed.",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      // Create formatted user object for the UI
+      const formattedUser: User = {
+        id: userId,
+        name: `${firstName} ${lastName}`.trim(),
+        email: newUser.email,
+        role: newUser.role || 'User',
+        status: newUser.status || 'Active',
+        lastLogin: 'Never',
+        taxDue: newUser.taxDue || 0,
+        filingDeadline: newUser.filingDeadline,
+        availableCredits: newUser.availableCredits || 0
+      };
+      
+      // Update UI
+      setUsers(prevUsers => [...prevUsers, formattedUser]);
+      
+      // Show success message
+      toast({
+        title: "User Created",
+        description: `New user ${formattedUser.name} has been created successfully.`
+      });
+      
+      return true;
     } catch (error) {
-      console.error("Error creating user:", error);
+      console.error("Unexpected error creating user:", error);
       
       toast({
         title: "Error",
-        description: "Failed to create user. Please try again.",
+        description: "An unexpected error occurred. Please try again.",
         variant: "destructive"
       });
       return false;
