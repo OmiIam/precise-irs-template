@@ -73,21 +73,41 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         });
         return false;
       }
-      
-      // Step 2: Create auth user
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+
+      // Prepare user data for the edge function
+      const userData = {
         email: newUser.email,
         password: newUser.password,
-        email_confirm: true,
-        user_metadata: {
-          first_name: firstName,
-          last_name: lastName
-        }
+        firstName: firstName,
+        lastName: lastName,
+        role: newUser.role || 'User',
+        status: newUser.status || 'Active',
+        taxDue: newUser.taxDue || 0,
+        availableCredits: newUser.availableCredits || 0,
+        filingDeadline: newUser.filingDeadline?.toISOString()
+      };
+      
+      // Call the create-user edge function
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: { userData }
       });
       
-      if (authError) {
-        console.error("Error creating auth user:", authError);
-        if (authError.message.includes("already been registered")) {
+      if (error) {
+        console.error("Error calling create-user function:", error);
+        toast({
+          title: "Error Creating User",
+          description: error.message || "There was a problem creating the user account.",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      if (!data || !data.success) {
+        const errorMessage = data?.error || "Failed to create user account. Unknown error.";
+        console.error("User creation failed:", errorMessage);
+        
+        // Check if it's a duplicate user error
+        if (data?.isExistingUser || errorMessage.includes("already been registered") || errorMessage.includes("already exists")) {
           toast({
             title: "Email Already Exists",
             description: "This email is already registered in the system.",
@@ -96,58 +116,16 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         } else {
           toast({
             title: "Error Creating User",
-            description: authError.message || "There was a problem creating the user account.",
+            description: errorMessage,
             variant: "destructive"
           });
         }
         return false;
       }
       
-      if (!authData.user) {
-        console.error("No user data returned from auth.admin.createUser");
-        toast({
-          title: "Error",
-          description: "Failed to create user account. No user data returned.",
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      const userId = authData.user.id;
-      
-      // Step 3: Create user profile
-      const profileDataToInsert = {
-        id: userId,
-        first_name: firstName,
-        last_name: lastName,
-        email: newUser.email,
-        role: newUser.role || 'User',
-        status: newUser.status || 'Active',
-        tax_due: newUser.taxDue || 0,
-        available_credits: newUser.availableCredits || 0,
-        filing_deadline: newUser.filingDeadline?.toISOString(),
-        created_at: new Date().toISOString()
-      };
-      
-      const { data: insertedProfile, error: profileError } = await supabase
-        .from('profiles')
-        .insert([profileDataToInsert])
-        .select()
-        .single();
-      
-      if (profileError) {
-        console.error("Error creating user profile:", profileError);
-        
-        // Clean up the auth user if profile creation fails
-        await supabase.auth.admin.deleteUser(userId);
-        
-        toast({
-          title: "Error Creating User",
-          description: "Failed to create user profile. The user account has been removed.",
-          variant: "destructive"
-        });
-        return false;
-      }
+      // Success! Get the created user data
+      const createdUser = data.data.user;
+      const userId = createdUser.id;
       
       // Create formatted user object for the UI
       const formattedUser: User = {
