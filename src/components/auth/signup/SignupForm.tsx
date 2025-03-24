@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { signupSchema, SignupFormValues } from './signupSchema';
 import { DocumentUpload } from './DocumentUpload';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SignupFormProps {
   onSubmit: (values: SignupFormValues) => Promise<{ userId: string } | void>;
@@ -22,6 +23,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
   const { toast } = useToast();
   const [userId, setUserId] = useState<string | null>(null);
   const [documentInfo, setDocumentInfo] = useState<{ path: string; name: string } | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -35,27 +37,70 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
   });
 
   const handleSubmit = async (values: SignupFormValues) => {
-    const result = await onSubmit(values);
-    
-    // Type guard to check if result exists and has userId property
-    if (result && 'userId' in result) {
-      console.log('User created with ID:', result.userId);
-      setUserId(result.userId);
+    try {
+      setIsProcessing(true);
+      console.log("Submitting signup form with values:", { ...values, password: "[REDACTED]" });
+      
+      const result = await onSubmit(values);
+      
+      // Type guard to check if result exists and has userId property
+      if (result && 'userId' in result) {
+        console.log('User created with ID:', result.userId);
+        setUserId(result.userId);
+        
+        toast({
+          title: "Account created",
+          description: "Please upload your identification document to complete the signup.",
+        });
+      }
+    } catch (error: any) {
+      console.error("Error in handleSubmit:", error);
+      toast({
+        title: "Signup failed",
+        description: error.message || "There was an error. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const handleUploadComplete = (info: { path: string; name: string }) => {
+  const handleUploadComplete = async (info: { path: string; name: string }) => {
     setDocumentInfo(info);
     
-    // Once document is uploaded, redirect to dashboard
-    toast({
-      title: "Signup complete",
-      description: "Your account has been created and document uploaded successfully.",
-    });
-    
-    setTimeout(() => {
-      navigate('/dashboard');
-    }, 1500);
+    try {
+      if (userId) {
+        // Update the user profile with document information
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            id_front_url: info.path
+          })
+          .eq('id', userId);
+          
+        if (error) {
+          console.error("Error updating profile with document:", error);
+          throw error;
+        }
+        
+        // Once document is uploaded, redirect to dashboard
+        toast({
+          title: "Signup complete",
+          description: "Your account has been created and document uploaded successfully.",
+        });
+        
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 1500);
+      }
+    } catch (error: any) {
+      console.error("Error after document upload:", error);
+      toast({
+        title: "Error updating profile",
+        description: error.message || "There was an error saving your document information.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -147,10 +192,10 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
                 <Button 
                   type="submit" 
                   className="w-full bg-irs-blue text-white hover:bg-irs-darkBlue"
-                  disabled={isLoading}
+                  disabled={isLoading || isProcessing}
                 >
                   <UserPlus className="mr-2 h-4 w-4" /> 
-                  {isLoading ? "Creating Account..." : "Create Account"}
+                  {isLoading || isProcessing ? "Creating Account..." : "Create Account"}
                 </Button>
               </>
             ) : (
