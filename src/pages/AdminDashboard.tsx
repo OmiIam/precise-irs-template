@@ -1,8 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import AdminSidebar from '@/components/admin/AdminSidebar';
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { useToast } from '@/hooks/use-toast';
 import { useUserManagement } from '@/hooks/useUserManagement';
 import { useUserActions } from '@/components/admin/dashboard/userActions';
@@ -11,9 +9,8 @@ import DashboardContent from '@/components/admin/dashboard/DashboardContent';
 import UserDialogContainer from '@/components/admin/dashboard/UserDialogContainer';
 import { useAuth } from '@/contexts/auth';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react'; // Changed from ReloadIcon to RefreshCw
-import { format } from 'date-fns';
+import AdminDashboardLayout from '@/components/admin/dashboard/AdminDashboardLayout';
+import RefreshStatusIndicator from '@/components/admin/dashboard/RefreshStatusIndicator';
 
 const AdminDashboard = () => {
   const { toast } = useToast();
@@ -120,17 +117,6 @@ const AdminDashboard = () => {
     setIsRefreshing(true);
     try {
       await fetchUsers();
-      toast({
-        title: "Data Refreshed",
-        description: "User data has been refreshed successfully."
-      });
-    } catch (error) {
-      console.error("Error refreshing data:", error);
-      toast({
-        title: "Refresh Failed",
-        description: "Failed to refresh user data. Please try again.",
-        variant: "destructive"
-      });
     } finally {
       setIsRefreshing(false);
     }
@@ -142,77 +128,47 @@ const AdminDashboard = () => {
   };
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-irs-gray">
-        <AdminSidebar activePage="dashboard" />
-        
-        <SidebarInset className="p-0">
-          <UserDialogContainer
-            onSaveUser={handleSaveUser}
-            onCreateUser={async (user) => {
-              const success = await handleCreateUser(user);
-              if (success) {
-                handleUserCreated();
-              }
-              return success;
-            }}
-          >
-            {({ handleAddUser, handleEditUser, dialogComponent }) => (
-              <>
-                <div className="flex justify-between items-center p-4 bg-white border-b">
-                  <DashboardHeader 
-                    onAddUser={handleAddUser}
-                  />
-                  
-                  <div className="flex items-center gap-2">
-                    <div className="text-sm text-gray-500">
-                      {isSubscribed ? (
-                        <span className="text-green-500 flex items-center">
-                          <span className="h-2 w-2 bg-green-500 rounded-full mr-1"></span> Realtime updates active
-                        </span>
-                      ) : (
-                        <span className="text-amber-500 flex items-center">
-                          <span className="h-2 w-2 bg-amber-500 rounded-full mr-1"></span> Realtime updates inactive
-                        </span>
-                      )}
-                      <div className="text-xs mt-1">
-                        Last updated: {format(lastRefresh, 'HH:mm:ss')}
-                      </div>
-                    </div>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={handleManualRefresh}
-                      disabled={isRefreshing}
-                    >
-                      {isRefreshing ? (
-                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> // Changed from ReloadIcon to RefreshCw
-                      ) : (
-                        <RefreshCw className="mr-2 h-4 w-4" /> // Changed from ReloadIcon to RefreshCw
-                      )}
-                      Refresh
-                    </Button>
-                  </div>
-                </div>
-                
-                <DashboardContent 
-                  users={users}
-                  onEditUser={handleEditUser}
-                  onViewUser={handleViewUser}
-                  onImpersonateUser={handleImpersonateUser}
-                  onDeleteUser={handleDeleteUser}
-                  onToggleUserStatus={handleToggleUserStatus}
-                  onToggleUserRole={handleToggleUserRole}
-                />
-                
-                {dialogComponent}
-              </>
-            )}
-          </UserDialogContainer>
-        </SidebarInset>
-      </div>
-    </SidebarProvider>
+    <AdminDashboardLayout activePage="dashboard">
+      <UserDialogContainer
+        onSaveUser={handleSaveUser}
+        onCreateUser={async (user) => {
+          const success = await handleCreateUser(user);
+          if (success) {
+            handleUserCreated();
+          }
+          return success;
+        }}
+      >
+        {({ handleAddUser, handleEditUser, dialogComponent }) => (
+          <>
+            <div className="flex justify-between items-center p-4 bg-white border-b">
+              <DashboardHeader 
+                onAddUser={handleAddUser}
+              />
+              
+              <RefreshStatusIndicator
+                isSubscribed={isSubscribed}
+                lastRefresh={lastRefresh}
+                onRefresh={handleManualRefresh}
+                isRefreshing={isRefreshing}
+              />
+            </div>
+            
+            <DashboardContent 
+              users={users}
+              onEditUser={handleEditUser}
+              onViewUser={handleViewUser}
+              onImpersonateUser={handleImpersonateUser}
+              onDeleteUser={handleDeleteUser}
+              onToggleUserStatus={handleToggleUserStatus}
+              onToggleUserRole={handleToggleUserRole}
+            />
+            
+            {dialogComponent}
+          </>
+        )}
+      </UserDialogContainer>
+    </AdminDashboardLayout>
   );
 };
 
