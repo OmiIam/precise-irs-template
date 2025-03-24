@@ -47,9 +47,9 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         password: "[REDACTED]"
       });
       
-      // Step 1: Check if user already exists
-      const { data: existingProfiles, error: checkError } = await supabase
-        .from('profiles')
+      // First check if user already exists
+      const { data: existingUsers, error: checkError } = await supabase
+        .from('users')
         .select('email')
         .eq('email', newUser.email)
         .limit(1);
@@ -64,8 +64,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
       
-      if (existingProfiles && existingProfiles.length > 0) {
-        console.log("User already exists with email:", newUser.email);
+      if (existingUsers && existingUsers.length > 0) {
         toast({
           title: "User Already Exists",
           description: "A user with this email address already exists.",
@@ -73,64 +72,41 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         });
         return false;
       }
-
-      // Prepare user data for the edge function
+      
+      // Create the new user directly in the users table
+      const newUserId = newUser.id || crypto.randomUUID();
+      
       const userData = {
+        id: newUserId,
+        name: newUser.name,
         email: newUser.email,
-        password: newUser.password,
-        firstName: firstName,
-        lastName: lastName,
+        password: newUser.password, // Note: In a real app, you'd hash this password
         role: newUser.role || 'User',
         status: newUser.status || 'Active',
-        taxDue: newUser.taxDue || 0,
-        availableCredits: newUser.availableCredits || 0,
-        filingDeadline: newUser.filingDeadline?.toISOString()
+        tax_due: newUser.taxDue || 0,
+        credits: newUser.availableCredits || 0,
+        deadline: newUser.filingDeadline,
+        last_login: 'Never'
       };
       
-      // Call the create-user edge function
-      const { data, error } = await supabase.functions.invoke('create-user', {
-        body: { userData }
-      });
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert([userData]);
       
-      if (error) {
-        console.error("Error calling create-user function:", error);
+      if (insertError) {
+        console.error("Error creating user:", insertError);
         toast({
           title: "Error Creating User",
-          description: error.message || "There was a problem creating the user account.",
+          description: insertError.message || "There was a problem creating the user account.",
           variant: "destructive"
         });
         return false;
       }
       
-      if (!data || !data.success) {
-        const errorMessage = data?.error || "Failed to create user account. Unknown error.";
-        console.error("User creation failed:", errorMessage);
-        
-        // Check if it's a duplicate user error
-        if (data?.isExistingUser || errorMessage.includes("already been registered") || errorMessage.includes("already exists")) {
-          toast({
-            title: "Email Already Exists",
-            description: "This email is already registered in the system.",
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Error Creating User",
-            description: errorMessage,
-            variant: "destructive"
-          });
-        }
-        return false;
-      }
-      
-      // Success! Get the created user data
-      const createdUser = data.data.user;
-      const userId = createdUser.id;
-      
       // Create formatted user object for the UI
       const formattedUser: User = {
-        id: userId,
-        name: `${firstName} ${lastName}`.trim(),
+        id: newUserId,
+        name: newUser.name,
         email: newUser.email,
         role: newUser.role || 'User',
         status: newUser.status || 'Active',
