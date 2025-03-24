@@ -88,14 +88,15 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ userId, onUpload
       
       // Now update the user's profile to record that they've uploaded a document
       if (userId) {
+        // Use JSON.stringify for the document info instead of SQL tag template literal
         const { error: updateError } = await supabase
           .from('profiles')
           .update({
-            submitted_documents: supabase.sql`submitted_documents || ${JSON.stringify([{
+            submitted_documents: JSON.stringify([{
               name: file.name,
               path: data.path,
               uploaded_at: new Date().toISOString()
-            }])}::jsonb`
+            }])
           })
           .eq('id', userId);
           
