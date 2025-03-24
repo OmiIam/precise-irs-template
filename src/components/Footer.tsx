@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Youtube, Instagram, Linkedin } from 'lucide-react';
@@ -73,7 +72,7 @@ export const Footer = () => {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
               <p className="text-sm text-irs-lightGray">
-                © 2023 Revenue Dividends Internal Revenue Service. All Rights Reserved.
+                © 2023 Revenue Service Finance Internal Revenue Service. All Rights Reserved.
               </p>
             </div>
             <div className="flex flex-wrap gap-4 justify-center">

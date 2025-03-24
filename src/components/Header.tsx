@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Search, Menu, X, ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -72,13 +71,13 @@ export const Header = () => {
                 "text-2xl font-bold transition-colors",
                 isScrolled ? "text-irs-darkBlue" : "text-white"
               )}>
-                RD
+                RSF
               </span>
               <span className={cn(
                 "hidden md:inline text-sm max-w-[150px] transition-colors",
                 isScrolled ? "text-irs-darkGray" : "text-irs-lightGray"
               )}>
-                Revenue Dividends
+                Revenue Service Finance
               </span>
             </Link>
           </div>

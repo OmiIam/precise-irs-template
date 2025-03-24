@@ -14,7 +14,7 @@ export const HeroSection = () => {
             2023 Tax Filing Season
           </div>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 animate-slide-in">
-            Revenue Dividends - Your Tax Solution
+            Revenue Service Finance - Your Tax Solution
           </h1>
           <p className="text-irs-lightGray text-lg mb-8 animate-slide-in" style={{ animationDelay: '0.1s' }}>
             Secure and simplified tax filing for individuals and businesses. Get your maximum refund with our advanced tax preparation tools and expert guidance.

@@ -65,7 +65,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
           Create an account
         </CardTitle>
         <CardDescription className="text-center text-irs-darkGray">
-          Enter your information to create a Revenue Dividends account
+          Enter your information to create a Revenue Service Finance account
         </CardDescription>
       </CardHeader>
       <CardContent>
