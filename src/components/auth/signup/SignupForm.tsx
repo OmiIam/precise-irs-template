@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from 'react-router-dom';
@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AccountCreationStep } from './AccountCreationStep';
 import { DocumentUploadStep } from './DocumentUploadStep';
 import { SignupFormFooter } from './SignupFormFooter';
+import { useAuth } from '@/contexts/auth';
 
 interface SignupFormProps {
   onSubmit: (values: SignupFormValues) => Promise<{ userId: string } | void>;
@@ -20,8 +21,10 @@ interface SignupFormProps {
 const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [userId, setUserId] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -33,6 +36,16 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
       confirmPassword: "",
     },
   });
+
+  // Redirect if the user is already authenticated
+  useEffect(() => {
+    if (user && !isRedirecting) {
+      setIsRedirecting(true);
+      setTimeout(() => {
+        navigate('/dashboard', { replace: true });
+      }, 10);
+    }
+  }, [user, navigate, isRedirecting]);
 
   const handleSubmit = async (values: SignupFormValues) => {
     try {
@@ -64,7 +77,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
   };
 
   const handleVerificationComplete = (info: { path: string; name: string }) => {
-    navigate('/dashboard');
+    navigate('/dashboard', { replace: true });
   };
 
   return (

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import { useAuth } from '@/contexts/auth';
 import LoginContainer from './LoginContainer';
@@ -9,12 +9,19 @@ import { useLoginRedirect } from '@/hooks/useLoginRedirect';
 
 const LoginPage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
-  const { signIn } = useAuth();
+  const { signIn, user } = useAuth();
   const { isRedirecting, setIsRedirecting } = useLoginRedirect();
   
   const toggleAdminMode = () => {
     setIsAdmin(!isAdmin);
   };
+
+  // Pre-set redirecting if user is already authenticated to avoid flicker
+  useEffect(() => {
+    if (user && !isRedirecting) {
+      setIsRedirecting(true);
+    }
+  }, [user, isRedirecting, setIsRedirecting]);
 
   return (
     <div className="min-h-screen bg-irs-gray">
