@@ -85,13 +85,13 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         status: newUser.status || 'Active',
         tax_due: newUser.taxDue || 0,
         credits: newUser.availableCredits || 0,
-        deadline: newUser.filingDeadline,
+        deadline: newUser.filingDeadline ? newUser.filingDeadline.toISOString().split('T')[0] : null, // Convert Date to YYYY-MM-DD string format
         last_login: 'Never'
       };
       
       const { error: insertError } = await supabase
         .from('users')
-        .insert([userData]);
+        .insert(userData); // Pass the single object, not an array
       
       if (insertError) {
         console.error("Error creating user:", insertError);
