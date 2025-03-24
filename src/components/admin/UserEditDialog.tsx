@@ -40,32 +40,37 @@ const UserEditDialog = ({
 
   const [showResetPassword, setShowResetPassword] = React.useState(false);
 
+  // Reset form data when the dialog opens or when user/mode changes
   React.useEffect(() => {
-    if (user) {
-      setFormData({
-        ...user,
-        taxDue: user.taxDue || 0,
-        filingDeadline: user.filingDeadline ? new Date(user.filingDeadline) : new Date(),
-        availableCredits: user.availableCredits || 0
-      });
-      setShowResetPassword(false);
-    } else if (isCreateMode) {
-      // Generate a proper UUID for new users
-      const newUserId = crypto.randomUUID();
-      const initialPassword = generateRandomPassword();
-      setFormData({
-        id: newUserId,
-        name: '',
-        email: '',
-        role: 'User',
-        lastLogin: 'Never',
-        status: 'Active',
-        taxDue: 0,
-        filingDeadline: new Date(),
-        availableCredits: 0,
-        password: initialPassword
-      });
-      setShowResetPassword(true);
+    if (open) {
+      if (user) {
+        // Editing existing user
+        setFormData({
+          ...user,
+          taxDue: user.taxDue || 0,
+          filingDeadline: user.filingDeadline ? new Date(user.filingDeadline) : new Date(),
+          availableCredits: user.availableCredits || 0
+        });
+        setShowResetPassword(false);
+      } else if (isCreateMode) {
+        // Creating new user
+        const newUserId = crypto.randomUUID();
+        const initialPassword = generateRandomPassword();
+        
+        setFormData({
+          id: newUserId,
+          name: '',
+          email: '',
+          role: 'User',
+          lastLogin: 'Never',
+          status: 'Active',
+          taxDue: 0,
+          filingDeadline: new Date(),
+          availableCredits: 0,
+          password: initialPassword // Ensure password is set for new users
+        });
+        setShowResetPassword(true);
+      }
     }
   }, [user, isCreateMode, open]);
 
@@ -75,6 +80,21 @@ const UserEditDialog = ({
     : "Make changes to the user account details.";
 
   if ((!user && !isCreateMode)) return null;
+
+  const handleSaveWrapper = (userData: User) => {
+    // For create mode, ensure password exists
+    if (isCreateMode && !userData.password) {
+      console.error("Password is missing for new user");
+      return;
+    }
+    
+    console.log("Submitting user data:", {
+      ...userData,
+      password: userData.password ? "******" : undefined
+    });
+    
+    onSave(userData);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -89,7 +109,7 @@ const UserEditDialog = ({
         <UserEditForm 
           formData={formData}
           setFormData={setFormData}
-          onSave={onSave}
+          onSave={handleSaveWrapper}
           onCancel={() => onOpenChange(false)}
           isCreateMode={isCreateMode}
           showResetPassword={showResetPassword}

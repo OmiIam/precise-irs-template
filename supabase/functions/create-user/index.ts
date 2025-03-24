@@ -64,20 +64,17 @@ serve(async (req) => {
       );
     }
     
-    // Check if email already exists before creating user
-    const { data: existingUsers, error: checkError } = await supabase
+    // Check if email already exists in profiles before creating user
+    const { data: existingProfiles, error: profileCheckError } = await supabase
       .from('profiles')
       .select('email')
       .eq('email', userData.email)
       .limit(1);
       
-    if (checkError) {
-      console.error("Error checking for existing users:", checkError);
-      throw checkError;
-    }
-    
-    if (existingUsers && existingUsers.length > 0) {
-      console.log("User with email already exists:", userData.email);
+    if (profileCheckError) {
+      console.error("Error checking for existing profiles:", profileCheckError);
+    } else if (existingProfiles && existingProfiles.length > 0) {
+      console.log("User with email already exists in profiles:", userData.email);
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -88,16 +85,37 @@ serve(async (req) => {
       );
     }
     
+    // Check if email already exists in auth users before creating user
+    const { data: authData, error: authCheckError } = await supabase.auth.admin.listUsers({
+      filter: {
+        email: userData.email
+      }
+    });
+    
+    if (authCheckError) {
+      console.error("Error checking for existing auth users:", authCheckError);
+    } else if (authData?.users && authData.users.length > 0) {
+      console.log("User with email already exists in auth:", userData.email);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "A user with this email address has already been registered",
+          isExistingUser: true
+        }),
+        { status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     // First, create the auth user
     console.log("Creating auth user with email:", userData.email);
     const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
       email: userData.email,
+      password: userData.password,
       email_confirm: true,
       user_metadata: { 
         first_name: userData.firstName,
         last_name: userData.lastName
-      },
-      password: userData.password
+      }
     });
     
     if (authError) {
@@ -122,11 +140,12 @@ serve(async (req) => {
       throw new Error("User creation failed");
     }
     
-    console.log("Auth user created successfully:", authUser.user.id);
+    const userId = authUser.user.id;
+    console.log("Auth user created successfully:", userId);
     
     // Now insert/update the profile data
     console.log("Creating user profile with data:", {
-      id: authUser.user.id,
+      id: userId,
       first_name: userData.firstName,
       last_name: userData.lastName,
       email: userData.email,
@@ -137,7 +156,7 @@ serve(async (req) => {
     const { data: profileData, error: profileError } = await supabase
       .from('profiles')
       .upsert({
-        id: authUser.user.id,
+        id: userId,
         first_name: userData.firstName,
         last_name: userData.lastName,
         email: userData.email,
@@ -146,30 +165,43 @@ serve(async (req) => {
         tax_due: userData.taxDue || 0,
         filing_deadline: userData.filingDeadline,
         available_credits: userData.availableCredits || 0
-      })
+      }, { returning: 'minimal' })
       .select();
       
     if (profileError) {
       console.error("Error updating profile:", profileError);
+      
       // If profile creation fails, attempt to clean up by deleting the auth user
       try {
         console.log("Cleaning up auth user after profile creation failure");
-        await supabase.auth.admin.deleteUser(authUser.user.id);
+        await supabase.auth.admin.deleteUser(userId);
         console.log("Cleaned up auth user after profile creation failure");
       } catch (cleanupError) {
         console.error("Failed to clean up auth user:", cleanupError);
       }
+      
       throw profileError;
     }
     
-    console.log("User profile created/updated successfully:", profileData);
+    // Fetch the complete profile
+    const { data: completeProfile, error: fetchError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+      
+    if (fetchError) {
+      console.error("Error fetching complete profile:", fetchError);
+    }
+    
+    console.log("User profile created/updated successfully");
     
     return new Response(
       JSON.stringify({ 
         success: true, 
         data: { 
           user: authUser.user,
-          profile: profileData?.[0] || null 
+          profile: completeProfile || null 
         } 
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

@@ -57,12 +57,19 @@ const UserDialogContainer: React.FC<UserDialogContainerProps> = ({
           return;
         }
         
+        console.log("Attempting to create user:", {
+          ...updatedUser,
+          password: updatedUser.password ? "******" : undefined
+        });
+        
         success = await onCreateUser(updatedUser);
+        console.log("User creation result:", success);
       } else {
         success = await onSaveUser(updatedUser);
       }
       
       if (success) {
+        // Only close dialog and show success message if the operation was successful
         setDialogOpen(false);
         
         toast({
@@ -70,6 +77,15 @@ const UserDialogContainer: React.FC<UserDialogContainerProps> = ({
           description: isCreateMode 
             ? `New user ${updatedUser.name} has been created.` 
             : `Changes to user ${updatedUser.name} have been saved.`
+        });
+      } else {
+        // If not successful, show an error message but don't close the dialog
+        toast({
+          title: "Operation Failed",
+          description: isCreateMode 
+            ? "Failed to create user. Please try again." 
+            : "Failed to update user. Please try again.",
+          variant: "destructive"
         });
       }
     } catch (error) {

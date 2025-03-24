@@ -46,7 +46,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         password: userData.password ? "******" : undefined
       });
       
-      // Then save to database first (don't add to UI yet)
+      // Call the edge function to create the user
       const response = await supabase.functions.invoke('create-user', {
         body: { userData }
       });
@@ -114,10 +114,12 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
           availableCredits: data.data.profile?.available_credits || 0
         };
         
+        console.log("Adding new user to UI:", formattedUser);
         setUsers(prevUsers => [...prevUsers, formattedUser]);
+        return true;
       }
       
-      return true;
+      return false;
     } catch (error) {
       console.error("Error creating user:", error);
       
