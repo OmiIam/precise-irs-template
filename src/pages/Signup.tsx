@@ -3,11 +3,9 @@ import React from 'react';
 import { Header } from '@/components/Header';
 import SignupForm from '@/components/auth/signup/SignupForm';
 import { useSignup } from '@/hooks/useSignup';
-import { useToast } from '@/hooks/use-toast';
 
 const Signup = () => {
   const { isLoading, handleSignup } = useSignup();
-  const { toast } = useToast();
 
   return (
     <div className="min-h-screen bg-irs-gray">
