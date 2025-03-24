@@ -47,9 +47,9 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         password: "[REDACTED]"
       });
       
-      // First check if user already exists
+      // First check if user already exists by email
       const { data: existingUsers, error: checkError } = await supabase
-        .from('users')
+        .from('profiles')
         .select('email')
         .eq('email', newUser.email)
         .limit(1);
@@ -73,39 +73,50 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
       
-      // Create the new user directly in the users table
-      const newUserId = newUser.id || crypto.randomUUID();
-      
+      // Prepare user data
       const userData = {
-        id: newUserId,
-        name: newUser.name,
         email: newUser.email,
         password: newUser.password,
+        firstName: firstName,
+        lastName: lastName || '',
         role: newUser.role || 'User',
         status: newUser.status || 'Active',
-        tax_due: newUser.taxDue || 0,
-        credits: newUser.availableCredits || 0,
-        deadline: newUser.filingDeadline ? newUser.filingDeadline.toISOString().split('T')[0] : null,
-        last_login: null
+        taxDue: newUser.taxDue || 0,
+        availableCredits: newUser.availableCredits || 0,
+        filingDeadline: newUser.filingDeadline ? newUser.filingDeadline.toISOString() : null
       };
       
-      const { error: insertError } = await supabase
-        .from('users')
-        .insert(userData);
+      // Call the Supabase Edge Function to create the user in Auth and profiles table
+      const { data, error } = await supabase.functions.invoke('create-user', {
+        body: { userData }
+      });
       
-      if (insertError) {
-        console.error("Error creating user:", insertError);
+      if (error) {
+        console.error("Error invoking create-user function:", error);
         toast({
           title: "Error Creating User",
-          description: insertError.message || "There was a problem creating the user account.",
+          description: error.message || "There was a problem creating the user account.",
           variant: "destructive"
         });
         return false;
       }
       
+      if (!data.success) {
+        console.error("Error from create-user function:", data.error);
+        toast({
+          title: "Error Creating User",
+          description: data.error || "Failed to create user account.",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      console.log("User created successfully:", data);
+      
       // Create formatted user object for the UI
+      const userId = data.data?.user?.id || crypto.randomUUID();
       const formattedUser: User = {
-        id: newUserId,
+        id: userId,
         name: newUser.name,
         email: newUser.email,
         role: newUser.role || 'User',

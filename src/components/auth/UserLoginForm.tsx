@@ -1,11 +1,11 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { LogIn, ShieldCheck } from 'lucide-react';
+import { LogIn, ShieldCheck, Loader2 } from 'lucide-react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -22,6 +22,7 @@ type UserLoginFormProps = {
 
 const UserLoginForm = ({ onToggleMode, signIn }: UserLoginFormProps) => {
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -33,13 +34,26 @@ const UserLoginForm = ({ onToggleMode, signIn }: UserLoginFormProps) => {
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
     try {      
+      setIsLoading(true);
+      
       // Regular user login
       const { error } = await signIn(values.email, values.password);
       
       if (error) {
+        console.error('Error during sign in:', error);
+        
+        let errorMessage = "Check your email and password and try again";
+        if (error.message) {
+          if (error.message.includes("Invalid login")) {
+            errorMessage = "Invalid email or password. Please try again.";
+          } else {
+            errorMessage = error.message;
+          }
+        }
+        
         toast({
           title: "Login failed",
-          description: error.message || "Check your email and password and try again",
+          description: errorMessage,
           variant: "destructive",
         });
         return;
@@ -57,6 +71,8 @@ const UserLoginForm = ({ onToggleMode, signIn }: UserLoginFormProps) => {
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -94,9 +110,18 @@ const UserLoginForm = ({ onToggleMode, signIn }: UserLoginFormProps) => {
             )}
           />
           
-          <Button type="submit" className="w-full bg-irs-blue text-white hover:bg-irs-darkBlue">
-            <LogIn className="mr-2 h-4 w-4" /> 
-            Sign In
+          <Button type="submit" className="w-full bg-irs-blue text-white hover:bg-irs-darkBlue" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Signing In...
+              </>
+            ) : (
+              <>
+                <LogIn className="mr-2 h-4 w-4" /> 
+                Sign In
+              </>
+            )}
           </Button>
         </form>
       </Form>
