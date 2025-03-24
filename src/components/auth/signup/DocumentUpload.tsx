@@ -21,13 +21,27 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ userId, onUpload
     try {
       setIsUploading(true);
       
+      // Ensure the file path contains userId as the first folder segment
       const fileName = `${userId}/${Date.now()}-${file.name}`;
+      
+      console.log('Uploading file to:', fileName);
+      console.log('User ID:', userId);
+      console.log('Bucket:', 'user-documents');
+      
       const { error: uploadError, data } = await supabase.storage
         .from('user-documents')
-        .upload(fileName, file);
+        .upload(fileName, file, {
+          upsert: false,
+          contentType: file.type
+        });
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error('Upload error details:', uploadError);
+        throw uploadError;
+      }
 
+      console.log('Upload successful:', data);
+      
       onUploadComplete({ 
         path: data.path,
         name: file.name 
