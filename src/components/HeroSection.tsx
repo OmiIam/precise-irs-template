@@ -11,7 +11,7 @@ export const HeroSection = () => {
       <div className="container relative z-10 mx-auto px-4 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto text-center">
           <div className="inline-block px-3 py-1 rounded-full bg-irs-blue/20 text-irs-lightBlue text-sm font-medium mb-4 animate-fade-in">
-            2023 Tax Filing Season
+            2025 Tax Filing Season
           </div>
           <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white mb-6 animate-slide-in">
             Revenue Service Finance - Your Tax Solution
