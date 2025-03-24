@@ -24,6 +24,12 @@ export async function createAuthUser(supabase: any, userData: any): Promise<{ au
     
     if (error) {
       console.error("Error in createAuthUser:", error);
+      if (error.message.includes("already been registered")) {
+        return { 
+          authUser: null, 
+          error: "This email is already registered in the system." 
+        };
+      }
       return { 
         authUser: null, 
         error: "Failed to create auth user: " + error.message 
@@ -92,6 +98,12 @@ export async function createUserProfile(supabase: any, userId: string, userData:
     
     if (error) {
       console.error("Error in createUserProfile:", error);
+      if (error.message.includes("duplicate key") || error.message.includes("already exists")) {
+        return { 
+          profile: null, 
+          error: "A profile with this email already exists" 
+        };
+      }
       return { 
         profile: null, 
         error: "Failed to create user profile: " + error.message 
