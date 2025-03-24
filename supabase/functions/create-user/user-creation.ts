@@ -1,135 +1,118 @@
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
+
 /**
- * Creates a new auth user
+ * Creates a new user in Supabase Auth
  * @param supabase Supabase client
- * @param userData User data for creation
- * @returns The created auth user and any error
+ * @param userData User data including email and password
+ * @returns Object containing created auth user and any errors
  */
-export async function createAuthUser(supabase: any, userData: any): Promise<{ authUser: any | null, error: string | null }> {
+export async function createAuthUser(supabase: any, userData: any): Promise<{ authUser: any, error: string | null }> {
   try {
     console.log("Creating auth user with email:", userData.email);
-    const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+    
+    // Create user in Auth
+    const { data, error } = await supabase.auth.admin.createUser({
       email: userData.email,
       password: userData.password,
-      email_confirm: true, // Auto-confirm email for admin-created users
-      user_metadata: { 
+      email_confirm: true,
+      user_metadata: {
         first_name: userData.firstName,
-        last_name: userData.lastName
+        last_name: userData.lastName || ''
       }
     });
     
-    if (authError) {
-      console.error("Error creating auth user:", authError);
+    if (error) {
+      console.error("Error in createAuthUser:", error);
       return { 
         authUser: null, 
-        error: "Failed to create user in authentication system: " + authError.message
+        error: "Failed to create auth user: " + error.message 
       };
     }
     
-    if (!authUser || !authUser.user) {
-      console.error("Failed to create auth user - no user returned");
+    if (!data.user) {
+      console.error("No user returned from auth.admin.createUser");
       return { 
         authUser: null, 
-        error: "User creation failed - no user data returned from auth system"
+        error: "User creation failed: No user data returned" 
       };
     }
     
-    console.log("Auth user created successfully with ID:", authUser.user.id);
-    return { authUser: authUser.user, error: null };
+    console.log("Auth user created successfully with ID:", data.user.id);
+    return { authUser: data.user, error: null };
   } catch (error) {
     console.error("Unexpected error in createAuthUser:", error);
-    return { authUser: null, error: "Error creating auth user: " + error.message };
+    return { 
+      authUser: null, 
+      error: "Unexpected error creating auth user: " + error.message 
+    };
   }
 }
 
 /**
- * Creates a new user profile
+ * Creates a new user profile in the profiles table
  * @param supabase Supabase client
  * @param userId User ID from auth
- * @param userData User data for profile
- * @returns The created profile and any error
+ * @param userData User profile data
+ * @returns Object containing created profile and any errors
  */
-export async function createUserProfile(supabase: any, userId: string, userData: any): Promise<{ profile: any | null, error: string | null }> {
+export async function createUserProfile(supabase: any, userId: string, userData: any): Promise<{ profile: any, error: string | null }> {
   try {
-    console.log("Creating user profile with data:", {
+    if (!userId) {
+      console.error("Missing user ID for profile creation");
+      return { 
+        profile: null, 
+        error: "Cannot create profile: Missing user ID" 
+      };
+    }
+    
+    console.log("Creating user profile for user ID:", userId);
+    
+    // Prepare profile data
+    const profileData = {
       id: userId,
       first_name: userData.firstName,
-      last_name: userData.lastName,
+      last_name: userData.lastName || '',
       email: userData.email,
-      role: userData.role,
-      status: userData.status
-    });
+      role: userData.role || 'User',
+      status: userData.status || 'Active',
+      tax_due: userData.taxDue || 0,
+      available_credits: userData.availableCredits || 0,
+      created_at: new Date().toISOString()
+    };
     
-    // First, check if a profile already exists for this user
-    const { data: existingProfile, error: checkError } = await supabase
+    console.log("Profile data to insert:", profileData);
+    
+    // Insert profile record
+    const { data, error } = await supabase
       .from('profiles')
-      .select('id')
-      .eq('id', userId)
+      .insert([profileData])
+      .select()
       .single();
-      
-    if (checkError && checkError.code !== 'PGRST116') { // Ignore "no rows returned" error
-      console.error("Error checking for existing profile:", checkError);
-      return { profile: null, error: "Failed to check for existing profile: " + checkError.message };
-    }
     
-    if (existingProfile) {
-      console.log("Profile already exists for user:", userId);
-      return { profile: existingProfile, error: null };
-    }
-    
-    // Profile doesn't exist, create it
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .insert({
-        id: userId,
-        first_name: userData.firstName,
-        last_name: userData.lastName,
-        email: userData.email,
-        role: userData.role || 'User',
-        status: userData.status || 'Active',
-        tax_due: userData.taxDue || 0,
-        filing_deadline: userData.filingDeadline,
-        available_credits: userData.availableCredits || 0
-      })
-      .select();
-      
-    if (profileError) {
-      console.error("Error creating profile:", profileError);
-      return { profile: null, error: "Failed to create user profile: " + profileError.message };
-    }
-    
-    if (!profileData || profileData.length === 0) {
-      console.error("Profile insert returned no data");
-      return { profile: null, error: "Failed to create user profile: No data returned after insert" };
-    }
-    
-    // Verify the profile was created by fetching it
-    const { data: verifiedProfile, error: fetchError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-      
-    if (fetchError) {
-      console.error("Error verifying profile creation:", fetchError);
+    if (error) {
+      console.error("Error in createUserProfile:", error);
       return { 
         profile: null, 
-        error: "User created but profile verification failed: " + fetchError.message
+        error: "Failed to create user profile: " + error.message 
       };
     }
     
-    if (!verifiedProfile) {
-      console.error("Profile not found after creation - this should not happen");
+    if (!data) {
+      console.error("No profile data returned after insertion");
       return { 
         profile: null, 
-        error: "User created but profile not found after creation"
+        error: "Profile creation failed: No profile data returned" 
       };
     }
     
-    console.log("User profile verified successfully with ID:", verifiedProfile.id);
-    return { profile: verifiedProfile, error: null };
+    console.log("User profile created successfully:", data);
+    return { profile: data, error: null };
   } catch (error) {
     console.error("Unexpected error in createUserProfile:", error);
-    return { profile: null, error: "Error creating user profile: " + error.message };
+    return { 
+      profile: null, 
+      error: "Unexpected error creating user profile: " + error.message 
+    };
   }
 }
