@@ -12,7 +12,7 @@ import UserDialogContainer from '@/components/admin/dashboard/UserDialogContaine
 import { useAuth } from '@/contexts/auth';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ReloadIcon } from '@radix-ui/react-icons';
+import { RefreshCw } from 'lucide-react'; // Changed from ReloadIcon to RefreshCw
 import { format } from 'date-fns';
 
 const AdminDashboard = () => {
@@ -187,9 +187,9 @@ const AdminDashboard = () => {
                       disabled={isRefreshing}
                     >
                       {isRefreshing ? (
-                        <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> // Changed from ReloadIcon to RefreshCw
                       ) : (
-                        <ReloadIcon className="mr-2 h-4 w-4" />
+                        <RefreshCw className="mr-2 h-4 w-4" /> // Changed from ReloadIcon to RefreshCw
                       )}
                       Refresh
                     </Button>
