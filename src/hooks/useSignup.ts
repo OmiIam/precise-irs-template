@@ -59,6 +59,7 @@ export const useSignup = () => {
         description: error.message || "There was an error creating your account. Please try again.",
         variant: "destructive",
       });
+      return void 0; // Explicitly return void
     } finally {
       setIsLoading(false);
     }
