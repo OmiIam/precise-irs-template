@@ -52,13 +52,16 @@ export const useFetchUsers = () => {
         const availableCredits = user.available_credits === null ? 0 : 
           (typeof user.available_credits === 'string' ? parseFloat(user.available_credits) : user.available_credits);
         
+        // Create a properly formatted name from first_name and last_name
+        const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User';
+        
         return {
           id: user.id,
-          name: `${user.first_name} ${user.last_name}`,
-          email: user.email,
-          role: user.role,
+          name: fullName,
+          email: user.email || '',
+          role: user.role || 'User',
           lastLogin: user.last_login ? new Date(user.last_login).toLocaleString() : 'Never',
-          status: user.status,
+          status: user.status || 'Active',
           taxDue,
           filingDeadline,
           availableCredits

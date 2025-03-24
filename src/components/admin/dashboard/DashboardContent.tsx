@@ -34,15 +34,22 @@ const DashboardContent: React.FC<DashboardContentProps> = ({
             <div className="rounded-lg border bg-card shadow-sm">
               <div className="p-6">
                 <h2 className="text-xl font-semibold text-irs-darkest mb-6">User Management</h2>
-                <UserListTable 
-                  users={users}
-                  onEditUser={onEditUser} 
-                  onViewUser={onViewUser}
-                  onImpersonateUser={onImpersonateUser}
-                  onDeleteUser={onDeleteUser}
-                  onToggleUserStatus={onToggleUserStatus}
-                  onToggleUserRole={onToggleUserRole}
-                />
+                {users.length === 0 ? (
+                  <div className="text-center p-6 bg-gray-50 rounded-md">
+                    <p className="text-gray-500">No users found in the system.</p>
+                    <p className="text-sm text-gray-400 mt-1">Add a user to get started or refresh the page.</p>
+                  </div>
+                ) : (
+                  <UserListTable 
+                    users={users}
+                    onEditUser={onEditUser} 
+                    onViewUser={onViewUser}
+                    onImpersonateUser={onImpersonateUser}
+                    onDeleteUser={onDeleteUser}
+                    onToggleUserStatus={onToggleUserStatus}
+                    onToggleUserRole={onToggleUserRole}
+                  />
+                )}
               </div>
             </div>
           </div>

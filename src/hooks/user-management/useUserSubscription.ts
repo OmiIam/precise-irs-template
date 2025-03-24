@@ -1,41 +1,38 @@
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-export const useUserSubscription = (fetchUsers: () => Promise<void>) => {
-  const channelRef = useRef<any>(null);
+export const useUserSubscription = (handleDataChange: () => Promise<void>) => {
   const [isSubscribed, setIsSubscribed] = useState(false);
 
   useEffect(() => {
-    console.log('Setting up Supabase realtime subscription for profiles table');
+    console.log("Setting up realtime subscription for user changes");
     
-    // Set up Supabase realtime subscription
+    // Enable the subscription 
     const channel = supabase
-      .channel('profiles-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'profiles'
-      }, (payload) => {
-        console.log('Profiles table changed, refreshing user list with payload:', payload);
-        // Fetch users when a change is detected
-        fetchUsers();
-      })
+      .channel('public:profiles')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'profiles' 
+        }, 
+        async (payload) => {
+          console.log('Change received!', payload);
+          // Trigger data refresh when changes are detected
+          await handleDataChange();
+        }
+      )
       .subscribe((status) => {
-        console.log('Subscription status:', status);
+        console.log("Subscription status:", status);
         setIsSubscribed(status === 'SUBSCRIBED');
       });
-    
-    channelRef.current = channel;
 
-    // Clean up subscription on unmount
     return () => {
-      console.log('Cleaning up Supabase realtime subscription');
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-      }
+      console.log("Cleaning up realtime subscription");
+      supabase.removeChannel(channel);
     };
-  }, [fetchUsers]);
+  }, [handleDataChange]);
 
   return { isSubscribed };
 };
