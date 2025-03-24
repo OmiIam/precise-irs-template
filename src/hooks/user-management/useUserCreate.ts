@@ -122,7 +122,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         toast({
           title: "Warning",
           description: "User created but profile data could not be fully updated.",
-          variant: "warning"
+          variant: "default" // Changed from "warning" to "default"
         });
       }
       
