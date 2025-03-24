@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { UserPlus } from 'lucide-react';
@@ -9,13 +9,17 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { signupSchema, SignupFormValues } from './signupSchema';
+import { DocumentUpload } from './DocumentUpload';
 
 interface SignupFormProps {
-  onSubmit: (values: SignupFormValues) => Promise<void>;
+  onSubmit: (values: SignupFormValues) => Promise<{ userId: string } | void>;
   isLoading: boolean;
 }
 
 const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [documentInfo, setDocumentInfo] = useState<{ path: string; name: string } | null>(null);
+  
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
@@ -26,6 +30,13 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
       confirmPassword: "",
     },
   });
+
+  const handleSubmit = async (values: SignupFormValues) => {
+    const result = await onSubmit(values);
+    if (result?.userId) {
+      setUserId(result.userId);
+    }
+  };
 
   return (
     <Card className="border-irs-lightGray">
@@ -39,7 +50,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
       </CardHeader>
       <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -110,11 +121,18 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
                 </FormItem>
               )}
             />
+
+            {userId && !documentInfo && (
+              <DocumentUpload 
+                userId={userId} 
+                onUploadComplete={setDocumentInfo} 
+              />
+            )}
             
             <Button 
               type="submit" 
               className="w-full bg-irs-blue text-white hover:bg-irs-darkBlue"
-              disabled={isLoading}
+              disabled={isLoading || (userId && !documentInfo)}
             >
               <UserPlus className="mr-2 h-4 w-4" /> 
               {isLoading ? "Creating Account..." : "Create Account"}

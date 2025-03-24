@@ -44,12 +44,13 @@ export const useSignup = () => {
 
         setUserId(data.user.id);
         setUserEmail(values.email);
-        setSignupComplete(true);
         
         toast({
           title: "Account created",
-          description: "Please complete the identity verification process.",
+          description: "Please upload your identification document to complete the signup.",
         });
+
+        return { userId: data.user.id };
       }
     } catch (error: any) {
       console.error("Error during signup:", error);

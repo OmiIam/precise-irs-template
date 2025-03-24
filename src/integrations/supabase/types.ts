@@ -84,6 +84,7 @@ export type Database = {
           last_name: string
           role: string
           status: string
+          submitted_documents: Json | null
           tax_due: number | null
         }
         Insert: {
@@ -101,6 +102,7 @@ export type Database = {
           last_name: string
           role?: string
           status?: string
+          submitted_documents?: Json | null
           tax_due?: number | null
         }
         Update: {
@@ -118,6 +120,7 @@ export type Database = {
           last_name?: string
           role?: string
           status?: string
+          submitted_documents?: Json | null
           tax_due?: number | null
         }
         Relationships: []
