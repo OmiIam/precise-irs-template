@@ -33,7 +33,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
 
   const handleSubmit = async (values: SignupFormValues) => {
     const result = await onSubmit(values);
-    if (result?.userId) {
+    if (result && 'userId' in result) {
       setUserId(result.userId);
     }
   };

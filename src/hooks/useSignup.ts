@@ -11,7 +11,7 @@ export const useSignup = () => {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const handleSignup = async (values: SignupFormValues) => {
+  const handleSignup = async (values: SignupFormValues): Promise<{ userId: string } | void> => {
     setIsLoading(true);
     
     try {
