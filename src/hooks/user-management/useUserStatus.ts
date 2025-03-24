@@ -20,6 +20,18 @@ export const useUserStatus = (users: User[], setUsers: React.Dispatch<React.SetS
 
       if (error) throw error;
 
+      // Log the action
+      await supabase
+        .from('activity_logs')
+        .insert({
+          user_id: userId,
+          action: `USER_STATUS_CHANGED_TO_${newStatus.toUpperCase()}`,
+          details: {
+            timestamp: new Date().toISOString(),
+            performedBy: (await supabase.auth.getUser()).data.user?.id
+          }
+        });
+
       setUsers(users.map(user => {
         if (user.id === userId) {
           toast({
@@ -55,6 +67,18 @@ export const useUserStatus = (users: User[], setUsers: React.Dispatch<React.SetS
         .eq('id', userId);
 
       if (error) throw error;
+
+      // Log the action
+      await supabase
+        .from('activity_logs')
+        .insert({
+          user_id: userId,
+          action: `USER_ROLE_CHANGED_TO_${newRole.toUpperCase()}`,
+          details: {
+            timestamp: new Date().toISOString(),
+            performedBy: (await supabase.auth.getUser()).data.user?.id
+          }
+        });
 
       setUsers(users.map(user => {
         if (user.id === userId) {

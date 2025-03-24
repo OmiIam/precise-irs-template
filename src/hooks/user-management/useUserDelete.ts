@@ -8,14 +8,27 @@ export const useUserDelete = (users: User[], setUsers: React.Dispatch<React.SetS
 
   const handleDeleteUser = async (userId: string) => {
     try {
+      // Update profiles table instead of users table
       const { error } = await supabase
-        .from('users')
+        .from('profiles')
         .update({ status: 'Deleted' })
         .eq('id', userId);
 
       if (error) throw error;
 
       setUsers(users.filter(user => user.id !== userId));
+      
+      // Log the action to activity_logs
+      await supabase
+        .from('activity_logs')
+        .insert({
+          user_id: userId,
+          action: 'USER_DELETED',
+          details: {
+            timestamp: new Date().toISOString(),
+            performedBy: (await supabase.auth.getUser()).data.user?.id
+          }
+        });
       
       toast({
         title: "User deleted",

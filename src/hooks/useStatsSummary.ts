@@ -35,24 +35,24 @@ export const useStatsSummary = () => {
     setError(null);
     
     try {
-      // Get total users count
+      // Get total users count from profiles
       const { count: totalUsers, error: usersError } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*', { count: 'exact', head: true });
       
       if (usersError) throw usersError;
       
-      // Get active users count
+      // Get active users count from profiles
       const { count: activeUsers, error: activeUsersError } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'Active');
       
       if (activeUsersError) throw activeUsersError;
       
-      // Get total tax due
+      // Get total tax due from profiles
       const { data: taxData, error: taxError } = await supabase
-        .from('users')
+        .from('profiles')
         .select('tax_due');
       
       if (taxError) throw taxError;
@@ -74,24 +74,24 @@ export const useStatsSummary = () => {
       
       if (pendingFilingsError) throw pendingFilingsError;
       
-      // Get total tax credits
+      // Get total tax credits from profiles
       const { data: creditsData, error: creditsError } = await supabase
-        .from('users')
-        .select('credits');
+        .from('profiles')
+        .select('available_credits');
       
       if (creditsError) throw creditsError;
       
-      const taxCredits = creditsData.reduce((sum, user) => sum + (user.credits || 0), 0);
+      const taxCredits = creditsData.reduce((sum, user) => sum + (user.available_credits || 0), 0);
       
       // Get approaching deadlines (next 30 days)
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
       
       const { count: approachingDeadlines, error: deadlinesError } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*', { count: 'exact', head: true })
-        .lt('deadline', thirtyDaysFromNow.toISOString().split('T')[0])
-        .gt('deadline', new Date().toISOString().split('T')[0]);
+        .lt('filing_deadline', thirtyDaysFromNow.toISOString())
+        .gt('filing_deadline', new Date().toISOString());
       
       if (deadlinesError) throw deadlinesError;
       

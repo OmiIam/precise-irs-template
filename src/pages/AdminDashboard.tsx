@@ -10,11 +10,13 @@ import DashboardHeader from '@/components/admin/dashboard/DashboardHeader';
 import DashboardContent from '@/components/admin/dashboard/DashboardContent';
 import UserDialogContainer from '@/components/admin/dashboard/UserDialogContainer';
 import { useAuth } from '@/contexts/auth';
+import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { resetActivityTimer } = useUserManagement();
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { 
     users, 
     isLoading, 
@@ -26,6 +28,26 @@ const AdminDashboard = () => {
     handleToggleUserRole
   } = useUserManagement();
   const { handleViewUser, handleImpersonateUser } = useUserActions();
+  
+  // Ensure user is allowed to access admin dashboard
+  useEffect(() => {
+    const checkAdminAccess = async () => {
+      // Get admin status from localStorage as a fallback
+      const adminAuth = localStorage.getItem('isAdminAuthenticated');
+      
+      // If user isn't admin and doesn't have admin auth, redirect
+      if (!isAdmin && adminAuth !== 'true') {
+        toast({
+          title: "Access Denied",
+          description: "You don't have permission to access the admin dashboard.",
+          variant: "destructive"
+        });
+        navigate('/dashboard', { replace: true });
+      }
+    };
+    
+    checkAdminAccess();
+  }, [isAdmin, navigate, toast]);
   
   // Reset activity timer on any user interaction with the page
   useEffect(() => {

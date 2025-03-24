@@ -73,55 +73,80 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
       
-      // Prepare user data
-      const userData = {
+      // Create auth user account
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUser.email,
         password: newUser.password,
-        firstName: firstName,
-        lastName: lastName || '',
-        role: newUser.role || 'User',
-        status: newUser.status || 'Active',
-        taxDue: newUser.taxDue || 0,
-        availableCredits: newUser.availableCredits || 0,
-        filingDeadline: newUser.filingDeadline ? newUser.filingDeadline.toISOString() : null
-      };
-      
-      // Call the Supabase Edge Function to create the user in Auth and profiles table
-      const { data, error } = await supabase.functions.invoke('create-user', {
-        body: { userData }
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          }
+        }
       });
       
-      if (error) {
-        console.error("Error invoking create-user function:", error);
+      if (authError) {
+        console.error("Error creating auth user:", authError);
         toast({
           title: "Error Creating User",
-          description: error.message || "There was a problem creating the user account.",
+          description: authError.message || "Failed to create user account.",
           variant: "destructive"
         });
         return false;
       }
       
-      if (!data.success) {
-        console.error("Error from create-user function:", data.error);
+      if (!authData.user) {
+        console.error("No user returned from signUp operation");
         toast({
           title: "Error Creating User",
-          description: data.error || "Failed to create user account.",
+          description: "Failed to create user account. No user data returned.",
           variant: "destructive"
         });
         return false;
       }
       
-      console.log("User created successfully:", data);
+      // Update the profile with additional data
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          role: newUser.role || 'User',
+          status: newUser.status || 'Active',
+          tax_due: newUser.taxDue || 0,
+          filing_deadline: newUser.filingDeadline?.toISOString(),
+          available_credits: newUser.availableCredits || 0
+        })
+        .eq('id', authData.user.id);
+      
+      if (profileError) {
+        console.error("Error updating profile:", profileError);
+        toast({
+          title: "Warning",
+          description: "User created but profile data could not be fully updated.",
+          variant: "warning"
+        });
+      }
+      
+      // Log the activity
+      await supabase
+        .from('activity_logs')
+        .insert({
+          user_id: authData.user.id,
+          action: 'USER_CREATED',
+          details: {
+            email: newUser.email,
+            timestamp: new Date().toISOString(),
+            createdBy: (await supabase.auth.getUser()).data.user?.id
+          }
+        });
       
       // Create formatted user object for the UI
-      const userId = data.data?.user?.id || crypto.randomUUID();
       const formattedUser: User = {
-        id: userId,
+        id: authData.user.id,
         name: newUser.name,
         email: newUser.email,
         role: newUser.role || 'User',
         status: newUser.status || 'Active',
-        lastLogin: 'Never', // This is just for UI display, not the database value
+        lastLogin: 'Never',
         taxDue: newUser.taxDue || 0,
         filingDeadline: newUser.filingDeadline,
         availableCredits: newUser.availableCredits || 0

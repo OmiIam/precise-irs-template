@@ -20,22 +20,23 @@ export const useFetchUsers = () => {
     setFetchInProgress(true);
     
     try {
+      // Fetch from profiles table instead of users table
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*');
 
       if (error) throw error;
 
       const formattedUsers = data.map(user => ({
         id: user.id,
-        name: user.name,
+        name: `${user.first_name} ${user.last_name}`,
         email: user.email,
         role: user.role,
         lastLogin: user.last_login ? new Date(user.last_login).toLocaleString() : 'Never',
         status: user.status,
         taxDue: user.tax_due || 0,
-        filingDeadline: user.deadline ? new Date(user.deadline) : undefined,
-        availableCredits: user.credits || 0
+        filingDeadline: user.filing_deadline ? new Date(user.filing_deadline) : undefined,
+        availableCredits: user.available_credits || 0
       }));
 
       setUsers(formattedUsers);
