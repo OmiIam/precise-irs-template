@@ -19,16 +19,18 @@ export const useLoginRedirect = () => {
         
         if (adminAuth === 'true') {
           setIsRedirecting(true);
+          console.log('Redirecting to admin dashboard from admin auth');
           // Use a slight delay to avoid the security error
           setTimeout(() => {
             navigate('/admin-dashboard', { replace: true });
-          }, 10);
+          }, 50);
           return;
         }
         
         // Then check for regular user authentication
         if (user) {
           setIsRedirecting(true);
+          console.log('Redirecting based on user role:', isAdmin ? 'admin' : 'regular user');
           // Use a slight delay to avoid the security error
           setTimeout(() => {
             if (isAdmin) {
@@ -36,7 +38,7 @@ export const useLoginRedirect = () => {
             } else {
               navigate('/dashboard', { replace: true });
             }
-          }, 10);
+          }, 50);
         }
       } catch (error) {
         console.error('Navigation error:', error);

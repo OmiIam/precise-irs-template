@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -35,31 +36,24 @@ const AdminLoginForm = ({ onToggleMode, setIsRedirecting }: AdminLoginFormProps)
     try {
       // Check if the credentials match the specific admin credentials
       if (values.email === "admin@admin.com" && values.password === "iXOeNiRqvO2QiN4t") {
-        try {
-          console.log('Admin credentials accepted. Redirecting to admin dashboard...');
-          
-          // Store admin status in localStorage
-          localStorage.setItem('isAdminAuthenticated', 'true');
-          
-          // Show success toast
-          toast({
-            title: "Admin Login successful",
-            description: "Welcome to the admin dashboard",
-          });
-          
-          // Redirect to admin dashboard directly with replace to avoid navigation stack issues
-          setIsRedirecting(true);
+        console.log('Admin credentials accepted. Redirecting to admin dashboard...');
+        
+        // Store admin status in localStorage
+        localStorage.setItem('isAdminAuthenticated', 'true');
+        
+        // Show success toast
+        toast({
+          title: "Admin Login successful",
+          description: "Welcome to the admin dashboard",
+        });
+        
+        // Set redirecting state to prevent multiple redirects
+        setIsRedirecting(true);
+
+        // Use setTimeout to avoid the security error when redirecting
+        setTimeout(() => {
           navigate('/admin-dashboard', { replace: true });
-          return;
-        } catch (error) {
-          console.error('Error during admin login redirect:', error);
-          toast({
-            title: "Admin Login failed",
-            description: "Error during redirect. Please try again.",
-            variant: "destructive",
-          });
-          setIsRedirecting(false);
-        }
+        }, 50);
       } else {
         // Show error for invalid admin credentials
         toast({
@@ -75,6 +69,7 @@ const AdminLoginForm = ({ onToggleMode, setIsRedirecting }: AdminLoginFormProps)
         description: "An unexpected error occurred. Please try again.",
         variant: "destructive",
       });
+      setIsRedirecting(false);
     }
   };
 

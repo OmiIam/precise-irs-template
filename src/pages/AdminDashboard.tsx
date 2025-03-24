@@ -73,9 +73,12 @@ const AdminDashboard = () => {
 
   // Log admin access for audit purposes
   useEffect(() => {
-    if (user) {
-      const logAdminAccess = async () => {
-        try {
+    const logAdminAccess = async () => {
+      try {
+        // Use localStorage admin flag if user is null (admin-only login)
+        const adminAuth = localStorage.getItem('isAdminAuthenticated');
+        
+        if (user) {
           await supabase
             .from('activity_logs')
             .insert({
@@ -86,13 +89,24 @@ const AdminDashboard = () => {
                 userAgent: navigator.userAgent
               }
             });
-        } catch (error) {
-          console.error("Error logging admin access:", error);
+        } else if (adminAuth === 'true') {
+          // Log admin access without user ID
+          await supabase
+            .from('activity_logs')
+            .insert({
+              action: 'ADMIN_ONLY_DASHBOARD_ACCESS',
+              details: {
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent
+              }
+            });
         }
-      };
-      
-      logAdminAccess();
-    }
+      } catch (error) {
+        console.error("Error logging admin access:", error);
+      }
+    };
+    
+    logAdminAccess();
   }, [user]);
 
   // Automatically fetch data when dashboard mounts

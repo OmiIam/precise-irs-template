@@ -12,30 +12,33 @@ export const useAuthCheck = (requireAdmin = false) => {
     const checkAuthentication = async () => {
       // Check for special admin authentication
       const adminAuth = localStorage.getItem('isAdminAuthenticated');
+      setIsAdminAuthenticated(adminAuth === 'true');
       
-      // If admin auth is set but we need to validate it
+      // If admin auth is set but we need to validate it for admin routes
       if (adminAuth === 'true' && requireAdmin) {
         try {
-          // Validate the current session is still valid
-          const { data: { session } } = await supabase.auth.getSession();
-          setIsAdminAuthenticated(!!session);
+          // Validate the current session is still valid if we have a user
+          if (user) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+              // Clear invalid admin auth if no valid session exists
+              localStorage.removeItem('isAdminAuthenticated');
+              setIsAdminAuthenticated(false);
+            }
+          }
         } catch (error) {
           console.error("Error validating session:", error);
-          setIsAdminAuthenticated(false);
-          // Clear invalid admin auth
-          localStorage.removeItem('isAdminAuthenticated');
+          // Don't clear adminAuth here - we want to allow pure admin login too
         }
-      } else {
-        setIsAdminAuthenticated(adminAuth === 'true');
       }
       
       setCheckComplete(true);
     };
     
     checkAuthentication();
-  }, [requireAdmin]);
+  }, [requireAdmin, user]);
 
-  // Determine access status
+  // Determine access status - note we're allowing admin access without user in certain cases
   const hasAccess = (
     // User exists for any protected route
     (user && !requireAdmin) || 
