@@ -28,9 +28,9 @@ export const useUserData = () => {
   }, [fetchUsers, handleDataChange]);
   
   // Set up realtime subscription
-  const { isSubscribed } = useUserSubscription(fetchUsers);
+  const { isSubscribed } = useUserSubscription(handleDataChange);
 
-  // Force refresh every 30 seconds as a backup mechanism
+  // Automatic refresh every 30 seconds as a fallback
   useEffect(() => {
     const intervalId = setInterval(() => {
       console.log("Performing scheduled refresh of user data");

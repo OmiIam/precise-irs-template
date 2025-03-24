@@ -18,36 +18,8 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
 
-      // Extract first and last name
-      const nameParts = newUser.name.trim().split(' ');
-      const firstName = nameParts[0];
-      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-
-      if (!firstName) {
-        toast({
-          title: "Invalid Name",
-          description: "First name is required.",
-          variant: "destructive"
-        });
-        return false;
-      }
-
-      // Validate password
-      if (!newUser.password || typeof newUser.password !== 'string' || newUser.password.length < 6) {
-        toast({
-          title: "Invalid Password",
-          description: "Password must be at least 6 characters long.",
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      console.log("Creating user with data:", {
-        ...newUser,
-        password: "[REDACTED]"
-      });
-      
-      // First check if user already exists by email
+      // Check if the email already exists
+      console.log("Checking if user email already exists:", newUser.email);
       const { data: existingUsers, error: checkError } = await supabase
         .from('profiles')
         .select('email')
@@ -73,9 +45,27 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
       
-      console.log("User doesn't exist, proceeding with auth.signUp");
+      console.log("Creating user with data:", {
+        ...newUser,
+        password: newUser.password ? "[REDACTED]" : undefined
+      });
       
       // Create auth user account
+      if (!newUser.password || newUser.password.length < 6) {
+        toast({
+          title: "Invalid Password",
+          description: "Password must be at least 6 characters long.",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      // Extract name parts for user metadata
+      const nameParts = newUser.name.trim().split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+      
+      // Create the user in Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: newUser.email,
         password: newUser.password,
@@ -97,8 +87,6 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
       
-      console.log("Auth.signUp response:", authData);
-      
       if (!authData.user) {
         console.error("No user returned from signUp operation");
         toast({
@@ -108,8 +96,6 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         });
         return false;
       }
-      
-      console.log("Updating profile with additional data for user ID:", authData.user.id);
       
       // Update the profile with additional data
       const { error: profileError } = await supabase
@@ -132,24 +118,6 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         });
       }
       
-      // Log the activity
-      console.log("Logging activity for user creation");
-      try {
-        await supabase
-          .from('activity_logs')
-          .insert({
-            user_id: authData.user.id,
-            action: 'USER_CREATED',
-            details: {
-              email: newUser.email,
-              timestamp: new Date().toISOString(),
-              createdBy: (await supabase.auth.getUser()).data.user?.id || 'system'
-            }
-          });
-      } catch (logError) {
-        console.error("Error logging activity:", logError);
-      }
-      
       // Create formatted user object for the UI
       const formattedUser: User = {
         id: authData.user.id,
@@ -163,8 +131,6 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         availableCredits: newUser.availableCredits || 0
       };
       
-      console.log("User created successfully, updating UI with formatted user:", formattedUser);
-      
       // Update UI immediately
       setUsers(prevUsers => [...prevUsers, formattedUser]);
       
@@ -174,11 +140,8 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         description: `New user ${formattedUser.name} has been created successfully.`
       });
       
-      // Force a fetch from the server to ensure data consistency
-      setTimeout(() => {
-        console.log("Triggering user data refresh after creation");
-        window.dispatchEvent(new CustomEvent('refresh-users'));
-      }, 1000);
+      // Force a refresh from the server to ensure data consistency
+      window.dispatchEvent(new CustomEvent('refresh-users'));
       
       return true;
     } catch (error) {
