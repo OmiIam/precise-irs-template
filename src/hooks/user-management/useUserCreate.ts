@@ -86,7 +86,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         tax_due: newUser.taxDue || 0,
         credits: newUser.availableCredits || 0,
         deadline: newUser.filingDeadline ? newUser.filingDeadline.toISOString().split('T')[0] : null, // Convert Date to YYYY-MM-DD string format
-        last_login: 'Never'
+        last_login: null // Set to null instead of 'Never' string which can't be stored in a timestamp field
       };
       
       const { error: insertError } = await supabase
@@ -110,7 +110,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         email: newUser.email,
         role: newUser.role || 'User',
         status: newUser.status || 'Active',
-        lastLogin: 'Never',
+        lastLogin: 'Never', // This is just for UI display, not the database value
         taxDue: newUser.taxDue || 0,
         filingDeadline: newUser.filingDeadline,
         availableCredits: newUser.availableCredits || 0
