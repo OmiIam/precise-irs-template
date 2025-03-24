@@ -70,7 +70,7 @@ export const useStatsSummary = () => {
       
       // Parse and sum the tax_due values
       const totalTaxDue = taxData.reduce((sum, user) => {
-        const taxValue = parseFloat(user.tax_due) || 0;
+        const taxValue = user.tax_due === null ? 0 : (typeof user.tax_due === 'string' ? parseFloat(user.tax_due) : user.tax_due);
         return sum + taxValue;
       }, 0);
       
@@ -109,7 +109,7 @@ export const useStatsSummary = () => {
       
       // Parse and sum the available_credits values
       const taxCredits = creditsData.reduce((sum, user) => {
-        const creditsValue = parseFloat(user.available_credits) || 0;
+        const creditsValue = user.available_credits === null ? 0 : (typeof user.available_credits === 'string' ? parseFloat(user.available_credits) : user.available_credits);
         return sum + creditsValue;
       }, 0);
       

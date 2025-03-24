@@ -44,6 +44,13 @@ export const useFetchUsers = () => {
           filingDeadline = undefined;
         }
         
+        // Safely handle tax_due and available_credits which might be numbers or strings
+        const taxDue = user.tax_due === null ? 0 : 
+          (typeof user.tax_due === 'string' ? parseFloat(user.tax_due) : user.tax_due);
+          
+        const availableCredits = user.available_credits === null ? 0 : 
+          (typeof user.available_credits === 'string' ? parseFloat(user.available_credits) : user.available_credits);
+        
         return {
           id: user.id,
           name: `${user.first_name} ${user.last_name}`,
@@ -51,9 +58,9 @@ export const useFetchUsers = () => {
           role: user.role,
           lastLogin: user.last_login ? new Date(user.last_login).toLocaleString() : 'Never',
           status: user.status,
-          taxDue: parseFloat(user.tax_due || '0'),
-          filingDeadline: filingDeadline,
-          availableCredits: parseFloat(user.available_credits || '0')
+          taxDue,
+          filingDeadline,
+          availableCredits
         };
       });
 
