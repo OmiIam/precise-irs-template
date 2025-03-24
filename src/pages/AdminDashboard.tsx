@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client'; // This import was commented out but is needed
 import AdminSidebar from '@/components/admin/AdminSidebar';

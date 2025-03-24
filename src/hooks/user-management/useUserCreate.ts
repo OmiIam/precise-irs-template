@@ -80,18 +80,18 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         id: newUserId,
         name: newUser.name,
         email: newUser.email,
-        password: newUser.password, // Note: In a real app, you'd hash this password
+        password: newUser.password,
         role: newUser.role || 'User',
         status: newUser.status || 'Active',
         tax_due: newUser.taxDue || 0,
         credits: newUser.availableCredits || 0,
-        deadline: newUser.filingDeadline ? newUser.filingDeadline.toISOString().split('T')[0] : null, // Convert Date to YYYY-MM-DD string format
-        last_login: null // Set to null instead of 'Never' string which can't be stored in a timestamp field
+        deadline: newUser.filingDeadline ? newUser.filingDeadline.toISOString().split('T')[0] : null,
+        last_login: null
       };
       
       const { error: insertError } = await supabase
         .from('users')
-        .insert(userData); // Pass the single object, not an array
+        .insert(userData);
       
       if (insertError) {
         console.error("Error creating user:", insertError);
