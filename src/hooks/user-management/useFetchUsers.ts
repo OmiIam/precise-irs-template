@@ -8,17 +8,16 @@ export const useFetchUsers = () => {
   const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
+  const [fetchInProgress, setFetchInProgress] = useState(false);
 
   const fetchUsers = async () => {
-    // Prevent multiple rapid fetch requests
-    const now = Date.now();
-    if (now - lastFetchTime < 1000 && isLoading) {
+    // Prevent concurrent fetch operations
+    if (fetchInProgress) {
       return;
     }
     
     setIsLoading(true);
-    setLastFetchTime(now);
+    setFetchInProgress(true);
     
     try {
       const { data, error } = await supabase
@@ -49,6 +48,7 @@ export const useFetchUsers = () => {
       });
     } finally {
       setIsLoading(false);
+      setFetchInProgress(false);
     }
   };
 

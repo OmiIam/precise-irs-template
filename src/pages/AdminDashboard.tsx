@@ -1,5 +1,5 @@
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
@@ -26,17 +26,6 @@ const AdminDashboard = () => {
     handleToggleUserRole
   } = useUserManagement();
   const { handleViewUser, handleImpersonateUser } = useUserActions();
-  
-  // Use useCallback for the refresh function to ensure it doesn't recreate on every render
-  const handleRefresh = useCallback(() => {
-    if (!isLoading) {
-      fetchUsers();
-      toast({
-        title: "Data Refreshed",
-        description: "Latest data has been loaded from the server."
-      });
-    }
-  }, [fetchUsers, toast, isLoading]);
   
   // Reset activity timer on any user interaction with the page
   useEffect(() => {
@@ -84,7 +73,7 @@ const AdminDashboard = () => {
     }
   }, [user]);
 
-  // Automatically refresh data when dashboard mounts
+  // Automatically fetch data when dashboard mounts
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
@@ -102,9 +91,7 @@ const AdminDashboard = () => {
             {({ handleAddUser, handleEditUser, dialogComponent }) => (
               <>
                 <DashboardHeader 
-                  onRefresh={handleRefresh}
                   onAddUser={handleAddUser}
-                  isLoading={isLoading}
                 />
                 
                 <DashboardContent 
