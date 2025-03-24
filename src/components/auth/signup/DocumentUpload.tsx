@@ -13,24 +13,7 @@ interface DocumentUploadProps {
 export const DocumentUpload: React.FC<DocumentUploadProps> = ({ userId, onUploadComplete }) => {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
-  const [session, setSession] = useState<any>(null);
-
-  useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      console.log("Initial session in DocumentUpload:", session);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log("Auth state changed in DocumentUpload:", session);
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
+  
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) {
@@ -41,36 +24,11 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ userId, onUpload
     try {
       setIsUploading(true);
       
-      // First check if the user-documents bucket exists
-      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-      console.log("Available buckets:", buckets);
-      
-      if (bucketsError) {
-        console.error("Error checking buckets:", bucketsError);
-        throw bucketsError;
-      }
-      
-      const bucketExists = buckets?.some(bucket => bucket.name === 'user-documents');
-      if (!bucketExists) {
-        console.log("Bucket 'user-documents' doesn't exist, creating it");
-        // Create the bucket if it doesn't exist
-        const { error: createBucketError } = await supabase.storage.createBucket('user-documents', {
-          public: false
-        });
-        
-        if (createBucketError) {
-          console.error("Error creating bucket:", createBucketError);
-          throw createBucketError;
-        }
-        console.log("Bucket 'user-documents' created successfully");
-      }
-      
       // Ensure the file path contains userId as the first folder segment
       const fileName = `${userId}/${Date.now()}-${file.name}`;
       
       console.log('Uploading file to:', fileName);
       console.log('User ID:', userId);
-      console.log('Active session:', session);
       
       const { error: uploadError, data } = await supabase.storage
         .from('user-documents')
@@ -88,7 +46,6 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ userId, onUpload
       
       // Now update the user's profile to record that they've uploaded a document
       if (userId) {
-        // Use JSON.stringify for the document info instead of SQL tag template literal
         const { error: updateError } = await supabase
           .from('profiles')
           .update({

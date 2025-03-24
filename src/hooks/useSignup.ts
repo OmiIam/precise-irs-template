@@ -61,6 +61,14 @@ export const useSignup = () => {
       } else {
         console.log("Profile created/updated successfully");
       }
+      
+      // Ensure the user-documents bucket exists
+      try {
+        await supabase.functions.invoke('create-user-documents-bucket');
+      } catch (bucketError) {
+        console.error("Error ensuring user-documents bucket exists:", bucketError);
+        // Continue anyway since this is non-critical
+      }
 
       // Log the signup activity
       try {

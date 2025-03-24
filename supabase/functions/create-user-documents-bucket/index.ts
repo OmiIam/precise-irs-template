@@ -14,23 +14,26 @@ serve(async (req) => {
   }
 
   try {
-    // Create a Supabase client with the Auth context of the logged in user
+    // Create a Supabase client with the Admin key for full access
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+    
+    if (!supabaseServiceKey) {
+      throw new Error("SUPABASE_SERVICE_ROLE_KEY is not set");
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get the list of existing buckets
+    // Check if bucket exists
     const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
     
     if (bucketsError) {
       throw bucketsError;
     }
     
-    // Check if the user-documents bucket already exists
-    const userDocumentsBucket = buckets.find(bucket => bucket.name === 'user-documents');
-    
-    if (!userDocumentsBucket) {
-      // Create the bucket if it doesn't exist
+    // Create the bucket if it doesn't exist
+    const bucketExists = buckets.some(bucket => bucket.name === 'user-documents');
+    if (!bucketExists) {
       const { error: createError } = await supabase.storage.createBucket('user-documents', {
         public: false
       });
@@ -38,24 +41,25 @@ serve(async (req) => {
       if (createError) {
         throw createError;
       }
+
+      console.log("Created user-documents bucket");
       
-      // Create RLS policies for the bucket
-      // Note: This might require admin privileges and might not work with anon key
-      
-      return new Response(
-        JSON.stringify({ success: true, message: "user-documents bucket created successfully" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      // Create RLS policies for the bucket to allow authenticated users to upload
+      // These are now handled by the SQL migration
     }
     
     return new Response(
-      JSON.stringify({ success: true, message: "user-documents bucket already exists" }),
+      JSON.stringify({ 
+        success: true, 
+        message: bucketExists ? "user-documents bucket already exists" : "user-documents bucket created successfully" 
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
+    console.error("Error creating user-documents bucket:", error);
     return new Response(
       JSON.stringify({ success: false, error: error.message }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
     );
   }
 });
