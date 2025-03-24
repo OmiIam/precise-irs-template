@@ -116,7 +116,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       const userId = authData.user.id;
       
       // Step 3: Create user profile
-      const profileData = {
+      const profileDataToInsert = {
         id: userId,
         first_name: firstName,
         last_name: lastName,
@@ -129,9 +129,9 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         created_at: new Date().toISOString()
       };
       
-      const { data: profileData, error: profileError } = await supabase
+      const { data: insertedProfile, error: profileError } = await supabase
         .from('profiles')
-        .insert([profileData])
+        .insert([profileDataToInsert])
         .select()
         .single();
       
