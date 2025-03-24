@@ -26,6 +26,20 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
   onToggleUserStatus,
   onToggleUserRole,
 }) => {
+  // Safely format the filing deadline date
+  const formatDeadline = (deadline: Date | undefined): string => {
+    if (!deadline) return "N/A";
+    try {
+      // Ensure deadline is a Date object
+      const deadlineDate = deadline instanceof Date ? deadline : new Date(deadline);
+      if (isNaN(deadlineDate.getTime())) return "Invalid date";
+      return format(deadlineDate, "MM/dd/yyyy");
+    } catch (error) {
+      console.error("Error formatting deadline:", error, deadline);
+      return "Invalid date";
+    }
+  };
+
   return (
     <TableRow>
       <TableCell className="font-medium">{user.id}</TableCell>
@@ -45,13 +59,13 @@ const UserTableRow: React.FC<UserTableRowProps> = ({
       <TableCell className="hidden md:table-cell">
         <div className="text-xs space-y-1">
           <div className="flex items-center">
-            <span>Due: {formatCurrency(user.taxDue)}</span>
+            <span>Due: {formatCurrency(user.taxDue || 0)}</span>
           </div>
           <div>
-            Deadline: {user.filingDeadline ? format(new Date(user.filingDeadline), "MM/dd/yyyy") : "N/A"}
+            Deadline: {formatDeadline(user.filingDeadline)}
           </div>
           <div>
-            Credits: {formatCurrency(user.availableCredits)}
+            Credits: {formatCurrency(user.availableCredits || 0)}
           </div>
         </div>
       </TableCell>

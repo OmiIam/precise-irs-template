@@ -22,15 +22,30 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
     formData.filingDeadline || new Date()
   );
   
-  // Ensure dates are synchronized
+  // Ensure dates are synchronized when form data changes
   useEffect(() => {
     if (formData.filingDeadline) {
-      setSelectedDate(new Date(formData.filingDeadline));
+      try {
+        const dateValue = formData.filingDeadline instanceof Date 
+          ? formData.filingDeadline 
+          : new Date(formData.filingDeadline);
+          
+        if (!isNaN(dateValue.getTime())) {
+          setSelectedDate(dateValue);
+        } else {
+          console.warn("Invalid filing deadline date:", formData.filingDeadline);
+          setSelectedDate(new Date());
+        }
+      } catch (error) {
+        console.error("Error parsing filing deadline:", error);
+        setSelectedDate(new Date());
+      }
     }
   }, [formData.filingDeadline]);
   
   const handleSetDate = (date: Date | undefined) => {
     if (date) {
+      console.log("Setting new date:", date);
       setSelectedDate(date);
       handleDateChange(date);
     }
@@ -57,7 +72,7 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
           name="taxDue"
           type="number"
           placeholder="0.00"
-          value={formData.taxDue === 0 ? '' : formData.taxDue}
+          value={formData.taxDue === undefined || formData.taxDue === 0 ? '' : formData.taxDue}
           onChange={handleChange}
           className="col-span-3"
         />
@@ -72,7 +87,7 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
           name="availableCredits"
           type="number"
           placeholder="0.00"
-          value={formData.availableCredits === 0 ? '' : formData.availableCredits}
+          value={formData.availableCredits === undefined || formData.availableCredits === 0 ? '' : formData.availableCredits}
           onChange={handleChange}
           className="col-span-3"
         />

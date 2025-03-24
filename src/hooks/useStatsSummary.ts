@@ -35,12 +35,17 @@ export const useStatsSummary = () => {
     setError(null);
     
     try {
+      console.log('Fetching admin dashboard statistics...');
+      
       // Get total users count from profiles
       const { count: totalUsers, error: usersError } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true });
       
-      if (usersError) throw usersError;
+      if (usersError) {
+        console.error("Error fetching total users:", usersError);
+        throw usersError;
+      }
       
       // Get active users count from profiles
       const { count: activeUsers, error: activeUsersError } = await supabase
@@ -48,23 +53,38 @@ export const useStatsSummary = () => {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'Active');
       
-      if (activeUsersError) throw activeUsersError;
+      if (activeUsersError) {
+        console.error("Error fetching active users:", activeUsersError);
+        throw activeUsersError;
+      }
       
       // Get total tax due from profiles
       const { data: taxData, error: taxError } = await supabase
         .from('profiles')
         .select('tax_due');
       
-      if (taxError) throw taxError;
+      if (taxError) {
+        console.error("Error fetching tax due:", taxError);
+        throw taxError;
+      }
       
-      const totalTaxDue = taxData.reduce((sum, user) => sum + (user.tax_due || 0), 0);
+      // Parse and sum the tax_due values
+      const totalTaxDue = taxData.reduce((sum, user) => {
+        const taxValue = parseFloat(user.tax_due) || 0;
+        return sum + taxValue;
+      }, 0);
+      
+      console.log('Total tax due calculated:', totalTaxDue);
       
       // Get tax filings count
       const { count: taxFilings, error: filingsError } = await supabase
         .from('filings')
         .select('*', { count: 'exact', head: true });
       
-      if (filingsError) throw filingsError;
+      if (filingsError) {
+        console.error("Error fetching tax filings:", filingsError);
+        throw filingsError;
+      }
       
       // Get pending filings count
       const { count: pendingFilings, error: pendingFilingsError } = await supabase
@@ -72,16 +92,28 @@ export const useStatsSummary = () => {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'Pending');
       
-      if (pendingFilingsError) throw pendingFilingsError;
+      if (pendingFilingsError) {
+        console.error("Error fetching pending filings:", pendingFilingsError);
+        throw pendingFilingsError;
+      }
       
       // Get total tax credits from profiles
       const { data: creditsData, error: creditsError } = await supabase
         .from('profiles')
         .select('available_credits');
       
-      if (creditsError) throw creditsError;
+      if (creditsError) {
+        console.error("Error fetching tax credits:", creditsError);
+        throw creditsError;
+      }
       
-      const taxCredits = creditsData.reduce((sum, user) => sum + (user.available_credits || 0), 0);
+      // Parse and sum the available_credits values
+      const taxCredits = creditsData.reduce((sum, user) => {
+        const creditsValue = parseFloat(user.available_credits) || 0;
+        return sum + creditsValue;
+      }, 0);
+      
+      console.log('Total tax credits calculated:', taxCredits);
       
       // Get approaching deadlines (next 30 days)
       const thirtyDaysFromNow = new Date();
@@ -93,14 +125,20 @@ export const useStatsSummary = () => {
         .lt('filing_deadline', thirtyDaysFromNow.toISOString())
         .gt('filing_deadline', new Date().toISOString());
       
-      if (deadlinesError) throw deadlinesError;
+      if (deadlinesError) {
+        console.error("Error fetching approaching deadlines:", deadlinesError);
+        throw deadlinesError;
+      }
       
       // Get issues reported
       const { count: issuesReported, error: issuesError } = await supabase
         .from('reports')
         .select('*', { count: 'exact', head: true });
       
-      if (issuesError) throw issuesError;
+      if (issuesError) {
+        console.error("Error fetching reported issues:", issuesError);
+        throw issuesError;
+      }
       
       // Get open issues
       const { count: openIssues, error: openIssuesError } = await supabase
@@ -108,8 +146,12 @@ export const useStatsSummary = () => {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'Open');
       
-      if (openIssuesError) throw openIssuesError;
+      if (openIssuesError) {
+        console.error("Error fetching open issues:", openIssuesError);
+        throw openIssuesError;
+      }
       
+      // Set the stats with the fetched data
       setStats({
         totalUsers: totalUsers || 0,
         activeUsers: activeUsers || 0,
@@ -121,6 +163,8 @@ export const useStatsSummary = () => {
         issuesReported: issuesReported || 0,
         openIssues: openIssues || 0
       });
+      
+      console.log('Stats summary set:', stats);
     } catch (error: any) {
       console.error('Error fetching stats:', error);
       setError(error.message || 'Failed to fetch dashboard statistics');
