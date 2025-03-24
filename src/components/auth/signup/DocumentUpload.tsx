@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Upload, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,10 +13,25 @@ interface DocumentUploadProps {
 export const DocumentUpload: React.FC<DocumentUploadProps> = ({ userId, onUploadComplete }) => {
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
+  const [session, setSession] = useState<any>(null);
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !session) return;
 
     try {
       setIsUploading(true);
@@ -24,6 +39,7 @@ export const DocumentUpload: React.FC<DocumentUploadProps> = ({ userId, onUpload
       // Ensure the file path contains userId as the first folder segment
       const fileName = `${userId}/${Date.now()}-${file.name}`;
       
+      console.log('Current session:', session);
       console.log('Uploading file to:', fileName);
       console.log('User ID:', userId);
       console.log('Bucket:', 'user-documents');
