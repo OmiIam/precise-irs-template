@@ -6,7 +6,16 @@ import { useUserStatus } from './user-management/useUserStatus';
 
 export const useUserManagement = () => {
   const { resetActivityTimer } = useActivityTimer();
-  const { users, setUsers, isLoading, fetchUsers } = useUserData();
+  const { 
+    users, 
+    setUsers, 
+    isLoading, 
+    fetchUsers,
+    isSubscribed,
+    lastRefresh,
+    refreshUsers
+  } = useUserData();
+  
   const { handleSaveUser, handleCreateUser, handleDeleteUser } = useUserCrud(users, setUsers);
   const { handleToggleUserStatus, handleToggleUserRole, isAdminUser } = useUserStatus(users, setUsers);
 
@@ -18,6 +27,9 @@ export const useUserManagement = () => {
     users,
     isLoading,
     fetchUsers,
+    isSubscribed,
+    lastRefresh,
+    refreshUsers,
     
     // User CRUD operations
     handleSaveUser,

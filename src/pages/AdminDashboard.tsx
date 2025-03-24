@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
@@ -11,6 +11,9 @@ import DashboardContent from '@/components/admin/dashboard/DashboardContent';
 import UserDialogContainer from '@/components/admin/dashboard/UserDialogContainer';
 import { useAuth } from '@/contexts/auth';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { ReloadIcon } from '@radix-ui/react-icons';
+import { format } from 'date-fns';
 
 const AdminDashboard = () => {
   const { toast } = useToast();
@@ -25,9 +28,13 @@ const AdminDashboard = () => {
     handleCreateUser,
     handleDeleteUser,
     handleToggleUserStatus,
-    handleToggleUserRole
+    handleToggleUserRole,
+    isSubscribed,
+    lastRefresh,
+    refreshUsers
   } = useUserManagement();
   const { handleViewUser, handleImpersonateUser } = useUserActions();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Ensure user is allowed to access admin dashboard
   useEffect(() => {
@@ -109,21 +116,25 @@ const AdminDashboard = () => {
     logAdminAccess();
   }, [user]);
 
-  // Automatically fetch data when dashboard mounts and refresh periodically
-  useEffect(() => {
-    // Initial data fetch
-    fetchUsers();
-    
-    // Set up refresh interval (every 30 seconds)
-    const refreshInterval = setInterval(() => {
-      console.log("Periodic user data refresh");
-      fetchUsers();
-    }, 30000);
-    
-    return () => {
-      clearInterval(refreshInterval);
-    };
-  }, [fetchUsers]);
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await fetchUsers();
+      toast({
+        title: "Data Refreshed",
+        description: "User data has been refreshed successfully."
+      });
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh user data. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const handleUserCreated = async () => {
     console.log("User created, triggering data refresh");
@@ -148,9 +159,42 @@ const AdminDashboard = () => {
           >
             {({ handleAddUser, handleEditUser, dialogComponent }) => (
               <>
-                <DashboardHeader 
-                  onAddUser={handleAddUser}
-                />
+                <div className="flex justify-between items-center p-4 bg-white border-b">
+                  <DashboardHeader 
+                    onAddUser={handleAddUser}
+                  />
+                  
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm text-gray-500">
+                      {isSubscribed ? (
+                        <span className="text-green-500 flex items-center">
+                          <span className="h-2 w-2 bg-green-500 rounded-full mr-1"></span> Realtime updates active
+                        </span>
+                      ) : (
+                        <span className="text-amber-500 flex items-center">
+                          <span className="h-2 w-2 bg-amber-500 rounded-full mr-1"></span> Realtime updates inactive
+                        </span>
+                      )}
+                      <div className="text-xs mt-1">
+                        Last updated: {format(lastRefresh, 'HH:mm:ss')}
+                      </div>
+                    </div>
+                    
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleManualRefresh}
+                      disabled={isRefreshing}
+                    >
+                      {isRefreshing ? (
+                        <ReloadIcon className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <ReloadIcon className="mr-2 h-4 w-4" />
+                      )}
+                      Refresh
+                    </Button>
+                  </div>
+                </div>
                 
                 <DashboardContent 
                   users={users}

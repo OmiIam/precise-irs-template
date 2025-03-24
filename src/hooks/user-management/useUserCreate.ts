@@ -143,7 +143,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
             details: {
               email: newUser.email,
               timestamp: new Date().toISOString(),
-              createdBy: (await supabase.auth.getUser()).data.user?.id
+              createdBy: (await supabase.auth.getUser()).data.user?.id || 'system'
             }
           });
       } catch (logError) {
@@ -165,7 +165,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       
       console.log("User created successfully, updating UI with formatted user:", formattedUser);
       
-      // Update UI
+      // Update UI immediately
       setUsers(prevUsers => [...prevUsers, formattedUser]);
       
       // Show success message
