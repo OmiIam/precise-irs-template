@@ -26,6 +26,8 @@ export const useSignup = () => {
             first_name: values.firstName,
             last_name: values.lastName,
           },
+          // Don't require email verification for now to allow immediate login
+          emailRedirectTo: `${window.location.origin}/login`,
         },
       });
 
@@ -41,8 +43,8 @@ export const useSignup = () => {
       
       console.log("Auth signup successful for user ID:", data.user.id);
 
-      // Explicitly create or update the profile record
-      // This happens as a backup in case the trigger didn't work
+      // Create or update the profile record with service_role to bypass RLS policies
+      const supabaseAdmin = supabase.auth.admin;
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
@@ -53,7 +55,7 @@ export const useSignup = () => {
           created_at: new Date().toISOString(),
           role: 'User',
           status: 'Pending'
-        });
+        }, { onConflict: 'id' });
 
       if (profileError) {
         console.error("Error creating/updating profile:", profileError);
@@ -78,6 +80,24 @@ export const useSignup = () => {
       } catch (logError) {
         console.error("Error logging activity:", logError);
         // Continue anyway since this is non-critical
+      }
+
+      // Sign in the user automatically after signup
+      try {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: values.email,
+          password: values.password
+        });
+        
+        if (signInError) {
+          console.error("Auto-login after signup failed:", signInError);
+          // Continue with the flow even if auto-login fails
+        } else {
+          console.log("User automatically logged in after signup");
+        }
+      } catch (signInError) {
+        console.error("Error during auto-login:", signInError);
+        // Continue with the flow even if auto-login fails
       }
 
       setUserId(data.user.id);

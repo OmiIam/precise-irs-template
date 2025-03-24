@@ -40,19 +40,29 @@ export const checkUserRole = async (userId: string): Promise<boolean> => {
 // Sign in with email and password
 export const signInWithEmail = async (email: string, password: string) => {
   try {
+    console.log("Attempting login with email:", email);
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
     
-    if (error) throw error;
+    if (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
     
     // Update last login timestamp
     if (data.user) {
-      await supabase
-        .from('profiles')
-        .update({ last_login: new Date().toISOString() })
-        .eq('id', data.user.id);
+      console.log("Login successful for user:", data.user.id);
+      try {
+        await supabase
+          .from('profiles')
+          .update({ last_login: new Date().toISOString() })
+          .eq('id', data.user.id);
+      } catch (updateError) {
+        console.error("Error updating last login:", updateError);
+        // Non-critical error, continue with login process
+      }
     }
     
     return { error: null };
@@ -78,6 +88,7 @@ export const signUpWithEmail = async (
           first_name: firstName,
           last_name: lastName,
         },
+        emailRedirectTo: `${window.location.origin}/login`,
       },
     });
     

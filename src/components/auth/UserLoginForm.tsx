@@ -35,6 +35,7 @@ const UserLoginForm = ({ onToggleMode, signIn }: UserLoginFormProps) => {
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
     try {      
       setIsLoading(true);
+      console.log("Attempting to sign in with email:", values.email);
       
       // Regular user login
       const { error } = await signIn(values.email, values.password);
@@ -45,7 +46,8 @@ const UserLoginForm = ({ onToggleMode, signIn }: UserLoginFormProps) => {
         let errorMessage = "Check your email and password and try again";
         if (error.message) {
           if (error.message.includes("Invalid login")) {
-            errorMessage = "Invalid email or password. Please try again.";
+            // This could be due to email verification not being completed
+            errorMessage = "Invalid email or password. If you just signed up, please check your email for verification instructions or try again later.";
           } else {
             errorMessage = error.message;
           }
