@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -33,13 +32,10 @@ const AdminDashboard = () => {
   const { handleViewUser, handleImpersonateUser } = useUserActions();
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // Ensure user is allowed to access admin dashboard
   useEffect(() => {
     const checkAdminAccess = async () => {
-      // Get admin status from localStorage as a fallback
       const adminAuth = localStorage.getItem('isAdminAuthenticated');
       
-      // If user isn't admin and doesn't have admin auth, redirect
       if (!isAdmin && adminAuth !== 'true') {
         toast({
           title: "Access Denied",
@@ -53,21 +49,17 @@ const AdminDashboard = () => {
     checkAdminAccess();
   }, [isAdmin, navigate, toast]);
   
-  // Reset activity timer on any user interaction with the page
   useEffect(() => {
-    // Set up event listeners for admin dashboard activity
     const activityEvents = ['mousedown', 'keypress', 'scroll', 'touchstart'];
     
     const handleUserActivity = () => {
       resetActivityTimer();
     };
     
-    // Add event listeners
     activityEvents.forEach(event => {
       window.addEventListener(event, handleUserActivity);
     });
     
-    // Clean up event listeners on unmount
     return () => {
       activityEvents.forEach(event => {
         window.removeEventListener(event, handleUserActivity);
@@ -75,11 +67,9 @@ const AdminDashboard = () => {
     };
   }, [resetActivityTimer]);
 
-  // Log admin access for audit purposes
   useEffect(() => {
     const logAdminAccess = async () => {
       try {
-        // Use localStorage admin flag if user is null (admin-only login)
         const adminAuth = localStorage.getItem('isAdminAuthenticated');
         
         if (user) {
@@ -94,7 +84,6 @@ const AdminDashboard = () => {
               }
             });
         } else if (adminAuth === 'true') {
-          // Log admin access without user ID
           await supabase
             .from('activity_logs')
             .insert({

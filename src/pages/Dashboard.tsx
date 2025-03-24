@@ -1,271 +1,109 @@
-import React, { useEffect } from 'react';
-import { Header } from '@/components/Header';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Button } from '@/components/ui/button';
-import { 
-  ArrowRight, 
-  BarChart3, 
-  Calendar, 
-  DollarSign, 
-  Download, 
-  FileText, 
-  LayoutDashboard, 
-  Menu, 
-  Percent, 
-  RefreshCw, 
-  Settings, 
-  UserCircle 
-} from 'lucide-react';
-import { InfoCard } from '@/components/InfoCard';
-import { cn } from '@/lib/utils';
-import { useActivityTimer } from '@/hooks/user-management/useActivityTimer';
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/contexts/auth';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
-  const { resetActivityTimer } = useActivityTimer();
-  
-  useEffect(() => {
-    const activityEvents = ['mousedown', 'keypress', 'scroll', 'touchstart'];
-    
-    const handleUserActivity = () => {
-      resetActivityTimer();
-    };
-    
-    activityEvents.forEach(event => {
-      window.addEventListener(event, handleUserActivity);
-    });
-    
-    return () => {
-      activityEvents.forEach(event => {
-        window.removeEventListener(event, handleUserActivity);
-      });
-    };
-  }, [resetActivityTimer]);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [impersonating, setImpersonating] = useState(false);
+  const [impersonatedUser, setImpersonatedUser] = useState<any>(null);
 
-  const taxData = {
-    totalDue: 4250.75,
-    lastUpdated: 'March 20, 2025',
-    filingDeadline: 'April 15, 2025',
-    refundStatus: 'Pending',
-    taxCredits: [
-      { name: 'Earned Income Credit', amount: 1500 },
-      { name: 'Child Tax Credit', amount: 2000 },
-      { name: 'Education Credit', amount: 500 },
-    ],
-    recentForms: [
-      { id: 'W-2', name: 'Wage and Tax Statement', date: 'Jan 31, 2025' },
-      { id: '1099-INT', name: 'Interest Income', date: 'Feb 10, 2025' },
-      { id: '1098-E', name: 'Student Loan Interest', date: 'Feb 15, 2025' },
-    ]
+  useEffect(() => {
+    // Check if we're impersonating a user
+    const isImpersonating = localStorage.getItem('impersonating') === 'true';
+    
+    if (isImpersonating) {
+      try {
+        const userData = JSON.parse(localStorage.getItem('impersonatedUser') || '{}');
+        if (userData.id) {
+          setImpersonating(true);
+          setImpersonatedUser(userData);
+          
+          toast({
+            title: "Impersonation Mode",
+            description: `You are viewing as ${userData.name} (${userData.email})`,
+          });
+        }
+      } catch (error) {
+        console.error("Error parsing impersonated user data:", error);
+      }
+    }
+  }, [toast]);
+
+  const handleEndImpersonation = () => {
+    localStorage.removeItem('impersonating');
+    localStorage.removeItem('impersonatedUser');
+    setImpersonating(false);
+    setImpersonatedUser(null);
+    navigate('/admin-dashboard');
+    
+    toast({
+      title: "Impersonation Ended",
+      description: "Returned to admin view",
+    });
   };
 
+  const currentUser = impersonating ? impersonatedUser : user;
+
   return (
-    <div className="min-h-screen bg-irs-gray">
-      <Header />
-      
-      <div className="container mx-auto pt-32 pb-20 px-4">
-        <div className="flex flex-col md:flex-row gap-6">
-          <aside className="hidden md:block w-64 space-y-4">
-            <Card className="border-irs-lightGray">
-              <CardContent className="p-4">
-                <div className="space-y-1 py-2">
-                  <h3 className="font-medium text-irs-darkest">John Doe</h3>
-                  <p className="text-sm text-irs-darkGray">ID: 123-45-6789</p>
-                </div>
-                
-                <nav className="space-y-1 mt-6">
-                  <SidebarLink active icon={LayoutDashboard} href="#" label="Dashboard" />
-                  <SidebarLink icon={FileText} href="#" label="Tax Forms" />
-                  <SidebarLink icon={DollarSign} href="#" label="Payments" />
-                  <SidebarLink icon={Calendar} href="#" label="Deadlines" />
-                  <SidebarLink icon={UserCircle} href="#" label="Profile" />
-                  <SidebarLink icon={Settings} href="#" label="Settings" />
-                </nav>
-              </CardContent>
-            </Card>
-          </aside>
-          
-          <div className="md:hidden mb-4">
-            <Sheet>
-              <SheetTrigger asChild>
-                <Button variant="outline" className="w-full flex justify-between items-center">
-                  <span className="flex items-center">
-                    <Menu className="mr-2 h-4 w-4" />
-                    Navigation
-                  </span>
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left">
-                <div className="space-y-1 py-2">
-                  <h3 className="font-medium text-irs-darkest">John Doe</h3>
-                  <p className="text-sm text-irs-darkGray">ID: 123-45-6789</p>
-                </div>
-                
-                <nav className="space-y-1 mt-6">
-                  <SidebarLink active icon={LayoutDashboard} href="#" label="Dashboard" />
-                  <SidebarLink icon={FileText} href="#" label="Tax Forms" />
-                  <SidebarLink icon={DollarSign} href="#" label="Payments" />
-                  <SidebarLink icon={Calendar} href="#" label="Deadlines" />
-                  <SidebarLink icon={UserCircle} href="#" label="Profile" />
-                  <SidebarLink icon={Settings} href="#" label="Settings" />
-                </nav>
-              </SheetContent>
-            </Sheet>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        {impersonating && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">
+                  You are impersonating <span className="font-medium">{impersonatedUser?.name}</span>
+                  <button
+                    onClick={handleEndImpersonation}
+                    className="ml-3 font-medium text-yellow-700 underline"
+                  >
+                    End impersonation
+                  </button>
+                </p>
+              </div>
+            </div>
           </div>
-          
-          <main className="flex-1">
-            <div className="mb-8">
-              <h1 className="text-2xl md:text-3xl font-bold text-irs-darkest mb-2">Dashboard</h1>
-              <p className="text-irs-darkGray">
-                Welcome back, John. Here's your tax summary for 2025.
-              </p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-              <InfoCard 
-                title="Total Tax Due" 
-                description={`$${taxData.totalDue.toLocaleString()}`}
-                ctaText="Make a payment"
-                ctaLink="#"
-                variant="featured"
-                icon={<DollarSign size={20} />}
-              />
-              
-              <InfoCard 
-                title="Filing Deadline" 
-                description={taxData.filingDeadline}
-                ctaText="View calendar"
-                ctaLink="#"
-                icon={<Calendar size={20} />}
-              />
-              
-              <InfoCard 
-                title="Available Credits" 
-                description={`$${taxData.taxCredits.reduce((sum, credit) => sum + credit.amount, 0).toLocaleString()}`}
-                ctaText="See all credits"
-                ctaLink="#"
-                icon={<Percent size={20} />}
-              />
-            </div>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <Card className="border-irs-lightGray">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-xl">Recent Forms</CardTitle>
-                  <CardDescription>Your most recent tax documents</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3">
-                    {taxData.recentForms.map((form) => (
-                      <li key={form.id} className="flex justify-between items-center py-2 border-b border-irs-lightGray">
-                        <div>
-                          <p className="font-medium text-irs-darkest">{form.id}</p>
-                          <p className="text-sm text-irs-darkGray">{form.name}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs text-irs-darkGray">{form.date}</span>
-                          <Button size="sm" variant="ghost" className="p-1 h-auto">
-                            <Download size={16} />
-                          </Button>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                  
-                  <Button variant="outline" className="w-full mt-4 text-irs-blue">
-                    View All Documents
-                  </Button>
-                </CardContent>
-              </Card>
-              
-              <Card className="border-irs-lightGray">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-xl">Refund Status</CardTitle>
-                  <CardDescription>Track your refund</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col items-center justify-center h-40 text-center">
-                    <RefreshCw size={40} className="text-irs-blue mb-4" />
-                    <h3 className="text-lg font-semibold text-irs-darkest mb-1">
-                      {taxData.refundStatus}
-                    </h3>
-                    <p className="text-sm text-irs-darkGray mb-4">
-                      Your refund is being processed
-                    </p>
-                    <Button variant="outline" className="text-irs-blue">
-                      Check Status
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            <Card className="border-irs-lightGray">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-xl">Tax Summary</CardTitle>
-                <CardDescription>Last updated: {taxData.lastUpdated}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <p className="text-irs-darkGray">
-                    Your tax information is up to date. Below is a summary of your tax credits for the current year.
-                  </p>
-                  
-                  <div className="space-y-2">
-                    {taxData.taxCredits.map((credit) => (
-                      <div key={credit.name} className="flex justify-between py-2 border-b border-irs-lightGray">
-                        <span className="font-medium">{credit.name}</span>
-                        <span className="text-irs-darkBlue font-medium">${credit.amount.toLocaleString()}</span>
-                      </div>
-                    ))}
-                    <div className="flex justify-between py-2 font-bold">
-                      <span>Total Credits</span>
-                      <span className="text-irs-blue">${taxData.taxCredits.reduce((sum, credit) => sum + credit.amount, 0).toLocaleString()}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-between mt-6">
-                    <Button variant="outline" className="flex items-center gap-2">
-                      <BarChart3 size={16} />
-                      View Full Report
-                    </Button>
-                    <Button className="bg-irs-blue text-white hover:bg-irs-darkBlue flex items-center gap-2">
-                      Download PDF <Download size={16} />
-                    </Button>
-                  </div>
+        )}
+
+        <header className="bg-white shadow">
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Dashboard</h1>
+          </div>
+        </header>
+        
+        <main>
+          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+            <div className="bg-white shadow rounded-lg p-6">
+              <h2 className="text-xl font-semibold mb-4">User Information</h2>
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Name</p>
+                  <p className="mt-1 text-lg">{currentUser?.name || currentUser?.email}</p>
                 </div>
-              </CardContent>
-            </Card>
-          </main>
-        </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Email</p>
+                  <p className="mt-1 text-lg">{currentUser?.email}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Role</p>
+                  <p className="mt-1 text-lg">{currentUser?.role || "User"}</p>
+                </div>
+                {/* Add more user details here as needed */}
+              </div>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );
 };
-
-const SidebarLink = ({ 
-  icon: Icon, 
-  href, 
-  label, 
-  active 
-}: { 
-  icon: React.ElementType; 
-  href: string; 
-  label: string; 
-  active?: boolean;
-}) => (
-  <a 
-    href={href} 
-    className={cn(
-      "flex items-center py-2 px-3 rounded-md text-sm transition-colors",
-      active 
-        ? "bg-irs-blue/10 text-irs-blue font-medium" 
-        : "text-irs-darkGray hover:bg-irs-gray hover:text-irs-darkBlue"
-    )}
-  >
-    <Icon size={18} className="mr-2" />
-    {label}
-  </a>
-);
 
 export default Dashboard;
