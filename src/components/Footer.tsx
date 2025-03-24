@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Facebook, Twitter, Youtube, Instagram, Linkedin } from 'lucide-react';
+import { Facebook, Twitter, Youtube, Instagram, Linkedin, Phone, MessageSquare } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export const Footer = () => {
@@ -45,7 +45,18 @@ export const Footer = () => {
           
           <div className="space-y-4">
             <h3 className="text-xl font-bold">Connect With Us</h3>
-            <div className="flex space-x-4">
+            
+            <div className="flex items-center space-x-2 text-irs-lightGray hover:text-white transition-colors duration-200">
+              <Phone size={16} />
+              <a href="tel:+12526912474" className="text-sm">+1-252-691-2474</a>
+            </div>
+            
+            <div className="flex items-center space-x-2 text-irs-lightGray hover:text-white transition-colors duration-200">
+              <MessageSquare size={16} />
+              <a href="sms:+12526912474" className="text-sm">Text us</a>
+            </div>
+            
+            <div className="flex space-x-4 mt-4">
               <SocialLink href="#" icon={<Facebook size={20} />} label="Facebook" />
               <SocialLink href="#" icon={<Twitter size={20} />} label="Twitter" />
               <SocialLink href="#" icon={<Youtube size={20} />} label="YouTube" />
