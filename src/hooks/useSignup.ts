@@ -52,7 +52,7 @@ export const useSignup = () => {
           email: values.email,
           created_at: new Date().toISOString(),
           role: 'User',
-          status: 'Active'
+          status: 'Pending'
         });
 
       if (profileError) {
@@ -62,14 +62,6 @@ export const useSignup = () => {
         console.log("Profile created/updated successfully");
       }
       
-      // Ensure the user-documents bucket exists
-      try {
-        await supabase.functions.invoke('create-user-documents-bucket');
-      } catch (bucketError) {
-        console.error("Error ensuring user-documents bucket exists:", bucketError);
-        // Continue anyway since this is non-critical
-      }
-
       // Log the signup activity
       try {
         await supabase
@@ -94,15 +86,23 @@ export const useSignup = () => {
       
       toast({
         title: "Account created",
-        description: "Please upload your identification document to complete the signup.",
+        description: "Our team will contact you shortly with verification instructions.",
       });
 
       return { userId: data.user.id };
     } catch (error: any) {
       console.error("Error during signup:", error);
+      
+      let errorMessage = error.message || "There was an error creating your account. Please try again.";
+      
+      // Handle specific error cases
+      if (error.message?.includes("already registered")) {
+        errorMessage = "This email is already registered. Please log in or use a different email.";
+      }
+      
       toast({
         title: "Signup failed",
-        description: error.message || "There was an error creating your account. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
       return void 0; // Explicitly return void
