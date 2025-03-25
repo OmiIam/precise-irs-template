@@ -64,9 +64,12 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         password: "[REDACTED]"
       });
 
-      // Call the edge function to create the user
+      // Call the edge function to create the user with explicit headers
       const { data, error } = await supabase.functions.invoke('create-user', {
-        body: { userData }
+        body: { userData },
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
       
       if (error) {
