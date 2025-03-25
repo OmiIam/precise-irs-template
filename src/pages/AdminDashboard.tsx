@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -27,7 +28,8 @@ const AdminDashboard = () => {
     handleToggleUserRole,
     isSubscribed,
     lastRefresh,
-    refreshUsers
+    refreshUsers,
+    isCreating
   } = useUserManagement();
   const { handleViewUser, handleImpersonateUser } = useUserActions();
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -68,6 +70,10 @@ const AdminDashboard = () => {
   }, [resetActivityTimer]);
 
   useEffect(() => {
+    // Initial data fetch
+    fetchUsers();
+    
+    // Log admin access
     const logAdminAccess = async () => {
       try {
         const adminAuth = localStorage.getItem('isAdminAuthenticated');
@@ -100,7 +106,7 @@ const AdminDashboard = () => {
     };
     
     logAdminAccess();
-  }, [user]);
+  }, [user, fetchUsers]);
 
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
@@ -111,28 +117,18 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleUserCreated = async () => {
-    console.log("User created, triggering data refresh");
-    await fetchUsers();
-  };
-
   return (
     <AdminDashboardLayout activePage="dashboard">
       <UserDialogContainer
         onSaveUser={handleSaveUser}
-        onCreateUser={async (user) => {
-          const success = await handleCreateUser(user);
-          if (success) {
-            handleUserCreated();
-          }
-          return success;
-        }}
+        onCreateUser={handleCreateUser}
       >
         {({ handleAddUser, handleEditUser, dialogComponent }) => (
           <>
             <div className="flex justify-between items-center p-4 bg-white border-b">
               <DashboardHeader 
                 onAddUser={handleAddUser}
+                isCreatingUser={isCreating}
               />
               
               <RefreshStatusIndicator
@@ -145,6 +141,7 @@ const AdminDashboard = () => {
             
             <DashboardContent 
               users={users}
+              isLoading={isLoading}
               onEditUser={handleEditUser}
               onViewUser={handleViewUser}
               onImpersonateUser={handleImpersonateUser}

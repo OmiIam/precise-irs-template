@@ -1,26 +1,41 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { Loader2, UserPlus } from 'lucide-react';
 
 interface DashboardHeaderProps {
   onAddUser: () => void;
+  isCreatingUser?: boolean;
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ 
-  onAddUser 
+  onAddUser,
+  isCreatingUser = false 
 }) => {
   return (
-    <div className="sticky top-0 z-10 flex items-center justify-between border-b bg-background px-4 py-3">
-      <div className="flex items-center gap-2">
-        <SidebarTrigger />
-        <h1 className="font-semibold text-lg text-irs-darkest">Admin Dashboard</h1>
+    <div className="flex items-center justify-between w-full">
+      <div>
+        <h1 className="text-xl font-semibold text-irs-darkest">Admin Dashboard</h1>
+        <p className="text-sm text-irs-gray">Manage users and system settings</p>
       </div>
-      <div className="flex items-center gap-2">
-        <Button size="sm" onClick={onAddUser}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add User
+      
+      <div className="flex space-x-2">
+        <Button 
+          onClick={onAddUser} 
+          className="bg-irs-blue hover:bg-irs-darkBlue"
+          disabled={isCreatingUser}
+        >
+          {isCreatingUser ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Creating User...
+            </>
+          ) : (
+            <>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Add User
+            </>
+          )}
         </Button>
       </div>
     </div>

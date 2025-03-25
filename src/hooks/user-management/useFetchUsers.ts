@@ -34,6 +34,12 @@ export const useFetchUsers = () => {
 
       console.log('Profiles data received:', data);
 
+      if (!data || data.length === 0) {
+        console.log('No user profiles found in the database');
+        setUsers([]);
+        return;
+      }
+
       // Format the data with proper date handling
       const formattedUsers = data.map(user => {
         // Ensure proper date parsing for filing_deadline
