@@ -23,7 +23,7 @@ export const HeroSection = () => {
             <Link to="/login" className="btn-primary flex items-center justify-center gap-2 py-3 px-6">
               Get Started <ArrowRight size={16} />
             </Link>
-            <Link to="#" className="btn-secondary flex items-center justify-center gap-2 py-3 px-6">
+            <Link to="/refund-status" className="btn-secondary flex items-center justify-center gap-2 py-3 px-6">
               Check Refund Status
             </Link>
           </div>
