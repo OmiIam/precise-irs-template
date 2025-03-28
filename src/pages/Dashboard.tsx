@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/contexts/auth';
 
@@ -20,7 +21,7 @@ const Dashboard = () => {
               <div className="space-y-4">
                 <div>
                   <p className="text-sm font-medium text-gray-500">Name</p>
-                  <p className="mt-1 text-lg">{user?.name || user?.email}</p>
+                  <p className="mt-1 text-lg">{user?.email}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-500">Email</p>
