@@ -1,8 +1,9 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
@@ -31,11 +32,11 @@ const App = () => (
             {/* Public routes */}
             <Route path="/" element={<Index />} />
             
-            {/* Authentication routes - ensure they're not wrapped with ProtectedRoute */}
+            {/* Authentication routes - always accessible */}
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
             
-            {/* Other public routes */}
+            {/* Public information routes */}
             <Route path="/file" element={<File />} />
             <Route path="/pay" element={<Pay />} />
             <Route path="/refunds" element={<Refunds />} />

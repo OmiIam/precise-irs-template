@@ -14,11 +14,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
   const { user } = useAuth();
 
   const handleGetStarted = () => {
-    // Simplified navigation logic - go to dashboard if signed in, else signup
+    // Route to dashboard if signed in, else login
     if (user) {
       navigate('/dashboard');
     } else {
-      navigate('/signup');
+      navigate('/login');
     }
   };
 

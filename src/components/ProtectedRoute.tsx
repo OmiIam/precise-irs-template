@@ -16,21 +16,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const location = useLocation();
   const [timeoutExceeded, setTimeoutExceeded] = useState(false);
   
-  // Determine if this is an authentication page that should never be protected
+  // Auth pages should never be protected - always render them
   const isAuthPage = location.pathname === '/signup' || location.pathname === '/login';
-
-  // For auth pages, immediately render children without protection
   if (isAuthPage) {
     return <>{children}</>;
   }
   
   // Only check auth for non-auth pages
-  const { isLoading, checkComplete, hasAccess, isAuthenticated } = useAuthCheck(requireAdmin);
+  const { isLoading, hasAccess, isAuthenticated } = useAuthCheck(requireAdmin);
   
   // Set a timeout to prevent infinite loading for protected routes
   useEffect(() => {
-    if (isAuthPage) return; // Skip timeout for auth pages
-    
     const timer = setTimeout(() => {
       if (isLoading) {
         console.log('Auth check timeout exceeded, redirecting to login');
@@ -39,11 +35,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }, 5000); // 5 seconds timeout
     
     return () => clearTimeout(timer);
-  }, [isLoading, isAuthPage]);
+  }, [isLoading]);
   
   // Redirect if timeout is exceeded
   if (timeoutExceeded) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // Show loading spinner while checking authentication for protected routes
@@ -53,7 +49,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // If not authenticated at all, redirect to login
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   // If requires admin but user doesn't have access, redirect to dashboard
