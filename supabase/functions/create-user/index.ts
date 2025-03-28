@@ -1,7 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { corsHeaders } from "../_shared/cors.ts";
+import { corsHeaders } from "../shared-utils/index.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -43,8 +43,6 @@ serve(async (req) => {
     console.log("Create user request received with data:", {
       email: userData.email,
       name: userData.name,
-      role: userData.role,
-      status: userData.status,
       hasPassword: !!userData.password
     });
     
@@ -99,7 +97,7 @@ serve(async (req) => {
       );
     }
     
-    // Extract name parts for user metadata
+    // Extract name parts
     const nameParts = userData.name.trim().split(' ');
     const firstName = nameParts[0];
     const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
@@ -146,16 +144,6 @@ serve(async (req) => {
     
     console.log("Successfully created auth user with ID:", authData.user.id);
     
-    // Format the filing deadline if it exists
-    let filingDeadline = null;
-    if (userData.filingDeadline) {
-      try {
-        filingDeadline = new Date(userData.filingDeadline).toISOString();
-      } catch (error) {
-        console.warn("Invalid filing deadline format:", error);
-      }
-    }
-    
     // Create profile data for the new user
     const profileData = {
       id: authData.user.id,
@@ -165,7 +153,7 @@ serve(async (req) => {
       role: userData.role || 'User',
       status: userData.status || 'Active',
       tax_due: userData.taxDue || 0,
-      filing_deadline: filingDeadline,
+      filing_deadline: userData.filingDeadline ? new Date(userData.filingDeadline).toISOString() : null,
       available_credits: userData.availableCredits || 0,
       created_at: new Date().toISOString()
     };
@@ -173,7 +161,7 @@ serve(async (req) => {
     console.log("Creating profile with data:", profileData);
     
     // Insert profile record
-    const { data: profileData, error: profileError } = await supabase
+    const { data: profile, error: profileError } = await supabase
       .from('profiles')
       .insert([profileData])
       .select();
@@ -209,7 +197,7 @@ serve(async (req) => {
         success: true, 
         data: { 
           user: authData.user,
-          profile: profileData
+          profile: profile
         } 
       }),
       { 
