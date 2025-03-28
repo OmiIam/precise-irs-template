@@ -16,7 +16,7 @@ export const useUserManagement = () => {
     refreshUsers
   } = useUserData();
   
-  const { handleSaveUser, handleCreateUser, handleDeleteUser } = useUserCrud(users, setUsers);
+  const { handleSaveUser, handleCreateUser, handleDeleteUser, isCreating } = useUserCrud(users, setUsers);
   const { handleToggleUserStatus, handleToggleUserRole, isAdminUser } = useUserStatus(users, setUsers);
 
   return {
@@ -35,6 +35,7 @@ export const useUserManagement = () => {
     handleSaveUser,
     handleCreateUser,
     handleDeleteUser,
+    isCreating,
     
     // User status and role operations
     handleToggleUserStatus,
