@@ -1,116 +1,125 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User } from '@/types/user';
+import { User, UserRole, UserStatus } from '@/types/user';
+import { AdminContextType } from './types';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { AdminContextType } from './types';
-import { useNavigate } from 'react-router-dom';
 
 const AdminContext = createContext<AdminContextType | undefined>(undefined);
+
+export const useAdmin = () => {
+  const context = useContext(AdminContext);
+  if (!context) {
+    throw new Error('useAdmin must be used within an AdminProvider');
+  }
+  return context;
+};
 
 export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
-  const fetchUsers = async () => {
+  // Mock data for initial development
+  const mockUsers: User[] = [
+    {
+      id: '1',
+      email: 'john.doe@example.com',
+      name: 'John Doe',
+      role: 'User',
+      status: 'Active',
+      lastLogin: new Date().toISOString(),
+      taxDue: 1250.00,
+      filingDeadline: new Date().toISOString(),
+      availableCredits: 350
+    },
+    {
+      id: '2',
+      email: 'jane.smith@example.com',
+      name: 'Jane Smith',
+      role: 'Admin',
+      status: 'Active',
+      lastLogin: new Date().toISOString(),
+      taxDue: 0,
+      filingDeadline: new Date().toISOString(),
+      availableCredits: 0
+    }
+  ];
+
+  const refreshUsers = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      
+      // In a real implementation, this would fetch from Supabase
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .from('users')
+        .select('*');
       
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      // Transform the data to match our User type
-      const formattedUsers: User[] = data.map(profile => ({
-        id: profile.id,
-        email: profile.email,
-        name: `${profile.first_name} ${profile.last_name}`.trim(),
-        role: profile.role,
-        status: profile.status,
-        lastLogin: profile.last_login,
-        taxDue: profile.tax_due,
-        filingDeadline: profile.filing_deadline ? new Date(profile.filing_deadline) : undefined,
-        availableCredits: profile.available_credits
-      }));
-      
-      setUsers(formattedUsers);
+      if (data) {
+        // Transform the data to match our User type
+        const transformedUsers: User[] = data.map((user: any) => ({
+          id: user.id,
+          email: user.email,
+          name: user.user_metadata?.name || '',
+          role: (user.user_metadata?.role || 'User') as UserRole,
+          status: (user.user_metadata?.status || 'Active') as UserStatus,
+          lastLogin: user.last_sign_in_at || '',
+          taxDue: user.user_metadata?.taxDue || 0,
+          filingDeadline: user.user_metadata?.filingDeadline || new Date().toISOString(),
+          availableCredits: user.user_metadata?.availableCredits || 0
+        }));
+        setUsers(transformedUsers);
+      } else {
+        // Use mock data if no data is returned
+        setUsers(mockUsers);
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load users.',
+        description: 'Failed to fetch users. Using mock data instead.',
         variant: 'destructive'
       });
+      // Fallback to mock data
+      setUsers(mockUsers);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Set up realtime subscription
-  useEffect(() => {
-    fetchUsers();
-    
-    const channel = supabase
-      .channel('profiles_changes')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'profiles' 
-        }, 
-        () => {
-          fetchUsers();
-        }
-      )
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
   const createUser = async (userData: Partial<User> & { password: string }) => {
     try {
-      const response = await fetch(`${window.location.origin}/.supabase/functions/v1/create-user`, {
+      // In a real implementation, this would create a user in Supabase
+      // and call an Edge Function to perform additional setup
+      const response = await fetch('/api/create-user', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email: userData.email,
-          password: userData.password,
-          firstName: userData.name?.split(' ')[0] || '',
-          lastName: userData.name?.split(' ').slice(1).join(' ') || '',
-          role: userData.role || 'User',
-          status: userData.status || 'Active',
-          taxDue: userData.taxDue || 0,
-          availableCredits: userData.availableCredits || 0,
-        }),
+        body: JSON.stringify(userData),
       });
 
-      const data = await response.json();
-      
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create user');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create user');
       }
-      
+
       toast({
         title: 'Success',
-        description: 'User created successfully.',
+        description: 'User created successfully',
       });
-      
-      await fetchUsers();
+
+      // Refresh the user list
+      await refreshUsers();
       return true;
     } catch (error) {
       console.error('Error creating user:', error);
       toast({
         title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to create user.',
+        description: (error as Error).message || 'Failed to create user',
         variant: 'destructive'
       });
       return false;
@@ -119,39 +128,37 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateUser = async (user: User) => {
     try {
-      // Split name into first and last name
-      const nameParts = user.name?.split(' ') || ['', ''];
-      const firstName = nameParts[0];
-      const lastName = nameParts.slice(1).join(' ');
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          first_name: firstName,
-          last_name: lastName,
+      // In a real implementation, this would update a user in Supabase
+      const { error } = await supabase.auth.admin.updateUserById(
+        user.id, 
+        {
           email: user.email,
-          role: user.role,
-          status: user.status,
-          tax_due: user.taxDue,
-          filing_deadline: user.filingDeadline,
-          available_credits: user.availableCredits
-        })
-        .eq('id', user.id);
-        
+          user_metadata: {
+            name: user.name,
+            role: user.role,
+            status: user.status,
+            taxDue: user.taxDue,
+            filingDeadline: user.filingDeadline,
+            availableCredits: user.availableCredits
+          }
+        }
+      );
+
       if (error) throw error;
-      
+
       toast({
         title: 'Success',
-        description: 'User updated successfully.',
+        description: 'User updated successfully',
       });
-      
-      await fetchUsers();
+
+      // Update the local state
+      setUsers(prev => prev.map(u => u.id === user.id ? user : u));
       return true;
     } catch (error) {
       console.error('Error updating user:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update user.',
+        description: 'Failed to update user',
         variant: 'destructive'
       });
       return false;
@@ -160,25 +167,24 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const deleteUser = async (userId: string) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ status: 'Deleted' })
-        .eq('id', userId);
-        
+      // In a real implementation, this would delete a user in Supabase
+      const { error } = await supabase.auth.admin.deleteUser(userId);
+
       if (error) throw error;
-      
+
       toast({
         title: 'Success',
-        description: 'User deleted successfully.',
+        description: 'User deleted successfully',
       });
-      
-      await fetchUsers();
+
+      // Update the local state
+      setUsers(prev => prev.filter(u => u.id !== userId));
       return true;
     } catch (error) {
       console.error('Error deleting user:', error);
       toast({
         title: 'Error',
-        description: 'Failed to delete user.',
+        description: 'Failed to delete user',
         variant: 'destructive'
       });
       return false;
@@ -187,68 +193,64 @@ export const AdminProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const impersonateUser = async (userId: string) => {
     try {
-      // Store current admin session
-      const { data: session } = await supabase.auth.getSession();
-      if (session?.session) {
-        localStorage.setItem('admin_session', JSON.stringify(session.session));
+      // In a real implementation, this would call an Edge Function to impersonate a user
+      const response = await fetch('/api/impersonate-user', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to impersonate user');
       }
-      
-      // Call impersonate function
-      const { data, error } = await supabase.functions.invoke('impersonate-user', {
-        body: { user_id: userId }
+
+      const { token } = await response.json();
+
+      // Set the session in Supabase
+      const { error } = await supabase.auth.setSession({
+        access_token: token,
+        refresh_token: '',
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Now impersonating user',
       });
       
-      if (error) throw error;
-      
-      if (data?.token) {
-        // Set the impersonation session
-        await supabase.auth.setSession({
-          access_token: data.token,
-          refresh_token: data.refresh_token
-        });
-        
-        toast({
-          title: 'Success',
-          description: 'Now impersonating user.',
-        });
-        
-        navigate('/dashboard');
-        return true;
-      } else {
-        throw new Error('No token received');
-      }
+      return true;
     } catch (error) {
       console.error('Error impersonating user:', error);
       toast({
         title: 'Error',
-        description: 'Failed to impersonate user.',
+        description: 'Failed to impersonate user',
         variant: 'destructive'
       });
       return false;
     }
   };
 
+  useEffect(() => {
+    refreshUsers();
+  }, []);
+
+  const contextValue: AdminContextType = {
+    users,
+    isLoading,
+    refreshUsers,
+    createUser,
+    updateUser,
+    deleteUser,
+    impersonateUser
+  };
+
   return (
-    <AdminContext.Provider
-      value={{
-        users,
-        isLoading,
-        refreshUsers: fetchUsers,
-        createUser,
-        updateUser,
-        deleteUser,
-        impersonateUser
-      }}
-    >
+    <AdminContext.Provider value={contextValue}>
       {children}
     </AdminContext.Provider>
   );
-};
-
-export const useAdmin = () => {
-  const context = useContext(AdminContext);
-  if (context === undefined) {
-    throw new Error('useAdmin must be used within an AdminProvider');
-  }
-  return context;
 };

@@ -10,6 +10,6 @@ export interface User {
   status?: UserStatus;
   lastLogin?: string;
   taxDue?: number;
-  filingDeadline?: Date;
+  filingDeadline?: string | Date;
   availableCredits?: number;
 }

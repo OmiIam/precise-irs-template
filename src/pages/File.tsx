@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Header } from '@/components/Header';
+import Header from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Breadcrumb, BreadcrumbList, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator, BreadcrumbPage } from '@/components/ui/breadcrumb';
 import { Home, FileText, ArrowRight } from 'lucide-react';

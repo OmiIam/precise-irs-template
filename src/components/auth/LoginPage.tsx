@@ -1,6 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { Header } from '@/components/Header';
+import Header from '@/components/Header';
 import { useAuth } from '@/contexts/auth';
 import LoginContainer from './LoginContainer';
 import UserLoginForm from './UserLoginForm';
