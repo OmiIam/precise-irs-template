@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
+import { ArrowRight, Loader2, UserPlus } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email({
@@ -32,6 +33,7 @@ const UserLoginForm: React.FC<UserLoginFormProps> = ({ onToggleMode, signIn }) =
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+  const [isNew, setIsNew] = useState(false);
 
   const form = useForm<LoginValues>({
     resolver: zodResolver(loginSchema),
@@ -50,11 +52,12 @@ const UserLoginForm: React.FC<UserLoginFormProps> = ({ onToggleMode, signIn }) =
       if (error) {
         console.error("Login error:", error);
         
-        // Handle specific error messages
-        if (error.message?.includes("Invalid login")) {
+        // Check if the error indicates a non-existent user
+        if (error.message?.includes("Invalid login") || error.message?.includes("user not found")) {
+          setIsNew(true);
           toast({
-            title: "Login Failed",
-            description: "Invalid email or password. Please try again.",
+            title: "Account not found",
+            description: "We couldn't find an account with this email. Would you like to create one?",
             variant: "destructive",
           });
         } else {
@@ -95,13 +98,17 @@ const UserLoginForm: React.FC<UserLoginFormProps> = ({ onToggleMode, signIn }) =
   };
 
   // Populate email field if remembered
-  React.useEffect(() => {
+  useEffect(() => {
     const rememberedEmail = localStorage.getItem('rememberedEmail');
     if (rememberedEmail) {
       form.setValue('email', rememberedEmail);
       form.setValue('rememberMe', true);
     }
   }, [form]);
+
+  const handleSignUp = () => {
+    navigate('/signup', { state: { email: form.getValues().email } });
+  };
 
   return (
     <div className="space-y-6">
@@ -174,16 +181,29 @@ const UserLoginForm: React.FC<UserLoginFormProps> = ({ onToggleMode, signIn }) =
               Forgot password?
             </Button>
           </div>
+          
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? (
               <div className="flex items-center">
-                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Signing in...
               </div>
             ) : (
-              "Sign In"
+              <>Sign In <ArrowRight className="ml-2 h-4 w-4" /></>
             )}
           </Button>
+          
+          {isNew && (
+            <Button 
+              type="button" 
+              variant="outline" 
+              className="w-full bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+              onClick={handleSignUp}
+            >
+              <UserPlus className="mr-2 h-4 w-4" />
+              Create New Account
+            </Button>
+          )}
         </form>
       </Form>
       <div className="mt-4 text-center text-sm">

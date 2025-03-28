@@ -10,6 +10,8 @@ import { Button } from '@/components/ui/button';
 import { CalendarDays, CreditCard, DollarSign, FileText, HelpCircle, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { formatDistanceToNow, format } from 'date-fns';
+import DashboardWelcomeBanner from '@/components/dashboard/DashboardWelcomeBanner';
+import DashboardQuickActions from '@/components/dashboard/DashboardQuickActions';
 
 interface UserProfile {
   id: string;
@@ -129,19 +131,6 @@ const Dashboard = () => {
     return 'bg-green-50 border-green-200';
   };
 
-  const getDeadlineText = () => {
-    if (!userProfile?.filing_deadline) return 'No deadline set';
-    
-    const deadline = new Date(userProfile.filing_deadline);
-    const today = new Date();
-    
-    if (deadline < today) {
-      return `Overdue by ${formatDistanceToNow(deadline, { addSuffix: false })}`;
-    }
-    
-    return `Due in ${formatDistanceToNow(deadline, { addSuffix: false })}`;
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -169,14 +158,11 @@ const Dashboard = () => {
           </div>
         )}
 
-        <header className="bg-white shadow rounded-lg mb-6">
-          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Welcome, {fullName}</h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Here's an overview of your tax information and pending actions
-            </p>
-          </div>
-        </header>
+        <DashboardWelcomeBanner 
+          fullName={fullName} 
+          userStatus={userProfile?.status}
+          filingDeadline={userProfile?.filing_deadline}
+        />
         
         <main>
           {loading ? (
@@ -197,7 +183,6 @@ const Dashboard = () => {
                     <p className="font-medium">
                       {userProfile?.filing_deadline ? format(new Date(userProfile.filing_deadline), 'MMMM d, yyyy') : 'Not set'}
                     </p>
-                    <p className="text-sm mt-1 text-gray-500">{getDeadlineText()}</p>
                   </div>
                 </div>
               </div>
@@ -263,9 +248,6 @@ const Dashboard = () => {
                         format(new Date(userProfile.filing_deadline), 'MMM d, yyyy') : 
                         'Not set'}
                     </div>
-                    <p className="text-sm text-gray-500 mt-1">
-                      {getDeadlineText()}
-                    </p>
                   </CardContent>
                   <CardFooter>
                     <Button className="w-full" onClick={handleFileNow}>
@@ -276,28 +258,15 @@ const Dashboard = () => {
               </div>
               
               {/* Quick Actions */}
-              <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                <Button variant="outline" className="h-auto py-6 flex flex-col items-center justify-center gap-2" onClick={handleFileNow}>
-                  <FileText className="h-6 w-6" />
-                  <span>File Taxes</span>
-                </Button>
-                <Button variant="outline" className="h-auto py-6 flex flex-col items-center justify-center gap-2" onClick={handlePayNow}>
-                  <DollarSign className="h-6 w-6" />
-                  <span>Make Payment</span>
-                </Button>
-                <Button variant="outline" className="h-auto py-6 flex flex-col items-center justify-center gap-2" onClick={() => navigate('/refund-status')}>
-                  <CreditCard className="h-6 w-6" />
-                  <span>Check Refund</span>
-                </Button>
-                <Button variant="outline" className="h-auto py-6 flex flex-col items-center justify-center gap-2" onClick={handleContactSupport}>
-                  <HelpCircle className="h-6 w-6" />
-                  <span>Contact Support</span>
-                </Button>
-              </div>
+              <DashboardQuickActions 
+                onFileNow={handleFileNow}
+                onPayNow={handlePayNow}
+                onCheckRefund={() => navigate('/refund-status')}
+                onContactSupport={handleContactSupport}
+              />
               
               {/* User Information */}
-              <h2 className="text-xl font-semibold mb-4">Account Information</h2>
+              <h2 className="text-xl font-semibold mb-4 mt-8">Account Information</h2>
               <Card className="mb-8">
                 <CardContent className="pt-6">
                   <div className="space-y-4">
