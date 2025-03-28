@@ -13,12 +13,24 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   requireAdmin = false 
 }) => {
-  const { isLoading, checkComplete, hasAccess, isAuthenticated } = useAuthCheck(requireAdmin);
   const location = useLocation();
   const [timeoutExceeded, setTimeoutExceeded] = useState(false);
   
-  // Set a timeout to prevent infinite loading
+  // Determine if this is an authentication page that should never be protected
+  const isAuthPage = location.pathname === '/signup' || location.pathname === '/login';
+
+  // For auth pages, immediately render children without protection
+  if (isAuthPage) {
+    return <>{children}</>;
+  }
+  
+  // Only check auth for non-auth pages
+  const { isLoading, checkComplete, hasAccess, isAuthenticated } = useAuthCheck(requireAdmin);
+  
+  // Set a timeout to prevent infinite loading for protected routes
   useEffect(() => {
+    if (isAuthPage) return; // Skip timeout for auth pages
+    
     const timer = setTimeout(() => {
       if (isLoading) {
         console.log('Auth check timeout exceeded, redirecting to login');
@@ -27,26 +39,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }, 5000); // 5 seconds timeout
     
     return () => clearTimeout(timer);
-  }, [isLoading]);
-
-  // Special case for authentication pages - never block these
-  const isAuthPage = location.pathname === '/signup' || location.pathname === '/login';
-  if (isAuthPage) {
-    return <>{children}</>;
-  }
+  }, [isLoading, isAuthPage]);
   
   // Redirect if timeout is exceeded
   if (timeoutExceeded) {
     return <Navigate to="/login" replace />;
   }
 
-  // Show loading spinner while checking authentication
-  if (isLoading && !isAuthPage && !timeoutExceeded) {
+  // Show loading spinner while checking authentication for protected routes
+  if (isLoading && !timeoutExceeded) {
     return <AuthLoading />;
   }
 
   // If not authenticated at all, redirect to login
-  if (!isAuthenticated && !isAuthPage) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 

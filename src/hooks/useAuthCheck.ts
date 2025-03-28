@@ -11,6 +11,19 @@ export const useAuthCheck = (requireAdmin = false) => {
   const [error, setError] = useState<Error | null>(null);
   
   useEffect(() => {
+    // Fast path: Immediately determine if auth is already resolved
+    if (!authLoading) {
+      const adminAuth = localStorage.getItem('isAdminAuthenticated');
+      setIsAdminAuthenticated(adminAuth === 'true');
+      
+      // If we already have auth state, we can complete the check immediately
+      if (!requireAdmin || (user && isAdmin) || (requireAdmin && adminAuth === 'true')) {
+        setCheckComplete(true);
+        setIsLoading(false);
+        return;
+      }
+    }
+    
     const checkAuthentication = async () => {
       // If auth context is still loading, wait for it
       if (authLoading) {
@@ -63,7 +76,7 @@ export const useAuthCheck = (requireAdmin = false) => {
     checkAuthentication();
     
     return () => clearTimeout(timeoutId);
-  }, [requireAdmin, user, authLoading]);
+  }, [requireAdmin, user, isAdmin, authLoading]);
 
   // Determine access status - note we're allowing admin access without user in certain cases
   const hasAccess = (

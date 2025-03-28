@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -31,8 +30,12 @@ const App = () => (
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Index />} />
+            
+            {/* Authentication routes - ensure they're not wrapped with ProtectedRoute */}
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            
+            {/* Other public routes */}
             <Route path="/file" element={<File />} />
             <Route path="/pay" element={<Pay />} />
             <Route path="/refunds" element={<Refunds />} />
