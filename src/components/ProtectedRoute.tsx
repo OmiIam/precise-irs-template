@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
 import AuthLoading from '@/components/auth/AuthLoading';
@@ -11,12 +11,6 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, isLoading } = useAuth();
   const location = useLocation();
-
-  // Prefetch user data
-  useEffect(() => {
-    // This is where you could prefetch additional user data if needed
-    // The goal is to do this in parallel while showing the loading state
-  }, []);
 
   // Show loading state while checking authentication
   if (isLoading) {

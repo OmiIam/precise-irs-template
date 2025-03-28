@@ -1,7 +1,7 @@
 
 import React from 'react';
 
-const AuthLoading: React.FC = () => {
+const LoadingSpinner: React.FC = () => {
   return (
     <div className="flex justify-center items-center min-h-screen bg-white">
       <div className="relative">
@@ -12,4 +12,4 @@ const AuthLoading: React.FC = () => {
   );
 };
 
-export default AuthLoading;
+export default LoadingSpinner;

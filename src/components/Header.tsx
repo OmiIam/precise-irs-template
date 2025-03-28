@@ -1,16 +1,24 @@
 
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Search } from "lucide-react";
+import { Menu, X, Search, User, LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/auth";
 import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Monitor scroll position to change header appearance
   useEffect(() => {
@@ -34,35 +42,40 @@ export const Header = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
-  // Preconnect to necessary domains for performance
-  useEffect(() => {
-    // Add preconnect link for better font loading
-    const preconnectLink = document.createElement('link');
-    preconnectLink.rel = 'preconnect';
-    preconnectLink.href = 'https://fonts.googleapis.com';
-    document.head.appendChild(preconnectLink);
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+  };
 
-    return () => {
-      document.head.removeChild(preconnectLink);
-    };
-  }, []);
+  // Main navigation items
+  const navigationItems = [
+    { to: "/", label: "Home" },
+    { to: "/file", label: "File" },
+    { to: "/pay", label: "Pay" },
+    { to: "/refunds", label: "Refunds" },
+    { to: "/dashboard", label: "Dashboard" }
+  ];
 
   return (
     <header className={cn(
       "sticky top-0 z-40 w-full transition-all duration-200",
       isScrolled ? "bg-white shadow-md" : "bg-irs-darkest"
     )}>
+      {/* USA Gov Banner */}
       <div className="w-full bg-irs-darkest border-b border-blue-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2">
           <p className="text-sm text-white">An official website of the United States Government</p>
         </div>
       </div>
+      
+      {/* Main Header */}
       <div className={cn(
         "transition-all duration-300",
         isScrolled ? "bg-white" : "bg-irs-darkest"
       )}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
+            {/* Logo and Navigation */}
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <Link to="/" className="flex items-center">
@@ -71,21 +84,15 @@ export const Header = () => {
                     isScrolled ? "text-irs-darkest" : "text-white"
                   )}>RSF</span>
                   <span className={cn(
-                    "text-sm transition-colors duration-200",
+                    "hidden sm:inline text-sm transition-colors duration-200",
                     isScrolled ? "text-irs-darkGray" : "text-white"
                   )}>Revenue Service Finance</span>
                 </Link>
               </div>
-              <nav className="hidden sm:ml-6 sm:flex sm:space-x-4 ml-10">
-                {[
-                  { to: "/", label: "Home" },
-                  { to: "/file", label: "File" },
-                  { to: "/pay", label: "Pay" },
-                  { to: "/refunds", label: "Refunds" },
-                  { to: "/credits-deductions", label: "Credits & Deductions" },
-                  { to: "/forms-instructions", label: "Forms & Instructions" },
-                  { to: "/dashboard", label: "Get Started" }
-                ].map(item => (
+              
+              {/* Desktop Navigation */}
+              <nav className="hidden md:ml-6 md:flex md:space-x-1 ml-10">
+                {navigationItems.map(item => (
                   <Link
                     key={item.to}
                     to={item.to}
@@ -101,7 +108,10 @@ export const Header = () => {
                 ))}
               </nav>
             </div>
-            <div className="hidden sm:flex sm:items-center">
+            
+            {/* Right side: Search & User */}
+            <div className="hidden md:flex md:items-center md:space-x-4">
+              {/* Search */}
               <Button variant="ghost" 
                 className={cn(
                   "transition-colors duration-200",
@@ -110,14 +120,68 @@ export const Header = () => {
               >
                 <Search size={20} />
               </Button>
+              
+              {/* User Account */}
+              {user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" 
+                      className={cn(
+                        "transition-colors duration-200 flex items-center gap-2",
+                        isScrolled ? "text-irs-darkGray hover:text-irs-blue" : "text-white hover:text-irs-lightBlue"
+                      )}
+                    >
+                      <User size={20} />
+                      <span className="hidden lg:inline">{user.email?.split('@')[0]}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/dashboard')}>
+                      Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="cursor-pointer text-red-600 hover:text-red-700" onClick={handleSignOut}>
+                      <LogOut className="mr-2 h-4 w-4" /> Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Link
+                  to="/login"
+                  className={cn(
+                    "px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 border",
+                    isScrolled 
+                      ? "border-irs-blue text-irs-blue hover:bg-irs-blue hover:text-white" 
+                      : "border-white text-white hover:bg-white hover:text-irs-darkest"
+                  )}
+                >
+                  Sign In
+                </Link>
+              )}
             </div>
-            <div className="-mr-2 flex items-center sm:hidden">
+            
+            {/* Mobile Menu Button */}
+            <div className="md:hidden flex items-center">
+              {user && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "mr-2 transition-colors duration-200",
+                    isScrolled ? "text-irs-darkGray hover:text-irs-blue" : "text-white hover:text-irs-lightBlue"
+                  )}
+                  onClick={() => navigate('/dashboard')}
+                >
+                  <User size={20} />
+                </Button>
+              )}
               <Button
                 variant="ghost"
+                size="icon"
                 onClick={toggleMenu}
                 aria-expanded={isMenuOpen}
                 className={cn(
-                  "focus:outline-none focus:ring-2 focus:ring-inset focus:ring-irs-blue transition-colors duration-200",
+                  "transition-colors duration-200",
                   isScrolled ? "text-irs-darkGray hover:text-irs-blue" : "text-white hover:text-irs-lightBlue"
                 )}
               >
@@ -133,18 +197,11 @@ export const Header = () => {
         </div>
       </div>
 
+      {/* Mobile Menu */}
       {isMenuOpen && (
-        <div className="sm:hidden bg-white shadow-lg animate-fade-in">
+        <div className="md:hidden bg-white shadow-lg animate-fade-in">
           <div className="px-2 pt-2 pb-3 space-y-1">
-            {[
-              { to: "/", label: "Home" },
-              { to: "/file", label: "File" },
-              { to: "/pay", label: "Pay" },
-              { to: "/refunds", label: "Refunds" },
-              { to: "/credits-deductions", label: "Credits & Deductions" },
-              { to: "/forms-instructions", label: "Forms & Instructions" },
-              { to: "/dashboard", label: "Get Started" }
-            ].map(item => (
+            {navigationItems.map(item => (
               <Link
                 key={item.to}
                 to={item.to}
@@ -159,6 +216,38 @@ export const Header = () => {
                 {item.label}
               </Link>
             ))}
+            
+            {/* Mobile Search */}
+            <div className="px-3 py-2">
+              <div className="relative mt-1 rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-irs-blue focus:border-irs-blue sm:text-sm"
+                  placeholder="Search"
+                />
+              </div>
+            </div>
+            
+            {/* Mobile Sign In/Out */}
+            {user ? (
+              <button
+                onClick={handleSignOut}
+                className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-700 hover:bg-irs-gray"
+              >
+                Sign Out
+              </button>
+            ) : (
+              <Link
+                to="/login"
+                className="block px-3 py-2 rounded-md text-base font-medium text-irs-blue hover:text-irs-darkBlue hover:bg-irs-gray"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Sign In
+              </Link>
+            )}
           </div>
         </div>
       )}
