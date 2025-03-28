@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { User } from '@/types/user';
+import { User } from '@/components/admin/user-list/types';
 
 export const useFetchUsers = () => {
   const { toast } = useToast();
@@ -34,21 +34,37 @@ export const useFetchUsers = () => {
 
       console.log('Profiles data received:', data);
 
-      if (!data || data.length === 0) {
-        console.log('No user profiles found in the database');
-        setUsers([]);
-        return;
-      }
-
       // Format the data with proper date handling
       const formattedUsers = data.map(user => {
+        // Ensure proper date parsing for filing_deadline
+        let filingDeadline = user.filing_deadline ? new Date(user.filing_deadline) : undefined;
+        
+        // Check if date is valid
+        if (filingDeadline && isNaN(filingDeadline.getTime())) {
+          console.warn(`Invalid filing deadline for user ${user.id}:`, user.filing_deadline);
+          filingDeadline = undefined;
+        }
+        
+        // Safely handle tax_due and available_credits which might be numbers or strings
+        const taxDue = user.tax_due === null ? 0 : 
+          (typeof user.tax_due === 'string' ? parseFloat(user.tax_due) : user.tax_due);
+          
+        const availableCredits = user.available_credits === null ? 0 : 
+          (typeof user.available_credits === 'string' ? parseFloat(user.available_credits) : user.available_credits);
+        
         // Create a properly formatted name from first_name and last_name
         const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Unknown User';
         
         return {
           id: user.id,
+          name: fullName,
           email: user.email || '',
-          name: fullName
+          role: user.role || 'User',
+          lastLogin: user.last_login ? new Date(user.last_login).toLocaleString() : 'Never',
+          status: user.status || 'Active',
+          taxDue,
+          filingDeadline,
+          availableCredits
         };
       });
 

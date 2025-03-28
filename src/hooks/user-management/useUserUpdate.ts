@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { User } from '@/types/user';
+import { User } from '@/components/admin/user-list/types';
 
 export const useUserUpdate = (users: User[], setUsers: React.Dispatch<React.SetStateAction<User[]>>) => {
   const { toast } = useToast();
@@ -9,14 +9,19 @@ export const useUserUpdate = (users: User[], setUsers: React.Dispatch<React.SetS
   const handleSaveUser = async (updatedUser: User) => {
     try {
       // Split name into first and last name
-      const nameParts = updatedUser.name?.trim().split(' ') || ['', ''];
+      const nameParts = updatedUser.name.trim().split(' ');
       const firstName = nameParts[0];
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
       console.log("Updating user with data:", {
         first_name: firstName,
         last_name: lastName,
-        email: updatedUser.email
+        email: updatedUser.email,
+        role: updatedUser.role,
+        status: updatedUser.status,
+        tax_due: updatedUser.taxDue,
+        filing_deadline: updatedUser.filingDeadline?.toISOString(),
+        available_credits: updatedUser.availableCredits
       });
       
       // Update profiles table instead of users table
@@ -25,7 +30,12 @@ export const useUserUpdate = (users: User[], setUsers: React.Dispatch<React.SetS
         .update({
           first_name: firstName,
           last_name: lastName,
-          email: updatedUser.email
+          email: updatedUser.email,
+          role: updatedUser.role,
+          status: updatedUser.status,
+          tax_due: updatedUser.taxDue,
+          filing_deadline: updatedUser.filingDeadline?.toISOString(),
+          available_credits: updatedUser.availableCredits
         })
         .eq('id', updatedUser.id);
 

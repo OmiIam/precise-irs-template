@@ -1,100 +1,130 @@
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { Loader2 } from 'lucide-react';
-import { User } from '@/types/user';
-
-const userEditSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  email: z.string().email({ message: "Please enter a valid email address" }),
-});
+import React from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { generateRandomPassword } from './user-edit-form/utils';
+import { User, UserFormData } from './user-edit-form/types';
+import UserEditForm from './user-edit-form/UserEditForm';
 
 type UserEditDialogProps = {
-  user: User;
-  onSave: (user: User) => Promise<void>;
-  onCancel: () => void;
-  isOpen: boolean;
+  user: User | null;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onSave: (user: User) => void;
+  isCreateMode?: boolean;
+  isProcessing?: boolean;
 };
 
-const UserEditDialog = ({ user, onSave, onCancel, isOpen }: UserEditDialogProps) => {
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const form = useForm<z.infer<typeof userEditSchema>>({
-    resolver: zodResolver(userEditSchema),
-    defaultValues: {
-      name: user.name || '',
-      email: user.email,
-    },
+const UserEditDialog = ({
+  user,
+  open,
+  onOpenChange,
+  onSave,
+  isCreateMode = false,
+  isProcessing = false
+}: UserEditDialogProps) => {
+  const [formData, setFormData] = React.useState<UserFormData>({
+    id: '',
+    name: '',
+    email: '',
+    role: 'User',
+    lastLogin: '',
+    status: 'Active',
+    taxDue: 0,
+    filingDeadline: new Date(),
+    availableCredits: 0
   });
 
-  const handleSubmit = async (values: z.infer<typeof userEditSchema>) => {
-    setIsLoading(true);
-    try {
-      await onSave({
-        ...user,
-        name: values.name,
-        email: values.email,
-      });
-    } finally {
-      setIsLoading(false);
+  const [showResetPassword, setShowResetPassword] = React.useState(false);
+
+  // Reset form data when the dialog opens or when user/mode changes
+  React.useEffect(() => {
+    if (open) {
+      if (user) {
+        // Editing existing user
+        setFormData({
+          ...user,
+          taxDue: user.taxDue || 0,
+          filingDeadline: user.filingDeadline ? new Date(user.filingDeadline) : new Date(),
+          availableCredits: user.availableCredits || 0
+        });
+        setShowResetPassword(false);
+      } else if (isCreateMode) {
+        // Creating new user
+        const newUserId = crypto.randomUUID();
+        const initialPassword = generateRandomPassword();
+        
+        setFormData({
+          id: newUserId,
+          name: '',
+          email: '',
+          role: 'User',
+          lastLogin: 'Never',
+          status: 'Active',
+          taxDue: 0,
+          filingDeadline: new Date(),
+          availableCredits: 0,
+          password: initialPassword // Set initial password for new users
+        });
+        setShowResetPassword(true); // Show password field for new users
+      }
+    }
+  }, [user, isCreateMode, open]);
+  
+  // Close dialog handler - only close if not processing
+  const handleDialogOpenChange = (newOpenState: boolean) => {
+    if (!isProcessing || newOpenState) { // Allow opening, but prevent closing during processing
+      onOpenChange(newOpenState);
     }
   };
 
+  const dialogTitle = isCreateMode ? "Create New User" : "Edit User";
+  const dialogDescription = isCreateMode 
+    ? "Create a new user account with the following details." 
+    : "Make changes to the user account details.";
+
+  if ((!user && !isCreateMode)) return null;
+
+  const handleSaveWrapper = (userData: User) => {
+    // For create mode, ensure password exists
+    if (isCreateMode && !userData.password) {
+      console.error("Password is missing for new user");
+      return;
+    }
+    
+    console.log("Submitting user data:", {
+      ...userData,
+      password: userData.password ? "[REDACTED]" : undefined
+    });
+    
+    onSave(userData);
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Edit User</DialogTitle>
+          <DialogTitle>{dialogTitle}</DialogTitle>
+          <DialogDescription>
+            {dialogDescription}
+          </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : 'Save Changes'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+        
+        <UserEditForm 
+          formData={formData}
+          setFormData={setFormData}
+          onSave={handleSaveWrapper}
+          onCancel={() => !isProcessing && onOpenChange(false)}
+          isCreateMode={isCreateMode}
+          showResetPassword={showResetPassword}
+          setShowResetPassword={setShowResetPassword}
+          isProcessing={isProcessing}
+        />
       </DialogContent>
     </Dialog>
   );

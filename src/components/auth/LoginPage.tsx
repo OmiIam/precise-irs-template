@@ -1,45 +1,44 @@
 
-import React, { useEffect, useState } from 'react';
-import Header from '@/components/Header';
+import React, { useState, useEffect } from 'react';
+import { Header } from '@/components/Header';
 import { useAuth } from '@/contexts/auth';
 import LoginContainer from './LoginContainer';
 import UserLoginForm from './UserLoginForm';
 import AdminLoginForm from './AdminLoginForm';
-import { useNavigate } from 'react-router-dom';
+import { useLoginRedirect } from '@/hooks/useLoginRedirect';
 
 const LoginPage = () => {
-  const { user, isAdmin } = useAuth();
-  const navigate = useNavigate();
-  const [isAdminMode, setIsAdminMode] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const { signIn, user } = useAuth();
+  const { isRedirecting, setIsRedirecting } = useLoginRedirect();
   
-  // Toggle between admin and user login modes
-  const toggleMode = () => {
-    setIsAdminMode(!isAdminMode);
+  const toggleAdminMode = () => {
+    setIsAdmin(!isAdmin);
   };
-  
-  // Redirect if already authenticated
+
+  // Pre-set redirecting if user is already authenticated to avoid flicker
   useEffect(() => {
-    if (user) {
-      if (isAdmin) {
-        // Redirect admin users to admin dashboard
-        navigate('/admin/dashboard', { replace: true });
-      } else {
-        // Redirect regular users to user dashboard
-        navigate('/dashboard', { replace: true });
-      }
+    if (user && !isRedirecting) {
+      setIsRedirecting(true);
     }
-  }, [user, isAdmin, navigate]);
+  }, [user, isRedirecting, setIsRedirecting]);
 
   return (
     <div className="min-h-screen bg-irs-gray">
       <Header />
       <div className="container mx-auto pt-32 pb-20 px-4">
         <div className="max-w-md mx-auto">
-          <LoginContainer isAdmin={isAdminMode}>
-            {isAdminMode ? (
-              <AdminLoginForm onToggleMode={toggleMode} />
+          <LoginContainer isAdmin={isAdmin}>
+            {isAdmin ? (
+              <AdminLoginForm 
+                onToggleMode={toggleAdminMode} 
+                setIsRedirecting={setIsRedirecting} 
+              />
             ) : (
-              <UserLoginForm onToggleMode={toggleMode} signIn={useAuth().signIn} />
+              <UserLoginForm 
+                onToggleMode={toggleAdminMode} 
+                signIn={signIn} 
+              />
             )}
           </LoginContainer>
         </div>

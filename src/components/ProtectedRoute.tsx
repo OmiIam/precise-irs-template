@@ -1,25 +1,33 @@
 
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/auth';
+import { Navigate } from 'react-router-dom';
+import { useAuthCheck } from '@/hooks/useAuthCheck';
 import AuthLoading from '@/components/auth/AuthLoading';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requireAdmin?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, isLoading } = useAuth();
-  const location = useLocation();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  children, 
+  requireAdmin = false 
+}) => {
+  const { isLoading, checkComplete, hasAccess, isAuthenticated } = useAuthCheck(requireAdmin);
 
   // Show loading state while checking authentication
-  if (isLoading) {
+  if (isLoading || !checkComplete) {
     return <AuthLoading />;
   }
 
-  // If not authenticated, redirect to login with the current path in state
-  if (!user) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  // If not authenticated at all, redirect to login
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // If requires admin but user doesn't have access, redirect to dashboard
+  if (requireAdmin && !hasAccess) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   // Render the protected content
