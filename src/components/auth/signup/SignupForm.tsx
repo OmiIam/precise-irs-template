@@ -7,11 +7,11 @@ import { Form } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { signupSchema, SignupFormValues } from './signupSchema';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { AccountCreationStep } from './AccountCreationStep';
 import { DocumentUploadStep } from './DocumentUploadStep';
 import { SignupFormFooter } from './SignupFormFooter';
 import { useAuth } from '@/contexts/auth';
+import { toast as sonnerToast } from 'sonner';
 
 interface SignupFormProps {
   onSubmit: (values: SignupFormValues) => Promise<{ userId: string } | void>;
@@ -41,9 +41,13 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
   useEffect(() => {
     if (user && !isRedirecting) {
       setIsRedirecting(true);
+      sonnerToast.info('You are already signed in', {
+        description: 'Redirecting to dashboard...'
+      });
+      
       setTimeout(() => {
         navigate('/dashboard', { replace: true });
-      }, 10);
+      }, 500);
     }
   }, [user, navigate, isRedirecting]);
 
@@ -59,10 +63,14 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
         console.log('User created with ID:', result.userId);
         setUserId(result.userId);
         
-        toast({
-          title: "Account created",
-          description: "Our team will contact you shortly with document verification instructions.",
+        // Redirect to dashboard directly - document verification handled separately
+        sonnerToast.success('Account created successfully!', {
+          description: 'Redirecting to your dashboard...'
         });
+        
+        setTimeout(() => {
+          navigate('/dashboard', { replace: true });
+        }, 1000);
       }
     } catch (error: any) {
       console.error("Error in handleSubmit:", error);

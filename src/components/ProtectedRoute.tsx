@@ -15,7 +15,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 }) => {
   const { isLoading, checkComplete, hasAccess, isAuthenticated } = useAuthCheck(requireAdmin);
 
-  // Show loading state while checking authentication
+  // Show loading spinner while checking authentication
   if (isLoading || !checkComplete) {
     return <AuthLoading />;
   }

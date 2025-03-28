@@ -12,6 +12,7 @@ import {
   signUpWithEmail, 
   resetPasswordWithEmail 
 } from './authService';
+import { toast as sonnerToast } from 'sonner';
 
 // Create the auth context with undefined default value
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,6 +29,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        console.log("Auth state change event:", event);
+        
+        if (event === 'SIGNED_IN') {
+          sonnerToast.success('Signed in successfully');
+        } else if (event === 'SIGNED_OUT') {
+          sonnerToast.info('Signed out successfully');
+        }
+        
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
@@ -45,12 +54,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     // THEN check for existing session
     supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
+      console.log("Checking existing session:", currentSession ? "found" : "none");
+      
       setSession(currentSession);
       setUser(currentSession?.user ?? null);
       
       if (currentSession?.user) {
-        const isUserAdmin = await checkUserRole(currentSession.user.id);
-        setIsAdmin(isUserAdmin);
+        try {
+          const isUserAdmin = await checkUserRole(currentSession.user.id);
+          setIsAdmin(isUserAdmin);
+        } catch (error) {
+          console.error("Error checking user role:", error);
+        }
       }
       
       setIsLoading(false);

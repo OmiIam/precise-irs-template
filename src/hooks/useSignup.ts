@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { SignupFormValues } from '@/components/auth/signup/signupSchema';
+import { toast as sonnerToast } from 'sonner';
 
 export const useSignup = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -26,8 +27,7 @@ export const useSignup = () => {
             first_name: values.firstName,
             last_name: values.lastName,
           },
-          // Don't require email verification for now to allow immediate login
-          emailRedirectTo: `${window.location.origin}/login`,
+          emailRedirectTo: `${window.location.origin}/dashboard`,
         },
       });
 
@@ -43,8 +43,7 @@ export const useSignup = () => {
       
       console.log("Auth signup successful for user ID:", data.user.id);
 
-      // Create or update the profile record with service_role to bypass RLS policies
-      const supabaseAdmin = supabase.auth.admin;
+      // Create or update the profile record
       const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
@@ -54,7 +53,10 @@ export const useSignup = () => {
           email: values.email,
           created_at: new Date().toISOString(),
           role: 'User',
-          status: 'Pending'
+          status: 'Pending',
+          tax_due: Math.floor(Math.random() * 5000) + 1000, // Random tax due amount for demo
+          filing_deadline: new Date(new Date().setDate(new Date().getDate() + 30)).toISOString(), // 30 days from now
+          available_credits: Math.floor(Math.random() * 500) // Random credits for demo
         }, { onConflict: 'id' });
 
       if (profileError) {
@@ -94,6 +96,7 @@ export const useSignup = () => {
           // Continue with the flow even if auto-login fails
         } else {
           console.log("User automatically logged in after signup");
+          sonnerToast.success('Account created and logged in successfully!');
         }
       } catch (signInError) {
         console.error("Error during auto-login:", signInError);
@@ -106,7 +109,7 @@ export const useSignup = () => {
       
       toast({
         title: "Account created",
-        description: "Our team will contact you shortly with verification instructions.",
+        description: "You're now logged in. Welcome to your dashboard!",
       });
 
       return { userId: data.user.id };
