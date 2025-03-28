@@ -53,25 +53,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session: currentSession } }) => {
-      console.log("Checking existing session:", currentSession ? "found" : "none");
-      
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      
-      if (currentSession?.user) {
-        try {
-          const isUserAdmin = await checkUserRole(currentSession.user.id);
-          setIsAdmin(isUserAdmin);
-        } catch (error) {
-          console.error("Error checking user role:", error);
+    const fetchInitialSession = async () => {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        console.log("Checking existing session:", currentSession ? "found" : "none");
+        
+        setSession(currentSession);
+        setUser(currentSession?.user ?? null);
+        
+        if (currentSession?.user) {
+          try {
+            const isUserAdmin = await checkUserRole(currentSession.user.id);
+            setIsAdmin(isUserAdmin);
+          } catch (error) {
+            console.error("Error checking user role:", error);
+          }
         }
+      } catch (error) {
+        console.error("Error fetching initial session:", error);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
-    });
+    };
 
-    return () => subscription.unsubscribe();
+    fetchInitialSession();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {
