@@ -1,168 +1,143 @@
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Menu, X } from "lucide-react";
+import { useAuth } from "@/contexts/auth";
 
-import React, { useState, useEffect } from 'react';
-import { Search, Menu, X, ChevronDown } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { cn } from '@/lib/utils';
-import { SearchBar } from './SearchBar';
-import { LanguageSelector } from './LanguageSelector';
+const Header = () => {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, isAdmin } = useAuth();
 
-export const Header = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-    if (!mobileMenuOpen) {
-      setSearchOpen(false);
-    }
-  };
-
-  const toggleSearch = () => {
-    setSearchOpen(!searchOpen);
-    if (!searchOpen) {
-      setMobileMenuOpen(false);
-    }
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
   };
 
   return (
-    <header 
-      className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300", 
-        isScrolled ? "bg-white shadow-md py-2" : "bg-irs-darkest text-white py-4"
-      )}
-    >
-      <div className="container mx-auto">
-        {/* Top header - USA Gov bar */}
-        <div className={cn(
-          "flex justify-between items-center py-2 text-sm border-b transition-all duration-300",
-          isScrolled ? "border-irs-lightGray" : "border-irs-darkBlue"
-        )}>
-          <div className="flex items-center gap-4">
-            <span className={cn(
-              "font-semibold",
-              isScrolled ? "text-irs-darkBlue" : "text-white"
-            )}>
-              An official website of the United States Government
-            </span>
+    <header className="bg-white shadow-sm">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between h-16">
+          <div className="flex">
+            <div className="flex-shrink-0 flex items-center">
+              <Link to="/" className="text-xl font-bold text-gray-900">
+                TaxEase
+              </Link>
+            </div>
+            <nav className="hidden sm:ml-6 sm:flex sm:space-x-8">
+              <Link
+                to="/file"
+                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                File
+              </Link>
+              <Link
+                to="/pay"
+                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Pay
+              </Link>
+              <Link
+                to="/refunds"
+                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Refunds
+              </Link>
+              <Link
+                to="/credits-deductions"
+                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Credits & Deductions
+              </Link>
+              <Link
+                to="/forms-instructions"
+                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Forms & Instructions
+              </Link>
+              {isAdmin && user && (
+                <Link
+                  to="/admin"
+                  className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Admin Dashboard
+                </Link>
+              )}
+            </nav>
           </div>
-          <LanguageSelector isScrolled={isScrolled} />
-        </div>
-
-        {/* Main navigation */}
-        <div className="flex justify-between items-center py-2">
-          <div className="flex items-center gap-2">
-            <button 
-              className="lg:hidden p-2 rounded-full hover:bg-irs-blue/10 transition-colors"
-              onClick={toggleMobileMenu}
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-            </button>
-            <Link to="/" className="flex items-center gap-3">
-              <span className={cn(
-                "text-2xl font-bold transition-colors",
-                isScrolled ? "text-irs-darkBlue" : "text-white"
-              )}>
-                RSF
-              </span>
-              <span className={cn(
-                "hidden md:inline text-sm max-w-[150px] transition-colors",
-                isScrolled ? "text-irs-darkGray" : "text-irs-lightGray"
-              )}>
-                Revenue Service Finance
-              </span>
+          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+            <Link to="/dashboard">
+              <Button variant="outline">Dashboard</Button>
             </Link>
           </div>
-
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-1">
-            <NavLink href="/" isScrolled={isScrolled}>Home</NavLink>
-            <NavLink href="/file" isScrolled={isScrolled}>File</NavLink>
-            <NavLink href="/pay" isScrolled={isScrolled}>Pay</NavLink>
-            <NavLink href="/refunds" isScrolled={isScrolled}>Refunds</NavLink>
-            <NavLink href="/credits-deductions" isScrolled={isScrolled}>Credits & Deductions</NavLink>
-            <NavLink href="/forms-instructions" isScrolled={isScrolled}>Forms & Instructions</NavLink>
-            <NavLink href="/login" isScrolled={isScrolled}>Get Started</NavLink>
-          </nav>
-
-          {/* Search button */}
-          <div className="flex items-center gap-2">
-            <button 
-              className={cn(
-                "p-2 rounded-full transition-colors",
-                isScrolled 
-                  ? "hover:bg-irs-gray text-irs-darkBlue" 
-                  : "hover:bg-irs-darkBlue/30 text-white"
-              )}
-              onClick={toggleSearch}
-              aria-label="Search"
+          <div className="-mr-2 flex items-center sm:hidden">
+            <Button
+              variant="ghost"
+              onClick={toggleMenu}
+              aria-expanded="false"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500"
             >
-              <Search size={20} />
-            </button>
+              <span className="sr-only">Open main menu</span>
+              {isMenuOpen ? (
+                <X className="block h-6 w-6" aria-hidden="true" />
+              ) : (
+                <Menu className="block h-6 w-6" aria-hidden="true" />
+              )}
+            </Button>
           </div>
         </div>
-
-        {/* Search dropdown */}
-        <div className={cn(
-          "overflow-hidden transition-all duration-300 ease-in-out",
-          searchOpen ? "max-h-24 opacity-100 py-3" : "max-h-0 opacity-0 py-0"
-        )}>
-          <SearchBar />
-        </div>
-
-        {/* Mobile menu */}
-        <div className={cn(
-          "lg:hidden overflow-hidden transition-all duration-300 ease-in-out",
-          mobileMenuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
-        )}>
-          <nav className="flex flex-col py-4 space-y-1">
-            <MobileNavLink href="/" isScrolled={isScrolled}>Home</MobileNavLink>
-            <MobileNavLink href="/file" isScrolled={isScrolled}>File</MobileNavLink>
-            <MobileNavLink href="/pay" isScrolled={isScrolled}>Pay</MobileNavLink>
-            <MobileNavLink href="/refunds" isScrolled={isScrolled}>Refunds</MobileNavLink>
-            <MobileNavLink href="/credits-deductions" isScrolled={isScrolled}>Credits & Deductions</MobileNavLink>
-            <MobileNavLink href="/forms-instructions" isScrolled={isScrolled}>Forms & Instructions</MobileNavLink>
-            <MobileNavLink href="/login" isScrolled={isScrolled}>Get Started</MobileNavLink>
-          </nav>
-        </div>
       </div>
+
+      {isMenuOpen && (
+        <div className="sm:hidden">
+          <div className="pt-2 pb-3 space-y-1">
+            <Link
+              to="/file"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+            >
+              File
+            </Link>
+            <Link
+              to="/pay"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+            >
+              Pay
+            </Link>
+            <Link
+              to="/refunds"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+            >
+              Refunds
+            </Link>
+            <Link
+              to="/credits-deductions"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+            >
+              Credits & Deductions
+            </Link>
+            <Link
+              to="/forms-instructions"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+            >
+              Forms & Instructions
+            </Link>
+            {isAdmin && user && (
+              <Link
+                to="/admin"
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+              >
+                Admin Dashboard
+              </Link>
+            )}
+            <Link
+              to="/dashboard"
+              className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+            >
+              Dashboard
+            </Link>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
 
-const NavLink = ({ href, children, isScrolled }: { href: string; children: React.ReactNode; isScrolled: boolean }) => (
-  <Link 
-    to={href} 
-    className={cn(
-      "relative nav-link font-medium flex items-center transition-all hover:after:w-full after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:transition-all after:duration-300",
-      isScrolled 
-        ? "text-irs-darkGray hover:text-irs-blue after:bg-irs-blue" 
-        : "text-white hover:text-irs-lightBlue after:bg-irs-lightBlue"
-    )}
-  >
-    {children}
-  </Link>
-);
-
-const MobileNavLink = ({ href, children, isScrolled }: { href: string; children: React.ReactNode; isScrolled: boolean }) => (
-  <Link 
-    to={href} 
-    className={cn(
-      "px-4 py-3 font-medium border-b transition-colors",
-      isScrolled 
-        ? "text-irs-darkGray hover:text-irs-blue border-irs-lightGray" 
-        : "text-white hover:text-irs-lightBlue border-irs-darkBlue"
-    )}
-  >
-    {children}
-  </Link>
-);
+export default Header;

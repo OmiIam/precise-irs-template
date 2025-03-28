@@ -15,6 +15,7 @@ import Refunds from "./pages/Refunds";
 import CreditsDeductions from "./pages/CreditsDeductions";
 import FormsInstructions from "./pages/FormsInstructions";
 import RefundStatus from "./pages/RefundStatus";
+import AdminDashboard from "./pages/AdminDashboard";
 import { AuthProvider } from "./contexts/auth";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -40,6 +41,11 @@ const App = () => (
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute>
+                <AdminDashboard />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

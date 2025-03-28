@@ -25,7 +25,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Parse the request body
-    const { email, password, firstName, lastName } = await req.json();
+    const { email, password, firstName, lastName, role, status, taxDue, availableCredits, filingDeadline } = await req.json();
 
     if (!email || !password) {
       return new Response(
@@ -49,7 +49,48 @@ serve(async (req) => {
       throw createUserError;
     }
 
-    // Create the user was successful
+    // If the user was created, we need to ensure the profile exists with the correct data
+    if (userData.user) {
+      // Set up profile data
+      const profileData = {
+        id: userData.user.id,
+        email,
+        first_name: firstName || "",
+        last_name: lastName || "",
+        role: role || "User",
+        status: status || "Active",
+        tax_due: taxDue || 0,
+        available_credits: availableCredits || 0,
+        filing_deadline: filingDeadline || null,
+        created_at: new Date().toISOString()
+      };
+
+      // Insert or update the profile
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .upsert(profileData);
+
+      if (profileError) {
+        console.error("Error creating profile:", profileError);
+        // If profile creation fails, attempt to delete the auth user
+        await supabase.auth.admin.deleteUser(userData.user.id);
+        throw new Error(`Profile creation failed: ${profileError.message}`);
+      }
+
+      // Log the user creation
+      await supabase
+        .from('activity_logs')
+        .insert({
+          user_id: userData.user.id,
+          action: 'USER_CREATED',
+          details: {
+            created_by: req.headers.get('Authorization') ? 'Admin' : 'System',
+            timestamp: new Date().toISOString()
+          }
+        });
+    }
+
+    // Return success response
     return new Response(
       JSON.stringify({ 
         success: true, 

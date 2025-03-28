@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { EndImpersonation } from '@/components/admin/EndImpersonation';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -102,6 +103,7 @@ const Dashboard = () => {
           </div>
         </main>
       </div>
+      <EndImpersonation />
     </div>
   );
 };
