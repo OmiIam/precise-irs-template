@@ -6,6 +6,3 @@ verify_jwt = false
 
 [functions.create-user-documents-bucket]
 verify_jwt = false
-
-[functions.shared-utils]
-verify_jwt = false
