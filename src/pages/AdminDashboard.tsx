@@ -6,18 +6,10 @@ import UserForm from '@/components/admin/UserForm';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useAuth } from '@/contexts/auth';
-import { Navigate } from 'react-router-dom';
 
 const AdminDashboard: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const { user, isAdmin } = useAuth();
   
-  // Redirect if not admin
-  if (!user || !isAdmin) {
-    return <Navigate to="/dashboard" />;
-  }
-
   return (
     <AdminProvider>
       <div className="container mx-auto py-6 space-y-8">
