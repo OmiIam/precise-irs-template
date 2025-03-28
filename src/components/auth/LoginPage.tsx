@@ -9,7 +9,7 @@ import { useLoginRedirect } from '@/hooks/useLoginRedirect';
 
 const LoginPage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
-  const { signIn, user } = useAuth();
+  const { signIn, user, isLoading } = useAuth();
   const { isRedirecting, setIsRedirecting } = useLoginRedirect();
   
   const toggleAdminMode = () => {
@@ -18,10 +18,10 @@ const LoginPage = () => {
 
   // Pre-set redirecting if user is already authenticated to avoid flicker
   useEffect(() => {
-    if (user && !isRedirecting) {
+    if (user && !isLoading && !isRedirecting) {
       setIsRedirecting(true);
     }
-  }, [user, isRedirecting, setIsRedirecting]);
+  }, [user, isRedirecting, setIsRedirecting, isLoading]);
 
   return (
     <div className="min-h-screen bg-irs-gray">

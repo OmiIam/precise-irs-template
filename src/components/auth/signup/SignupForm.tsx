@@ -39,7 +39,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
 
   // Redirect if the user is already authenticated
   useEffect(() => {
-    if (user && !isRedirecting) {
+    if (user && !isRedirecting && !userId) {
       setIsRedirecting(true);
       sonnerToast.info('You are already signed in', {
         description: 'Redirecting to dashboard...'
@@ -49,7 +49,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSubmit, isLoading }) => {
         navigate('/dashboard', { replace: true });
       }, 500);
     }
-  }, [user, navigate, isRedirecting]);
+  }, [user, navigate, isRedirecting, userId]);
 
   const handleSubmit = async (values: SignupFormValues) => {
     try {

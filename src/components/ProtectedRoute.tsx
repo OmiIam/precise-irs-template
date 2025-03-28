@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthCheck } from '@/hooks/useAuthCheck';
 import AuthLoading from '@/components/auth/AuthLoading';
 
@@ -14,6 +14,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requireAdmin = false 
 }) => {
   const { isLoading, checkComplete, hasAccess, isAuthenticated } = useAuthCheck(requireAdmin);
+  const location = useLocation();
+
+  // Special case: If we're on signup or login page and trying to check auth, 
+  // don't get stuck in a loading state
+  if ((location.pathname === '/signup' || location.pathname === '/login') && isLoading) {
+    return <>{children}</>;
+  }
 
   // Show loading spinner while checking authentication
   if (isLoading || !checkComplete) {
