@@ -7,7 +7,6 @@ import { KeyRound, Copy, Eye, EyeOff } from 'lucide-react';
 import { UserFormData } from './types';
 import { generateRandomPassword } from './utils';
 import { useToast } from '@/hooks/use-toast';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
 type PasswordSectionProps = {
   formData: UserFormData;

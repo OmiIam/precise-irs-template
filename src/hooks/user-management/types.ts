@@ -1,5 +1,5 @@
 
-import { User } from '@/components/admin/user-list/types';
+import { User } from '@/types/user';
 import { z } from 'zod';
 
 export interface UserManagementState {
