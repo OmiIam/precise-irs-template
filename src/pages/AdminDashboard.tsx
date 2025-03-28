@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { AdminProvider } from '@/contexts/admin/AdminContext';
 import UserList from '@/components/admin/UserList';
-import UserForm from '@/components/admin/UserForm';
+import UserFormRefactored from '@/components/admin/UserFormRefactored';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -31,7 +31,7 @@ const AdminDashboard: React.FC = () => {
             <DialogHeader>
               <DialogTitle>Create New User</DialogTitle>
             </DialogHeader>
-            <UserForm mode="create" onSuccess={() => setIsCreateModalOpen(false)} />
+            <UserFormRefactored mode="create" onSuccess={() => setIsCreateModalOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>
