@@ -10,6 +10,12 @@ import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import File from "./pages/File";
+import Pay from "./pages/Pay";
+import Refunds from "./pages/Refunds";
+import CreditsDeductions from "./pages/CreditsDeductions";
+import FormsInstructions from "./pages/FormsInstructions";
+import RefundStatus from "./pages/RefundStatus";
 import { AuthProvider } from "./contexts/auth";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -26,6 +32,12 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/file" element={<File />} />
+            <Route path="/pay" element={<Pay />} />
+            <Route path="/refunds" element={<Refunds />} />
+            <Route path="/refund-status" element={<RefundStatus />} />
+            <Route path="/credits-deductions" element={<CreditsDeductions />} />
+            <Route path="/forms-instructions" element={<FormsInstructions />} />
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
