@@ -121,6 +121,13 @@ const UserForm: React.FC<UserFormProps> = ({ mode, initialData, onSuccess }) => 
     setFormData(prev => ({ ...prev, password: generateRandomPassword() }));
   };
 
+  // Convert filingDeadline to a proper Date object
+  const selectedDate = formData.filingDeadline ? 
+    (formData.filingDeadline instanceof Date ? 
+      formData.filingDeadline : 
+      new Date(formData.filingDeadline)) : 
+    undefined;
+
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid gap-4 py-4">
@@ -235,19 +242,19 @@ const UserForm: React.FC<UserFormProps> = ({ mode, initialData, onSuccess }) => 
                   variant="outline"
                   className={cn(
                     "w-full justify-start text-left font-normal",
-                    !formData.filingDeadline && "text-muted-foreground"
+                    !selectedDate && "text-muted-foreground"
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.filingDeadline
-                    ? format(formData.filingDeadline, "PPP")
+                  {selectedDate
+                    ? format(selectedDate, "PPP")
                     : "Select a date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
-                  selected={formData.filingDeadline}
+                  selected={selectedDate}
                   onSelect={handleDateChange}
                   initialFocus
                 />

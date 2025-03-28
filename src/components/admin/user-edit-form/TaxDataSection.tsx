@@ -19,7 +19,11 @@ type TaxDataSectionProps = {
 const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSectionProps) => {
   // Parse existing deadline or set to current date if undefined
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(
-    formData.filingDeadline || new Date()
+    formData.filingDeadline instanceof Date 
+      ? formData.filingDeadline 
+      : formData.filingDeadline 
+        ? new Date(formData.filingDeadline) 
+        : new Date()
   );
   
   // Ensure dates are synchronized when form data changes

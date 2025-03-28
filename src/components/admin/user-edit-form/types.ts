@@ -1,5 +1,5 @@
 
-import { User } from '@/types/user';
+import { User, UserRole, UserStatus } from '@/types/user';
 
 export type UserEditFormMode = 'create' | 'edit';
 
@@ -9,6 +9,18 @@ export interface UserEditFormProps {
   onCancel?: () => void;
   isSubmitting?: boolean;
   mode: UserEditFormMode;
+}
+
+export interface UserFormData {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  status: UserStatus;
+  taxDue?: number;
+  filingDeadline?: Date | string;
+  availableCredits?: number;
+  password?: string;
 }
 
 export interface BasicInfoSectionProps {
