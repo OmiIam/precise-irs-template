@@ -15,7 +15,6 @@ import Refunds from "./pages/Refunds";
 import CreditsDeductions from "./pages/CreditsDeductions";
 import FormsInstructions from "./pages/FormsInstructions";
 import RefundStatus from "./pages/RefundStatus";
-import AdminDashboard from "./pages/AdminDashboard";
 import { AuthProvider } from "./contexts/auth";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -43,11 +42,7 @@ const App = () => (
                 <Dashboard />
               </ProtectedRoute>
             } />
-            <Route path="/admin" element={
-              <ProtectedRoute requireAdmin={true}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            } />
+            {/* Removed admin route */}
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
