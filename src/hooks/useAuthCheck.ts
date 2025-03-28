@@ -8,6 +8,7 @@ export const useAuthCheck = (requireAdmin = false) => {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [checkComplete, setCheckComplete] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   
   useEffect(() => {
     const checkAuthentication = async () => {
@@ -37,18 +38,31 @@ export const useAuthCheck = (requireAdmin = false) => {
             }
           } catch (error) {
             console.error("Error validating session:", error);
-            // Don't clear adminAuth here - we want to allow pure admin login too
+            // Handle the error but continue the flow
+            setError(error instanceof Error ? error : new Error('Unknown error'));
           }
         }
       } catch (error) {
         console.error("Error in auth check:", error);
+        setError(error instanceof Error ? error : new Error('Unknown error'));
       } finally {
         setCheckComplete(true);
         setIsLoading(false);
       }
     };
     
+    // Set a timeout to ensure we don't get stuck
+    const timeoutId = setTimeout(() => {
+      if (isLoading && !checkComplete) {
+        console.warn("Auth check timeout exceeded");
+        setCheckComplete(true);
+        setIsLoading(false);
+      }
+    }, 3000); // 3 second timeout
+    
     checkAuthentication();
+    
+    return () => clearTimeout(timeoutId);
   }, [requireAdmin, user, authLoading]);
 
   // Determine access status - note we're allowing admin access without user in certain cases
@@ -62,9 +76,10 @@ export const useAuthCheck = (requireAdmin = false) => {
   );
 
   return {
-    isLoading: isLoading || authLoading,
+    isLoading: isLoading && authLoading,
     checkComplete,
     hasAccess,
-    isAuthenticated: !!user || isAdminAuthenticated
+    isAuthenticated: !!user || isAdminAuthenticated,
+    error
   };
 };

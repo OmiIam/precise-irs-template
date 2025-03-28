@@ -29,6 +29,7 @@ const App = () => (
       <HashRouter>
         <AuthProvider>
           <Routes>
+            {/* Public routes */}
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
@@ -38,6 +39,8 @@ const App = () => (
             <Route path="/refund-status" element={<RefundStatus />} />
             <Route path="/credits-deductions" element={<CreditsDeductions />} />
             <Route path="/forms-instructions" element={<FormsInstructions />} />
+            
+            {/* Protected routes */}
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />

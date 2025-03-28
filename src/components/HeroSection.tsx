@@ -3,6 +3,7 @@ import React from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/auth';
 
 interface HeroSectionProps {
   onGetStarted?: () => void;
@@ -10,11 +11,13 @@ interface HeroSectionProps {
 
 export const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleGetStarted = () => {
-    if (onGetStarted) {
-      onGetStarted();
+    if (user) {
+      navigate('/dashboard');
     } else {
+      // Direct link to signup instead of using onGetStarted callback
       navigate('/signup');
     }
   };
