@@ -19,6 +19,8 @@ const adminLoginSchema = z.object({
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
 
+type AdminLoginFormValues = z.infer<typeof adminLoginSchema>;
+
 type AdminLoginFormProps = {
   onToggleMode: () => void;
   onAdminLogin?: (values: { email: string; password: string }) => Promise<boolean>;
@@ -30,7 +32,7 @@ const AdminLoginForm = ({ onToggleMode, onAdminLogin, setIsRedirecting }: AdminL
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   
-  const form = useForm<z.infer<typeof adminLoginSchema>>({
+  const form = useForm<AdminLoginFormValues>({
     resolver: zodResolver(adminLoginSchema),
     defaultValues: {
       email: "",
@@ -38,7 +40,7 @@ const AdminLoginForm = ({ onToggleMode, onAdminLogin, setIsRedirecting }: AdminL
     },
   });
 
-  const onSubmit = async (values: z.infer<typeof adminLoginSchema>) => {
+  const onSubmit = async (values: AdminLoginFormValues) => {
     try {
       setIsLoading(true);
       
