@@ -1,8 +1,6 @@
 
-'use client';
-
-import { useNextAuth } from "@/hooks/useNextAuth";
-import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth";
+import { useNavigate, Navigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import AuthLoading from "@/components/auth/AuthLoading";
 
@@ -15,8 +13,8 @@ const ProtectedRoute = ({
   children, 
   requireAdmin = false 
 }: ProtectedRouteProps) => {
-  const { isLoading, isAuthenticated, isAdmin } = useNextAuth();
-  const router = useRouter();
+  const { isLoading, user, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [isChecking, setIsChecking] = useState(true);
   
   useEffect(() => {
@@ -24,15 +22,15 @@ const ProtectedRoute = ({
     if (!isLoading) {
       setIsChecking(false);
       
-      if (!isAuthenticated) {
+      if (!user) {
         console.log("User not authenticated, redirecting to login");
-        router.push("/login");
+        navigate("/login", { replace: true });
       } else if (requireAdmin && !isAdmin) {
         console.log("User not admin, redirecting to dashboard");
-        router.push("/dashboard");
+        navigate("/dashboard", { replace: true });
       }
     }
-  }, [isLoading, isAuthenticated, isAdmin, requireAdmin, router]);
+  }, [isLoading, user, isAdmin, requireAdmin, navigate]);
 
   // Show loading while we're checking auth status
   if (isLoading || isChecking) {
@@ -40,7 +38,7 @@ const ProtectedRoute = ({
   }
 
   // Don't render anything during redirect
-  if (!isAuthenticated || (requireAdmin && !isAdmin)) {
+  if (!user || (requireAdmin && !isAdmin)) {
     return null;
   }
 

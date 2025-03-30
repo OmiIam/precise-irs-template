@@ -10,8 +10,7 @@ import { ShieldCheck, Loader2 } from 'lucide-react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 import { Dispatch, SetStateAction } from 'react';
 
 const adminLoginSchema = z.object({
@@ -23,14 +22,14 @@ type AdminLoginFormValues = z.infer<typeof adminLoginSchema>;
 
 type AdminLoginFormProps = {
   onToggleMode: () => void;
-  onAdminLogin?: (values: { email: string; password: string }) => Promise<boolean>;
+  onAdminLogin?: (values: AdminLoginFormValues) => Promise<boolean>;
   setIsRedirecting: Dispatch<SetStateAction<boolean>>;
 };
 
 const AdminLoginForm = ({ onToggleMode, onAdminLogin, setIsRedirecting }: AdminLoginFormProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  const navigate = useNavigate();
   
   const form = useForm<AdminLoginFormValues>({
     resolver: zodResolver(adminLoginSchema),
@@ -45,12 +44,8 @@ const AdminLoginForm = ({ onToggleMode, onAdminLogin, setIsRedirecting }: AdminL
       setIsLoading(true);
       
       if (onAdminLogin) {
-        // Use the provided onAdminLogin function if available
-        // Explicitly passing values as required properties
-        const result = await onAdminLogin({
-          email: values.email,
-          password: values.password
-        });
+        // Use the provided onAdminLogin function if available with validated values
+        const result = await onAdminLogin(values);
         
         if (!result) {
           toast({
@@ -58,29 +53,22 @@ const AdminLoginForm = ({ onToggleMode, onAdminLogin, setIsRedirecting }: AdminL
             description: "Invalid admin credentials",
             variant: "destructive",
           });
-        }
-      } else {
-        // Fall back to standard NextAuth signIn
-        const result = await signIn("credentials", {
-          email: values.email,
-          password: values.password,
-          redirect: false,
-        });
-        
-        if (result?.ok) {
+        } else {
+          // Successfully logged in
           toast({
             title: "Admin Login successful",
             description: "Welcome to the admin dashboard",
           });
           setIsRedirecting(true);
-          router.push('/admin-dashboard');
-        } else {
-          toast({
-            title: "Admin Login failed",
-            description: "Invalid admin credentials",
-            variant: "destructive",
-          });
+          navigate('/admin-dashboard');
         }
+      } else {
+        // Fallback authentication method
+        toast({
+          title: "Login error", 
+          description: "Admin login method not configured",
+          variant: "destructive"
+        });
       }
     } catch (error) {
       console.error('Admin login error:', error);

@@ -1,18 +1,18 @@
 
-'use client';
-
 import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
 import LoginContainer from './LoginContainer';
 import UserLoginForm from './UserLoginForm';
 import AdminLoginForm from './AdminLoginForm';
-import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/auth';
+import AuthLoading from '@/components/auth/AuthLoading';
+import { Footer } from '@/components/Footer';
 
 const LoginPage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
-  const router = useRouter();
-  const { data: session, status } = useSession();
+  const navigate = useNavigate();
+  const { user, isAdmin: userIsAdmin, isLoading, signIn } = useAuth();
   const [isRedirecting, setIsRedirecting] = useState(false);
   
   const toggleAdminMode = () => {
@@ -21,18 +21,41 @@ const LoginPage = () => {
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (status === 'authenticated' && !isRedirecting) {
+    if (user && !isRedirecting) {
       setIsRedirecting(true);
       
       setTimeout(() => {
-        if (session?.user?.role === 'Admin') {
-          router.push('/admin-dashboard');
+        if (userIsAdmin) {
+          navigate('/admin-dashboard', { replace: true });
         } else {
-          router.push('/dashboard');
+          navigate('/dashboard', { replace: true });
         }
       }, 50);
     }
-  }, [status, session, isRedirecting, router]);
+  }, [user, userIsAdmin, isRedirecting, navigate]);
+
+  const handleAdminLogin = async (values: { email: string; password: string }) => {
+    // For admin login, we'll use the same signIn method but handle redirection here
+    try {
+      const result = await signIn(values.email, values.password);
+      
+      if (!result.error) {
+        setIsRedirecting(true);
+        navigate('/admin-dashboard', { replace: true });
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Error during admin login:", error);
+      return false;
+    }
+  };
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return <AuthLoading />;
+  }
 
   return (
     <div className="min-h-screen bg-irs-gray">
@@ -43,16 +66,19 @@ const LoginPage = () => {
             {isAdmin ? (
               <AdminLoginForm 
                 onToggleMode={toggleAdminMode} 
+                onAdminLogin={handleAdminLogin}
                 setIsRedirecting={setIsRedirecting} 
               />
             ) : (
               <UserLoginForm 
                 onToggleMode={toggleAdminMode}
+                signIn={signIn}
               />
             )}
           </LoginContainer>
         </div>
       </div>
+      <Footer />
     </div>
   );
 };

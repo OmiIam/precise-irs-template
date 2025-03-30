@@ -1,6 +1,4 @@
 
-'use client';
-
 import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -10,8 +8,7 @@ import { LockKeyhole, Loader2, ShieldCheck } from 'lucide-react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useNavigate } from "react-router-dom";
 
 const userLoginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -28,7 +25,7 @@ type UserLoginFormProps = {
 const UserLoginForm = ({ onToggleMode, signIn: customSignIn }: UserLoginFormProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  const navigate = useNavigate();
   
   const form = useForm<UserLoginFormValues>({
     resolver: zodResolver(userLoginSchema),
@@ -57,29 +54,15 @@ const UserLoginForm = ({ onToggleMode, signIn: customSignIn }: UserLoginFormProp
             title: "Login successful",
             description: "Welcome back!",
           });
-          router.push('/dashboard');
+          navigate('/dashboard');
         }
       } else {
-        // Fall back to NextAuth signIn
-        const result = await signIn("credentials", {
-          email: values.email,
-          password: values.password,
-          redirect: false,
+        // Fallback to other authentication method if needed
+        toast({
+          title: "Login error",
+          description: "Authentication method not configured",
+          variant: "destructive",
         });
-        
-        if (result?.ok) {
-          toast({
-            title: "Login successful",
-            description: "Welcome back!",
-          });
-          router.push('/dashboard');
-        } else {
-          toast({
-            title: "Login failed",
-            description: "Invalid email or password",
-            variant: "destructive",
-          });
-        }
       }
     } catch (error) {
       console.error('Login error:', error);

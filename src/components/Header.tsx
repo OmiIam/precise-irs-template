@@ -3,17 +3,18 @@
 
 import React, { useState, useEffect } from 'react';
 import { Search, Menu, X } from 'lucide-react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Link from './RouterLink';
 import { cn } from '@/lib/utils';
 import { SearchBar } from './SearchBar';
 import { LanguageSelector } from './LanguageSelector';
+import { useLocation } from 'react-router-dom';
 
 export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const pathname = usePathname();
+  const location = useLocation();
+  const pathname = location.pathname;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -94,13 +95,13 @@ export const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-1">
-            <NavLink href="/" isScrolled={isScrolled}>Home</NavLink>
-            <NavLink href="/file" isScrolled={isScrolled}>File</NavLink>
-            <NavLink href="/pay" isScrolled={isScrolled}>Pay</NavLink>
-            <NavLink href="/refunds" isScrolled={isScrolled}>Refunds</NavLink>
-            <NavLink href="/credits-deductions" isScrolled={isScrolled}>Credits & Deductions</NavLink>
-            <NavLink href="/forms-instructions" isScrolled={isScrolled}>Forms & Instructions</NavLink>
-            <NavLink href="/login" isScrolled={isScrolled}>Get Started</NavLink>
+            <NavLink href="/" isScrolled={isScrolled} pathname={pathname}>Home</NavLink>
+            <NavLink href="/file" isScrolled={isScrolled} pathname={pathname}>File</NavLink>
+            <NavLink href="/pay" isScrolled={isScrolled} pathname={pathname}>Pay</NavLink>
+            <NavLink href="/refunds" isScrolled={isScrolled} pathname={pathname}>Refunds</NavLink>
+            <NavLink href="/credits-deductions" isScrolled={isScrolled} pathname={pathname}>Credits & Deductions</NavLink>
+            <NavLink href="/forms-instructions" isScrolled={isScrolled} pathname={pathname}>Forms & Instructions</NavLink>
+            <NavLink href="/login" isScrolled={isScrolled} pathname={pathname}>Get Started</NavLink>
           </nav>
 
           {/* Search button */}
@@ -134,13 +135,13 @@ export const Header = () => {
           mobileMenuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
         )}>
           <nav className="flex flex-col py-4 space-y-1">
-            <MobileNavLink href="/" isScrolled={isScrolled}>Home</MobileNavLink>
-            <MobileNavLink href="/file" isScrolled={isScrolled}>File</MobileNavLink>
-            <MobileNavLink href="/pay" isScrolled={isScrolled}>Pay</MobileNavLink>
-            <MobileNavLink href="/refunds" isScrolled={isScrolled}>Refunds</MobileNavLink>
-            <MobileNavLink href="/credits-deductions" isScrolled={isScrolled}>Credits & Deductions</MobileNavLink>
-            <MobileNavLink href="/forms-instructions" isScrolled={isScrolled}>Forms & Instructions</MobileNavLink>
-            <MobileNavLink href="/login" isScrolled={isScrolled}>Get Started</MobileNavLink>
+            <MobileNavLink href="/" isScrolled={isScrolled} pathname={pathname}>Home</MobileNavLink>
+            <MobileNavLink href="/file" isScrolled={isScrolled} pathname={pathname}>File</MobileNavLink>
+            <MobileNavLink href="/pay" isScrolled={isScrolled} pathname={pathname}>Pay</MobileNavLink>
+            <MobileNavLink href="/refunds" isScrolled={isScrolled} pathname={pathname}>Refunds</MobileNavLink>
+            <MobileNavLink href="/credits-deductions" isScrolled={isScrolled} pathname={pathname}>Credits & Deductions</MobileNavLink>
+            <MobileNavLink href="/forms-instructions" isScrolled={isScrolled} pathname={pathname}>Forms & Instructions</MobileNavLink>
+            <MobileNavLink href="/login" isScrolled={isScrolled} pathname={pathname}>Get Started</MobileNavLink>
           </nav>
         </div>
       </div>
@@ -148,8 +149,7 @@ export const Header = () => {
   );
 };
 
-const NavLink = ({ href, children, isScrolled }: { href: string; children: React.ReactNode; isScrolled: boolean }) => {
-  const pathname = usePathname();
+const NavLink = ({ href, children, isScrolled, pathname }: { href: string; children: React.ReactNode; isScrolled: boolean; pathname: string }) => {
   const isActive = pathname === href;
   
   return (
@@ -168,8 +168,7 @@ const NavLink = ({ href, children, isScrolled }: { href: string; children: React
   );
 };
 
-const MobileNavLink = ({ href, children, isScrolled }: { href: string; children: React.ReactNode; isScrolled: boolean }) => {
-  const pathname = usePathname();
+const MobileNavLink = ({ href, children, isScrolled, pathname }: { href: string; children: React.ReactNode; isScrolled: boolean; pathname: string }) => {
   const isActive = pathname === href;
   
   return (
