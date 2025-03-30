@@ -1,73 +1,87 @@
 
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import type { NextAuthOptions } from "next-auth";
+import { NextAuthOptions } from "next-auth";
+
+// This is a temporary implementation for testing purposes
+// In a real app, you would authenticate against your database
+const users = [
+  {
+    id: "1",
+    name: "John Doe",
+    email: "john@example.com",
+    password: "password123",
+    role: "User",
+  },
+  {
+    id: "2",
+    name: "Admin User",
+    email: "admin@example.com",
+    password: "admin123",
+    role: "Admin",
+  },
+];
 
 export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Password", type: "password" }
+        email: { label: "Email", type: "text" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        // Here you would typically validate against a database
         if (!credentials?.email || !credentials?.password) {
           return null;
         }
 
-        // For admin login
-        if (credentials.email === "admin@admin.com" && credentials.password === "iXOeNiRqvO2QiN4t") {
+        // Find user by email
+        const user = users.find(user => user.email === credentials.email);
+        
+        // Check if user exists and password matches
+        if (user && user.password === credentials.password) {
+          // Note: In a real app, you would use a proper password hashing method
           return {
-            id: "admin-user",
-            email: credentials.email,
-            name: "Admin User",
-            role: "Admin",
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
           };
         }
         
-        // Add your regular user authentication logic here
-        // This is a placeholder for demonstration purposes
-        const isValidUser = credentials.email.includes("@") && credentials.password.length >= 6;
-        
-        if (isValidUser) {
-          return {
-            id: "user-" + Math.random().toString(36).substring(2, 9),
-            email: credentials.email,
-            name: credentials.email.split("@")[0],
-            role: "User",
-          };
-        }
-
         return null;
-      }
-    })
+      },
+    }),
   ],
   callbacks: {
     async jwt({ token, user }) {
+      // Pass user id and role to token
       if (user) {
-        token.role = user.role;
         token.id = user.id;
+        token.role = user.role;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.role = token.role as string;
+      // Pass token properties to session
+      if (token && session.user) {
         session.user.id = token.id as string;
+        session.user.role = token.role as string;
       }
       return session;
-    }
+    },
   },
   pages: {
     signIn: "/login",
-    error: "/login"
+    signOut: "/login",
+    error: "/login",
   },
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  secret: process.env.NEXTAUTH_SECRET || "YOUR_FALLBACK_SECRET_KEY_CHANGE_THIS",
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === "development",
 };
 
 const handler = NextAuth(authOptions);

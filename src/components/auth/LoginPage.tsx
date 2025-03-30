@@ -1,27 +1,38 @@
 
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
-import { useAuth } from '@/contexts/auth';
 import LoginContainer from './LoginContainer';
 import UserLoginForm from './UserLoginForm';
 import AdminLoginForm from './AdminLoginForm';
-import { useLoginRedirect } from '@/hooks/useLoginRedirect';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 
 const LoginPage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
-  const { signIn, user } = useAuth();
-  const { isRedirecting, setIsRedirecting } = useLoginRedirect();
+  const router = useRouter();
+  const { data: session, status } = useSession();
+  const [isRedirecting, setIsRedirecting] = useState(false);
   
   const toggleAdminMode = () => {
     setIsAdmin(!isAdmin);
   };
 
-  // Pre-set redirecting if user is already authenticated to avoid flicker
+  // Redirect if already authenticated
   useEffect(() => {
-    if (user && !isRedirecting) {
+    if (status === 'authenticated' && !isRedirecting) {
       setIsRedirecting(true);
+      
+      setTimeout(() => {
+        if (session?.user?.role === 'Admin') {
+          router.push('/admin-dashboard');
+        } else {
+          router.push('/dashboard');
+        }
+      }, 50);
     }
-  }, [user, isRedirecting, setIsRedirecting]);
+  }, [status, session, isRedirecting, router]);
 
   return (
     <div className="min-h-screen bg-irs-gray">
@@ -36,8 +47,7 @@ const LoginPage = () => {
               />
             ) : (
               <UserLoginForm 
-                onToggleMode={toggleAdminMode} 
-                signIn={signIn} 
+                onToggleMode={toggleAdminMode}
               />
             )}
           </LoginContainer>

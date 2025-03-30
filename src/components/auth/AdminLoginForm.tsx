@@ -10,6 +10,8 @@ import { ShieldCheck, Loader2 } from 'lucide-react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const adminLoginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -18,13 +20,13 @@ const adminLoginSchema = z.object({
 
 type AdminLoginFormProps = {
   onToggleMode: () => void;
-  onAdminLogin: (values: z.infer<typeof adminLoginSchema>) => Promise<boolean>;
   setIsRedirecting: (value: boolean) => void;
 };
 
-const AdminLoginForm = ({ onToggleMode, onAdminLogin, setIsRedirecting }: AdminLoginFormProps) => {
+const AdminLoginForm = ({ onToggleMode, setIsRedirecting }: AdminLoginFormProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
   
   const form = useForm<z.infer<typeof adminLoginSchema>>({
     resolver: zodResolver(adminLoginSchema),
@@ -37,13 +39,20 @@ const AdminLoginForm = ({ onToggleMode, onAdminLogin, setIsRedirecting }: AdminL
   const onSubmit = async (values: z.infer<typeof adminLoginSchema>) => {
     try {
       setIsLoading(true);
-      const success = await onAdminLogin(values);
       
-      if (success) {
+      const result = await signIn("credentials", {
+        email: values.email,
+        password: values.password,
+        redirect: false,
+      });
+      
+      if (result?.ok) {
         toast({
           title: "Admin Login successful",
           description: "Welcome to the admin dashboard",
         });
+        setIsRedirecting(true);
+        router.push('/admin-dashboard');
       } else {
         toast({
           title: "Admin Login failed",

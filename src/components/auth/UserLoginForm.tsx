@@ -12,6 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -20,10 +21,9 @@ const loginSchema = z.object({
 
 type UserLoginFormProps = {
   onToggleMode: () => void;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
 };
 
-const UserLoginForm = ({ onToggleMode, signIn }: UserLoginFormProps) => {
+const UserLoginForm = ({ onToggleMode }: UserLoginFormProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -42,16 +42,18 @@ const UserLoginForm = ({ onToggleMode, signIn }: UserLoginFormProps) => {
       console.log("Attempting to sign in with email:", values.email);
       
       // Regular user login
-      const { error } = await signIn(values.email, values.password);
+      const result = await signIn("credentials", {
+        email: values.email,
+        password: values.password,
+        redirect: false,
+      });
       
-      if (error) {
-        console.error('Error during sign in:', error);
+      if (result?.error) {
+        console.error('Error during sign in:', result.error);
         
         let errorMessage = "Check your email and password and try again";
-        if (typeof error === 'string') {
-          errorMessage = error;
-        } else if (error.message) {
-          errorMessage = error.message;
+        if (typeof result.error === 'string') {
+          errorMessage = result.error;
         }
         
         toast({
@@ -67,7 +69,6 @@ const UserLoginForm = ({ onToggleMode, signIn }: UserLoginFormProps) => {
         description: "Welcome back!",
       });
       
-      // NextAuth will handle the redirect
       router.push('/dashboard');
     } catch (error) {
       console.error('Login submission error:', error);

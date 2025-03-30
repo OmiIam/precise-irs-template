@@ -30,11 +30,11 @@ export const useNextAuth = () => {
   };
   
   const handleSignUp = async (email: string, password: string, firstName: string, lastName: string) => {
-    // In a real app, you would implement your sign-up logic here
-    // For demonstration, we'll just call signIn after registration
+    // For demonstration, we'll simulate a successful signup and then sign in
+    // In a real app, you would make an API call to create the user
     try {
-      // You would typically make an API call to create the user first
-      // Then sign them in
+      // In a real app, you would create the user first
+      // For now, just try to sign in with the credentials
       const result = await signIn("credentials", {
         email,
         password,
@@ -45,7 +45,9 @@ export const useNextAuth = () => {
         return { error: null, userId: session?.user?.id };
       }
       
-      return { error: result.error };
+      // Since we're using fixed users for testing, most signups will fail
+      // In a real app, you would check the specific error
+      return { error: "User registration failed. Try using one of the test accounts." };
     } catch (error) {
       console.error("Error during sign up:", error);
       return { error };
