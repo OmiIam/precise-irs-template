@@ -8,11 +8,12 @@ import LoginContainer from '@/components/auth/LoginContainer';
 import UserLoginForm from '@/components/auth/UserLoginForm';
 import AdminLoginForm from '@/components/auth/AdminLoginForm';
 import { useRouter } from 'next/navigation';
+import AuthLoading from '@/components/auth/AuthLoading';
 
 const LoginPage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
-  const { signIn, isAuthenticated, isAdmin: userIsAdmin } = useNextAuth();
+  const { signIn, isAuthenticated, isAdmin: userIsAdmin, isLoading } = useNextAuth();
   const [isRedirecting, setIsRedirecting] = useState(false);
   
   const toggleAdminMode = () => {
@@ -52,6 +53,11 @@ const LoginPage = () => {
     }
   };
 
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return <AuthLoading />;
+  }
+
   return (
     <div className="min-h-screen bg-irs-gray">
       <Header />
@@ -67,7 +73,7 @@ const LoginPage = () => {
             ) : (
               <UserLoginForm 
                 onToggleMode={toggleAdminMode} 
-                signIn={signIn} 
+                signIn={signIn}
               />
             )}
           </LoginContainer>

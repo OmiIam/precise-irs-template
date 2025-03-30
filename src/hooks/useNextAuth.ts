@@ -1,12 +1,22 @@
 
+'use client';
+
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
 
 export const useNextAuth = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [hasCheckedSession, setHasCheckedSession] = useState(false);
   
-  const isLoading = status === "loading";
+  useEffect(() => {
+    if (status !== "loading") {
+      setHasCheckedSession(true);
+    }
+  }, [status]);
+  
+  const isLoading = status === "loading" && !hasCheckedSession;
   const isAuthenticated = status === "authenticated";
   const isAdmin = session?.user?.role === "Admin";
   
@@ -19,37 +29,14 @@ export const useNextAuth = () => {
       });
       
       if (!result?.error) {
+        console.log("Sign in successful");
         return { error: null };
       }
       
-      return { error: result.error };
+      console.error("Sign in error:", result?.error);
+      return { error: result?.error };
     } catch (error) {
       console.error("Error during sign in:", error);
-      return { error };
-    }
-  };
-  
-  const handleSignUp = async (email: string, password: string, firstName: string, lastName: string) => {
-    // For demonstration, we'll simulate a successful signup and then sign in
-    // In a real app, you would make an API call to create the user
-    try {
-      // In a real app, you would create the user first
-      // For now, just try to sign in with the credentials
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-      
-      if (!result?.error) {
-        return { error: null, userId: session?.user?.id };
-      }
-      
-      // Since we're using fixed users for testing, most signups will fail
-      // In a real app, you would check the specific error
-      return { error: "User registration failed. Try using one of the test accounts." };
-    } catch (error) {
-      console.error("Error during sign up:", error);
       return { error };
     }
   };
@@ -79,7 +66,6 @@ export const useNextAuth = () => {
     isLoading,
     isAuthenticated,
     signIn: handleSignIn,
-    signUp: handleSignUp,
     signOut: handleSignOut,
     checkAccess
   };

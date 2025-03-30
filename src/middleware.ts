@@ -7,7 +7,7 @@ export async function middleware(req: NextRequest) {
   
   // Define public paths that don't require authentication
   const publicPaths = ['/', '/login', '/signup', '/file', '/pay', '/refunds', '/credits-deductions', '/forms-instructions'];
-  const isPublicPath = publicPaths.includes(path);
+  const isPublicPath = publicPaths.some(pp => path === pp || path.startsWith(`${pp}/`));
   
   // Admin paths that require admin role
   const adminPaths = ['/admin-dashboard'];
@@ -16,7 +16,10 @@ export async function middleware(req: NextRequest) {
   // Check if the path requires authentication
   if (!isPublicPath) {
     // Get the token from the request
-    const token = await getToken({ req });
+    const token = await getToken({ 
+      req,
+      secret: process.env.NEXTAUTH_SECRET
+    });
     
     // If no token is found, redirect to login
     if (!token) {

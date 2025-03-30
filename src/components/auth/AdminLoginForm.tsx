@@ -46,7 +46,12 @@ const AdminLoginForm = ({ onToggleMode, onAdminLogin, setIsRedirecting }: AdminL
       
       if (onAdminLogin) {
         // Use the provided onAdminLogin function if available
-        const result = await onAdminLogin(values);
+        // Explicitly passing values as required properties
+        const result = await onAdminLogin({
+          email: values.email,
+          password: values.password
+        });
+        
         if (!result) {
           toast({
             title: "Admin Login failed",
