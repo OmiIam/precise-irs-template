@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn as nextAuthSignIn } from "next-auth/react";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -21,9 +21,10 @@ const loginSchema = z.object({
 
 type UserLoginFormProps = {
   onToggleMode: () => void;
+  signIn?: (email: string, password: string) => Promise<{ error: any }>;
 };
 
-const UserLoginForm = ({ onToggleMode }: UserLoginFormProps) => {
+const UserLoginForm = ({ onToggleMode, signIn }: UserLoginFormProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -41,35 +42,63 @@ const UserLoginForm = ({ onToggleMode }: UserLoginFormProps) => {
       setIsLoading(true);
       console.log("Attempting to sign in with email:", values.email);
       
-      // Regular user login
-      const result = await signIn("credentials", {
-        email: values.email,
-        password: values.password,
-        redirect: false,
-      });
-      
-      if (result?.error) {
-        console.error('Error during sign in:', result.error);
+      if (signIn) {
+        // Use the custom signIn function if provided
+        const result = await signIn(values.email, values.password);
         
-        let errorMessage = "Check your email and password and try again";
-        if (typeof result.error === 'string') {
-          errorMessage = result.error;
+        if (result.error) {
+          console.error('Error during sign in:', result.error);
+          
+          let errorMessage = "Check your email and password and try again";
+          if (typeof result.error === 'string') {
+            errorMessage = result.error;
+          }
+          
+          toast({
+            title: "Login failed",
+            description: errorMessage,
+            variant: "destructive",
+          });
+          return;
         }
         
         toast({
-          title: "Login failed",
-          description: errorMessage,
-          variant: "destructive",
+          title: "Login successful",
+          description: "Welcome back!",
         });
-        return;
+        
+        router.push('/dashboard');
+      } else {
+        // Fall back to NextAuth signIn
+        const result = await nextAuthSignIn("credentials", {
+          email: values.email,
+          password: values.password,
+          redirect: false,
+        });
+        
+        if (result?.error) {
+          console.error('Error during sign in:', result.error);
+          
+          let errorMessage = "Check your email and password and try again";
+          if (typeof result.error === 'string') {
+            errorMessage = result.error;
+          }
+          
+          toast({
+            title: "Login failed",
+            description: errorMessage,
+            variant: "destructive",
+          });
+          return;
+        }
+        
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+        });
+        
+        router.push('/dashboard');
       }
-      
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
-      
-      router.push('/dashboard');
     } catch (error) {
       console.error('Login submission error:', error);
       toast({

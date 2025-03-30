@@ -12,6 +12,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { Dispatch, SetStateAction } from 'react';
 
 const adminLoginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -20,10 +21,11 @@ const adminLoginSchema = z.object({
 
 type AdminLoginFormProps = {
   onToggleMode: () => void;
-  setIsRedirecting: (value: boolean) => void;
+  onAdminLogin?: (values: { email: string; password: string }) => Promise<boolean>;
+  setIsRedirecting: Dispatch<SetStateAction<boolean>>;
 };
 
-const AdminLoginForm = ({ onToggleMode, setIsRedirecting }: AdminLoginFormProps) => {
+const AdminLoginForm = ({ onToggleMode, onAdminLogin, setIsRedirecting }: AdminLoginFormProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -40,25 +42,38 @@ const AdminLoginForm = ({ onToggleMode, setIsRedirecting }: AdminLoginFormProps)
     try {
       setIsLoading(true);
       
-      const result = await signIn("credentials", {
-        email: values.email,
-        password: values.password,
-        redirect: false,
-      });
-      
-      if (result?.ok) {
-        toast({
-          title: "Admin Login successful",
-          description: "Welcome to the admin dashboard",
-        });
-        setIsRedirecting(true);
-        router.push('/admin-dashboard');
+      if (onAdminLogin) {
+        // Use the provided onAdminLogin function if available
+        const result = await onAdminLogin(values);
+        if (!result) {
+          toast({
+            title: "Admin Login failed",
+            description: "Invalid admin credentials",
+            variant: "destructive",
+          });
+        }
       } else {
-        toast({
-          title: "Admin Login failed",
-          description: "Invalid admin credentials",
-          variant: "destructive",
+        // Fall back to standard NextAuth signIn
+        const result = await signIn("credentials", {
+          email: values.email,
+          password: values.password,
+          redirect: false,
         });
+        
+        if (result?.ok) {
+          toast({
+            title: "Admin Login successful",
+            description: "Welcome to the admin dashboard",
+          });
+          setIsRedirecting(true);
+          router.push('/admin-dashboard');
+        } else {
+          toast({
+            title: "Admin Login failed",
+            description: "Invalid admin credentials",
+            variant: "destructive",
+          });
+        }
       }
     } catch (error) {
       console.error('Admin login error:', error);
