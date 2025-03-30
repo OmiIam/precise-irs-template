@@ -4,79 +4,39 @@ import { useAuth } from '@/contexts/auth';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useAuthCheck = (requireAdmin = false) => {
-  const { user, isAdmin, isLoading: authLoading } = useAuth();
+  const { user, isAdmin, isLoading } = useAuth();
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const [checkComplete, setCheckComplete] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
   
   useEffect(() => {
-    // Fast path: Immediately determine if auth is already resolved
-    if (!authLoading) {
+    const checkAuthentication = async () => {
+      // Check for special admin authentication
       const adminAuth = localStorage.getItem('isAdminAuthenticated');
       setIsAdminAuthenticated(adminAuth === 'true');
       
-      // If we already have auth state, we can complete the check immediately
-      if (!requireAdmin || (user && isAdmin) || (requireAdmin && adminAuth === 'true')) {
-        setCheckComplete(true);
-        setIsLoading(false);
-        return;
-      }
-    }
-    
-    const checkAuthentication = async () => {
-      // If auth context is still loading, wait for it
-      if (authLoading) {
-        return;
-      }
-      
-      setIsLoading(true);
-      
-      try {
-        // Check for special admin authentication
-        const adminAuth = localStorage.getItem('isAdminAuthenticated');
-        setIsAdminAuthenticated(adminAuth === 'true');
-        
-        // If admin auth is set but we need to validate it for admin routes
-        if (adminAuth === 'true' && requireAdmin) {
-          try {
-            // Validate the current session is still valid if we have a user
-            if (user) {
-              const { data: { session } } = await supabase.auth.getSession();
-              if (!session) {
-                // Clear invalid admin auth if no valid session exists
-                localStorage.removeItem('isAdminAuthenticated');
-                setIsAdminAuthenticated(false);
-              }
+      // If admin auth is set but we need to validate it for admin routes
+      if (adminAuth === 'true' && requireAdmin) {
+        try {
+          // Validate the current session is still valid if we have a user
+          if (user) {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+              // Clear invalid admin auth if no valid session exists
+              localStorage.removeItem('isAdminAuthenticated');
+              setIsAdminAuthenticated(false);
             }
-          } catch (error) {
-            console.error("Error validating session:", error);
-            // Handle the error but continue the flow
-            setError(error instanceof Error ? error : new Error('Unknown error'));
           }
+        } catch (error) {
+          console.error("Error validating session:", error);
+          // Don't clear adminAuth here - we want to allow pure admin login too
         }
-      } catch (error) {
-        console.error("Error in auth check:", error);
-        setError(error instanceof Error ? error : new Error('Unknown error'));
-      } finally {
-        setCheckComplete(true);
-        setIsLoading(false);
       }
+      
+      setCheckComplete(true);
     };
     
-    // Set a timeout to ensure we don't get stuck
-    const timeoutId = setTimeout(() => {
-      if (isLoading && !checkComplete) {
-        console.warn("Auth check timeout exceeded");
-        setCheckComplete(true);
-        setIsLoading(false);
-      }
-    }, 3000); // 3 second timeout
-    
     checkAuthentication();
-    
-    return () => clearTimeout(timeoutId);
-  }, [requireAdmin, user, isAdmin, authLoading]);
+  }, [requireAdmin, user]);
 
   // Determine access status - note we're allowing admin access without user in certain cases
   const hasAccess = (
@@ -89,10 +49,9 @@ export const useAuthCheck = (requireAdmin = false) => {
   );
 
   return {
-    isLoading: isLoading && authLoading,
+    isLoading,
     checkComplete,
     hasAccess,
-    isAuthenticated: !!user || isAdminAuthenticated,
-    error
+    isAuthenticated: !!user || isAdminAuthenticated
   };
 };

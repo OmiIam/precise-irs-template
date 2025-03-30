@@ -6,28 +6,22 @@ import LoginContainer from './LoginContainer';
 import UserLoginForm from './UserLoginForm';
 import AdminLoginForm from './AdminLoginForm';
 import { useLoginRedirect } from '@/hooks/useLoginRedirect';
-import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
-  const { signIn, user, isLoading } = useAuth();
+  const { signIn, user } = useAuth();
   const { isRedirecting, setIsRedirecting } = useLoginRedirect();
-  const navigate = useNavigate();
   
   const toggleAdminMode = () => {
     setIsAdmin(!isAdmin);
   };
 
-  // If user is already authenticated, redirect to dashboard
+  // Pre-set redirecting if user is already authenticated to avoid flicker
   useEffect(() => {
-    if (user && !isLoading && !isRedirecting) {
-      console.log("User already authenticated, redirecting to dashboard");
+    if (user && !isRedirecting) {
       setIsRedirecting(true);
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 100);
     }
-  }, [user, isLoading, isRedirecting, setIsRedirecting, navigate]);
+  }, [user, isRedirecting, setIsRedirecting]);
 
   return (
     <div className="min-h-screen bg-irs-gray">

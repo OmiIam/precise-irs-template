@@ -2,19 +2,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/auth';
-import { toast as sonnerToast } from 'sonner';
 
 export const useLoginRedirect = () => {
   const navigate = useNavigate();
-  const { user, isAdmin, isLoading } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [isRedirecting, setIsRedirecting] = useState(false);
   
   useEffect(() => {
-    // Wait until auth loading is complete
-    if (isLoading) {
-      return;
-    }
-    
     // Don't attempt additional redirects if we're already redirecting
     if (isRedirecting) return;
     
@@ -26,10 +20,6 @@ export const useLoginRedirect = () => {
         if (adminAuth === 'true') {
           setIsRedirecting(true);
           console.log('Redirecting to admin dashboard from admin auth');
-          sonnerToast.success('Logged in as admin', {
-            description: 'Redirecting to admin dashboard...'
-          });
-          
           // Use a slight delay to avoid the security error
           setTimeout(() => {
             navigate('/admin-dashboard', { replace: true });
@@ -41,10 +31,6 @@ export const useLoginRedirect = () => {
         if (user) {
           setIsRedirecting(true);
           console.log('Redirecting based on user role:', isAdmin ? 'admin' : 'regular user');
-          sonnerToast.success('Login successful', {
-            description: `Redirecting to ${isAdmin ? 'admin' : ''} dashboard...`
-          });
-          
           // Use a slight delay to avoid the security error
           setTimeout(() => {
             if (isAdmin) {
@@ -64,7 +50,7 @@ export const useLoginRedirect = () => {
     // Run the redirection logic
     handleRedirect();
     
-  }, [user, isAdmin, navigate, isRedirecting, isLoading]);
+  }, [user, isAdmin, navigate, isRedirecting]);
 
   return { isRedirecting, setIsRedirecting };
 };

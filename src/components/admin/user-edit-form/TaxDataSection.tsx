@@ -51,7 +51,7 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
     }
   };
 
-  // Format function to safely format dates - using a format compatible with date-fns v3
+  // Format function to safely format dates
   const formatDate = (date: Date | undefined) => {
     try {
       return date ? format(date, "PPP") : "Select a date";

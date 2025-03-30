@@ -1,15 +1,19 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { corsHeaders } from "../_shared/cors.ts";
+import { validateUserData } from "./validation.ts";
+import { checkExistingUser } from "./user-check.ts";
+import { createAuthUser, createUserProfile } from "./user-creation.ts";
+import { corsHeaders } from "./cors.ts";
 
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders, status: 204 });
+    return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Create a Supabase client with the service role key (admin privileges)
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
     
@@ -27,7 +31,8 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // Parse request body
-    const { userData } = await req.json();
+    const requestData = await req.json();
+    const { userData } = requestData;
     
     if (!userData) {
       console.error("Missing userData in request body");
@@ -42,20 +47,20 @@ serve(async (req) => {
     
     console.log("Create user request received with data:", {
       email: userData.email,
-      name: userData.name,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
       role: userData.role,
       status: userData.status,
-      hasPassword: !!userData.password
+      hasPassword: !!userData.password,
+      passwordLength: userData.password ? userData.password.length : 0
     });
     
-    // Validate required fields
-    if (!userData.email || !userData.password || !userData.name) {
-      console.error("Missing required fields in user data");
+    // 1. Validate user data
+    const validationError = validateUserData(userData);
+    if (validationError) {
+      console.error("Validation error:", validationError);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Email, password, and name are required" 
-        }),
+        JSON.stringify({ success: false, error: validationError }),
         { 
           status: 400, 
           headers: { ...corsHeaders, "Content-Type": "application/json" } 
@@ -63,20 +68,13 @@ serve(async (req) => {
       );
     }
     
-    // Check if user already exists
-    const { data: existingUsers, error: checkError } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('email', userData.email)
-      .limit(1);
+    // 2. Check if user already exists
+    const { exists: userExists, error: checkError } = await checkExistingUser(supabase, userData.email);
     
     if (checkError) {
-      console.error("Error checking for existing user:", checkError);
+      console.error("Error checking existing user:", checkError);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Failed to check if user already exists: " + checkError.message 
-        }),
+        JSON.stringify({ success: false, error: checkError }),
         { 
           status: 500, 
           headers: { ...corsHeaders, "Content-Type": "application/json" } 
@@ -84,13 +82,13 @@ serve(async (req) => {
       );
     }
     
-    if (existingUsers && existingUsers.length > 0) {
+    if (userExists) {
       console.log("User already exists with email:", userData.email);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: "A user with this email address already exists", 
-          isExistingUser: true 
+          error: "A user with this email address has already been registered",
+          isExistingUser: true
         }),
         { 
           status: 409, 
@@ -99,30 +97,13 @@ serve(async (req) => {
       );
     }
     
-    // Extract name parts for user metadata
-    const nameParts = userData.name.trim().split(' ');
-    const firstName = nameParts[0];
-    const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
-    
-    // Create the user in Supabase Auth
-    console.log("Creating auth user with email:", userData.email);
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-      email: userData.email,
-      password: userData.password,
-      email_confirm: true,
-      user_metadata: {
-        first_name: firstName,
-        last_name: lastName,
-      }
-    });
+    // 3. Create auth user
+    const { authUser, error: authError } = await createAuthUser(supabase, userData);
     
     if (authError) {
       console.error("Error creating auth user:", authError);
       return new Response(
-        JSON.stringify({ 
-          success: false, 
-          error: "Failed to create user account: " + authError.message 
-        }),
+        JSON.stringify({ success: false, error: authError }),
         { 
           status: 500, 
           headers: { ...corsHeaders, "Content-Type": "application/json" } 
@@ -130,8 +111,8 @@ serve(async (req) => {
       );
     }
     
-    if (!authData.user) {
-      console.error("No user returned from createUser operation");
+    if (!authUser || !authUser.id) {
+      console.error("Auth user creation failed - no user ID returned");
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -144,47 +125,36 @@ serve(async (req) => {
       );
     }
     
-    console.log("Successfully created auth user with ID:", authData.user.id);
+    console.log("Successfully created auth user with ID:", authUser.id);
     
-    // Format the filing deadline if it exists
-    let filingDeadline = null;
-    if (userData.filingDeadline) {
-      try {
-        filingDeadline = new Date(userData.filingDeadline).toISOString();
-      } catch (error) {
-        console.warn("Invalid filing deadline format:", error);
-      }
-    }
-    
-    // Create profile data for the new user
-    const profileData = {
-      id: authData.user.id,
-      first_name: firstName,
-      last_name: lastName,
-      email: userData.email,
-      role: userData.role || 'User',
-      status: userData.status || 'Active',
-      tax_due: userData.taxDue || 0,
-      filing_deadline: filingDeadline,
-      available_credits: userData.availableCredits || 0,
-      created_at: new Date().toISOString()
-    };
-    
-    console.log("Creating profile with data:", profileData);
-    
-    // Insert profile record
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .insert([profileData])
-      .select();
+    // 4. Create user profile
+    const { profile, error: profileError } = await createUserProfile(supabase, authUser.id, userData);
     
     if (profileError) {
-      console.error("Error creating user profile:", profileError);
-      
       // Attempt to clean up the auth user if profile creation fails
       try {
         console.log("Cleaning up auth user after profile creation failure");
-        await supabase.auth.admin.deleteUser(authData.user.id);
+        await supabase.auth.admin.deleteUser(authUser.id);
+        console.log("Cleaned up auth user after profile creation failure");
+      } catch (cleanupError) {
+        console.error("Failed to clean up auth user:", cleanupError);
+      }
+      
+      console.error("Error creating user profile:", profileError);
+      return new Response(
+        JSON.stringify({ success: false, error: profileError }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+    
+    if (!profile) {
+      console.error("Profile creation failed - no profile data returned");
+      // Attempt to clean up the auth user
+      try {
+        await supabase.auth.admin.deleteUser(authUser.id);
       } catch (cleanupError) {
         console.error("Failed to clean up auth user after profile creation failure:", cleanupError);
       }
@@ -192,7 +162,7 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: "Failed to create user profile: " + profileError.message 
+          error: "Profile creation failed - no profile data returned" 
         }),
         { 
           status: 500, 
@@ -201,15 +171,15 @@ serve(async (req) => {
       );
     }
     
-    console.log("Successfully created user profile");
+    console.log("Successfully created user profile for user:", authUser.id);
     
     // Return success response with created user data
     return new Response(
       JSON.stringify({ 
         success: true, 
         data: { 
-          user: authData.user,
-          profile: profileData
+          user: authUser,
+          profile: profile
         } 
       }),
       { 

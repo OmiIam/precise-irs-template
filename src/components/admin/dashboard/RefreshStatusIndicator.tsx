@@ -1,9 +1,8 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { format, formatDistanceToNow } from 'date-fns';
-import { RefreshCw, CheckCircle, AlertCircle } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { RefreshCw } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
 
 interface RefreshStatusIndicatorProps {
   isSubscribed: boolean;
@@ -18,44 +17,31 @@ const RefreshStatusIndicator: React.FC<RefreshStatusIndicatorProps> = ({
   onRefresh,
   isRefreshing
 }) => {
-  const StatusIcon = isSubscribed ? CheckCircle : AlertCircle;
-  const statusColor = isSubscribed ? 'text-green-500' : 'text-amber-500';
-  const statusText = isSubscribed ? 'Real-time updates active' : 'Using periodic refresh';
-  
   return (
-    <div className="flex items-center space-x-2">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className="flex items-center mr-2">
-              <StatusIcon className={`h-4 w-4 ${statusColor} mr-1`} />
-              <span className="text-xs text-gray-500">
-                {statusText}
-              </span>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p className="text-sm">
-              {isSubscribed 
-                ? 'Real-time updates are working correctly' 
-                : 'Falling back to periodic refresh every 30 seconds'}
-            </p>
-            <p className="text-xs text-gray-400 mt-1">
-              Last updated: {format(lastRefresh, 'h:mm:ss a')} ({formatDistanceToNow(lastRefresh, { addSuffix: true })})
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+    <div className="flex items-center gap-2 text-sm">
+      <div className="flex items-center gap-1 mr-2">
+        <div 
+          className={`w-2 h-2 rounded-full ${isSubscribed ? 'bg-green-500' : 'bg-gray-400'}`} 
+        />
+        <span className="text-xs text-gray-500">
+          {isSubscribed ? 'Live updates' : 'Offline mode'}
+        </span>
+      </div>
+      
+      <span className="text-xs text-gray-500 hidden sm:inline">
+        Last updated: {formatDistanceToNow(lastRefresh, { addSuffix: true })}
+      </span>
       
       <Button 
+        variant="ghost" 
         size="sm" 
-        variant="outline" 
-        onClick={onRefresh} 
-        disabled={isRefreshing} 
-        className="h-8 px-2"
+        onClick={onRefresh}
+        disabled={isRefreshing}
+        className="ml-1 p-1 h-8 w-8"
       >
-        <RefreshCw className={`h-3.5 w-3.5 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-        Refresh
+        <RefreshCw 
+          className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} 
+        />
       </Button>
     </div>
   );

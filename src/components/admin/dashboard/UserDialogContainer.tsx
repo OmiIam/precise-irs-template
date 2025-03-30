@@ -45,10 +45,7 @@ const UserDialogContainer: React.FC<UserDialogContainerProps> = ({
     
     try {
       setIsProcessing(true);
-      console.log("Processing user data:", {
-        ...updatedUser,
-        password: updatedUser.password ? "[REDACTED]" : undefined
-      });
+      console.log("Processing user data...");
       
       let success = false;
       
@@ -85,7 +82,11 @@ const UserDialogContainer: React.FC<UserDialogContainerProps> = ({
           return;
         }
         
-        console.log("Attempting to create user");
+        console.log("Attempting to create user:", {
+          ...updatedUser,
+          password: updatedUser.password ? "[REDACTED]" : undefined
+        });
+        
         success = await onCreateUser(updatedUser);
         console.log("User creation result:", success);
       } else {

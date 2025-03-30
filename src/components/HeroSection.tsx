@@ -1,27 +1,10 @@
 
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/contexts/auth';
 
-interface HeroSectionProps {
-  onGetStarted?: () => void;
-}
-
-export const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-
-  const handleGetStarted = () => {
-    // Route to dashboard if signed in, else login
-    if (user) {
-      navigate('/dashboard');
-    } else {
-      navigate('/login');
-    }
-  };
-
+export const HeroSection = () => {
   return (
     <section className="w-full bg-irs-darkest pt-32 pb-20 relative overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-br from-irs-darkest to-irs-darkBlue opacity-90"></div>
@@ -37,12 +20,9 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onGetStarted }) => {
             Secure and simplified tax filing for individuals and businesses. Get your maximum refund with our advanced tax preparation tools and expert guidance.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center animate-slide-in" style={{ animationDelay: '0.2s' }}>
-            <button 
-              onClick={handleGetStarted} 
-              className="btn-primary flex items-center justify-center gap-2 py-3 px-6"
-            >
+            <Link to="/login" className="btn-primary flex items-center justify-center gap-2 py-3 px-6">
               Get Started <ArrowRight size={16} />
-            </button>
+            </Link>
             <Link to="/refund-status" className="btn-secondary flex items-center justify-center gap-2 py-3 px-6">
               Check Refund Status
             </Link>
