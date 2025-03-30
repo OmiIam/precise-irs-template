@@ -1,6 +1,4 @@
 
-'use client';
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +8,7 @@ export const useNextAuth = () => {
   const [session, setSession] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasCheckedSession, setHasCheckedSession] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -67,7 +66,6 @@ export const useNextAuth = () => {
     return () => subscription.unsubscribe();
   }, []);
   
-  const [isAdmin, setIsAdmin] = useState(false);
   const isAuthenticated = !!user;
   
   const handleSignIn = async (email: string, password: string) => {
@@ -87,6 +85,48 @@ export const useNextAuth = () => {
     } catch (error) {
       console.error("Error during sign in:", error);
       return { error };
+    }
+  };
+  
+  const handleSignUp = async (email: string, password: string, firstName: string, lastName: string) => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName,
+          }
+        }
+      });
+      
+      if (!error && data.user) {
+        // Create profile entry
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
+            first_name: firstName,
+            last_name: lastName,
+            email: email,
+            created_at: new Date().toISOString(),
+            role: 'User',
+            status: 'Pending'
+          });
+        
+        if (profileError) {
+          console.error("Error creating profile:", profileError);
+          return { error: profileError, userId: null };
+        }
+        
+        return { error: null, userId: data.user.id };
+      }
+      
+      return { error, userId: null };
+    } catch (error) {
+      console.error("Error during signup:", error);
+      return { error, userId: null };
     }
   };
   
@@ -115,6 +155,7 @@ export const useNextAuth = () => {
     isLoading,
     isAuthenticated,
     signIn: handleSignIn,
+    signUp: handleSignUp,
     signOut: handleSignOut,
     checkAccess
   };

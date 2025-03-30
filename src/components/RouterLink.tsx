@@ -9,7 +9,7 @@ interface LinkProps {
   onClick?: () => void;
 }
 
-// This component serves as a replacement for Next.js Link in a React Router environment
+// This component serves as a wrapper for React Router's Link component
 export const Link = ({ href, children, className, onClick }: LinkProps) => {
   return (
     <RouterDomLink to={href} className={className} onClick={onClick}>

@@ -1,23 +1,23 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Header } from '@/components/Header';
 import SignupForm from '@/components/auth/signup/SignupForm';
 import { useNextAuth } from '@/hooks/useNextAuth';
-import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
 const Signup = () => {
   const { signUp, isAuthenticated } = useNextAuth();
-  const router = useRouter();
+  const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   
   useEffect(() => {
     if (isAuthenticated) {
-      router.push('/dashboard');
+      navigate('/dashboard');
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, navigate]);
   
   const handleSignup = async (values: any) => {
     setIsLoading(true);
@@ -32,7 +32,7 @@ const Signup = () => {
       setIsLoading(false);
       
       if (!result.error) {
-        router.push('/dashboard');
+        navigate('/dashboard');
         return { userId: result.userId };
       }
       
