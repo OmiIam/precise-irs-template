@@ -1,9 +1,7 @@
 
-'use client';
-
 import React from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import Link from 'next/link';
+import { Link } from 'react-router-dom';
 
 type LoginContainerProps = {
   isAdmin: boolean;
@@ -29,7 +27,7 @@ const LoginContainer = ({ isAdmin, children }: LoginContainerProps) => {
       <CardFooter className="flex flex-col">
         <div className="text-center text-sm text-irs-darkGray mt-2">
           Don't have an account?{" "}
-          <Link href="/signup" className="text-irs-blue hover:text-irs-darkBlue font-medium">
+          <Link to="/signup" className="text-irs-blue hover:text-irs-darkBlue font-medium">
             Sign up
           </Link>
         </div>

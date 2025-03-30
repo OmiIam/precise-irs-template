@@ -3,7 +3,6 @@ import React from 'react';
 import { Header } from '@/components/Header';
 import SignupForm from '@/components/auth/signup/SignupForm';
 import { useSignup } from '@/hooks/useSignup';
-import { Footer } from '@/components/Footer';
 
 const Signup = () => {
   const { isLoading, handleSignup } = useSignup();
@@ -16,7 +15,6 @@ const Signup = () => {
           <SignupForm onSubmit={handleSignup} isLoading={isLoading} />
         </div>
       </div>
-      <Footer />
     </div>
   );
 };

@@ -1,6 +1,4 @@
 
-'use client';
-
 import React from 'react';
 import { 
   Users, 
@@ -11,7 +9,7 @@ import {
   Clock, 
   LogOut 
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -26,7 +24,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { signOut } from 'next-auth/react';
 
 type SidebarLinkProps = {
   icon: React.ElementType;
@@ -43,13 +40,13 @@ const SidebarLink = ({
   onClick, 
   isActive = false 
 }: SidebarLinkProps) => {
-  const router = useRouter();
+  const navigate = useNavigate();
   
   const handleClick = () => {
     if (onClick) {
       onClick();
     } else if (href) {
-      router.push(href);
+      navigate(href);
     }
   };
 
@@ -72,17 +69,18 @@ type AdminSidebarProps = {
 };
 
 const AdminSidebar = ({ activePage }: AdminSidebarProps) => {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogout = async () => {
-    await signOut({ redirect: false });
+  const handleLogout = () => {
+    // Clear the admin authentication flag
+    localStorage.removeItem('isAdminAuthenticated');
     
     toast({
       title: "Logged out",
       description: "You have been logged out of the admin panel",
     });
-    router.push('/login');
+    navigate('/login', { replace: true });
   };
 
   return (

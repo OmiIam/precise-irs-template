@@ -1,20 +1,15 @@
 
-'use client';
-
 import React, { useState, useEffect } from 'react';
-import { Search, Menu, X } from 'lucide-react';
-import Link from './RouterLink';
+import { Search, Menu, X, ChevronDown } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { SearchBar } from './SearchBar';
 import { LanguageSelector } from './LanguageSelector';
-import { useLocation } from 'react-router-dom';
 
 export const Header = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const location = useLocation();
-  const pathname = location.pathname;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,11 +18,6 @@ export const Header = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  useEffect(() => {
-    // Close mobile menu when route changes
-    setMobileMenuOpen(false);
-  }, [pathname]);
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -77,7 +67,7 @@ export const Header = () => {
             >
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
-            <Link href="/" className="flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-3">
               <span className={cn(
                 "text-2xl font-bold transition-colors",
                 isScrolled ? "text-irs-darkBlue" : "text-white"
@@ -95,13 +85,13 @@ export const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-1">
-            <NavLink href="/" isScrolled={isScrolled} pathname={pathname}>Home</NavLink>
-            <NavLink href="/file" isScrolled={isScrolled} pathname={pathname}>File</NavLink>
-            <NavLink href="/pay" isScrolled={isScrolled} pathname={pathname}>Pay</NavLink>
-            <NavLink href="/refunds" isScrolled={isScrolled} pathname={pathname}>Refunds</NavLink>
-            <NavLink href="/credits-deductions" isScrolled={isScrolled} pathname={pathname}>Credits & Deductions</NavLink>
-            <NavLink href="/forms-instructions" isScrolled={isScrolled} pathname={pathname}>Forms & Instructions</NavLink>
-            <NavLink href="/login" isScrolled={isScrolled} pathname={pathname}>Get Started</NavLink>
+            <NavLink href="/" isScrolled={isScrolled}>Home</NavLink>
+            <NavLink href="/file" isScrolled={isScrolled}>File</NavLink>
+            <NavLink href="/pay" isScrolled={isScrolled}>Pay</NavLink>
+            <NavLink href="/refunds" isScrolled={isScrolled}>Refunds</NavLink>
+            <NavLink href="/credits-deductions" isScrolled={isScrolled}>Credits & Deductions</NavLink>
+            <NavLink href="/forms-instructions" isScrolled={isScrolled}>Forms & Instructions</NavLink>
+            <NavLink href="/login" isScrolled={isScrolled}>Get Started</NavLink>
           </nav>
 
           {/* Search button */}
@@ -135,13 +125,13 @@ export const Header = () => {
           mobileMenuOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
         )}>
           <nav className="flex flex-col py-4 space-y-1">
-            <MobileNavLink href="/" isScrolled={isScrolled} pathname={pathname}>Home</MobileNavLink>
-            <MobileNavLink href="/file" isScrolled={isScrolled} pathname={pathname}>File</MobileNavLink>
-            <MobileNavLink href="/pay" isScrolled={isScrolled} pathname={pathname}>Pay</MobileNavLink>
-            <MobileNavLink href="/refunds" isScrolled={isScrolled} pathname={pathname}>Refunds</MobileNavLink>
-            <MobileNavLink href="/credits-deductions" isScrolled={isScrolled} pathname={pathname}>Credits & Deductions</MobileNavLink>
-            <MobileNavLink href="/forms-instructions" isScrolled={isScrolled} pathname={pathname}>Forms & Instructions</MobileNavLink>
-            <MobileNavLink href="/login" isScrolled={isScrolled} pathname={pathname}>Get Started</MobileNavLink>
+            <MobileNavLink href="/" isScrolled={isScrolled}>Home</MobileNavLink>
+            <MobileNavLink href="/file" isScrolled={isScrolled}>File</MobileNavLink>
+            <MobileNavLink href="/pay" isScrolled={isScrolled}>Pay</MobileNavLink>
+            <MobileNavLink href="/refunds" isScrolled={isScrolled}>Refunds</MobileNavLink>
+            <MobileNavLink href="/credits-deductions" isScrolled={isScrolled}>Credits & Deductions</MobileNavLink>
+            <MobileNavLink href="/forms-instructions" isScrolled={isScrolled}>Forms & Instructions</MobileNavLink>
+            <MobileNavLink href="/login" isScrolled={isScrolled}>Get Started</MobileNavLink>
           </nav>
         </div>
       </div>
@@ -149,40 +139,30 @@ export const Header = () => {
   );
 };
 
-const NavLink = ({ href, children, isScrolled, pathname }: { href: string; children: React.ReactNode; isScrolled: boolean; pathname: string }) => {
-  const isActive = pathname === href;
-  
-  return (
-    <Link 
-      href={href} 
-      className={cn(
-        "relative nav-link font-medium flex items-center px-3 py-2 transition-all hover:after:w-full after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:transition-all after:duration-300",
-        isActive && "after:w-full",
-        isScrolled 
-          ? "text-irs-darkGray hover:text-irs-blue after:bg-irs-blue" 
-          : "text-white hover:text-irs-lightBlue after:bg-irs-lightBlue"
-      )}
-    >
-      {children}
-    </Link>
-  );
-};
+const NavLink = ({ href, children, isScrolled }: { href: string; children: React.ReactNode; isScrolled: boolean }) => (
+  <Link 
+    to={href} 
+    className={cn(
+      "relative nav-link font-medium flex items-center transition-all hover:after:w-full after:absolute after:bottom-0 after:left-0 after:h-0.5 after:w-0 after:transition-all after:duration-300",
+      isScrolled 
+        ? "text-irs-darkGray hover:text-irs-blue after:bg-irs-blue" 
+        : "text-white hover:text-irs-lightBlue after:bg-irs-lightBlue"
+    )}
+  >
+    {children}
+  </Link>
+);
 
-const MobileNavLink = ({ href, children, isScrolled, pathname }: { href: string; children: React.ReactNode; isScrolled: boolean; pathname: string }) => {
-  const isActive = pathname === href;
-  
-  return (
-    <Link 
-      href={href} 
-      className={cn(
-        "px-4 py-3 font-medium border-b transition-colors",
-        isActive && "bg-irs-gray/10",
-        isScrolled 
-          ? "text-irs-darkGray hover:text-irs-blue border-irs-lightGray" 
-          : "text-white hover:text-irs-lightBlue border-irs-darkBlue"
-      )}
-    >
-      {children}
-    </Link>
-  );
-};
+const MobileNavLink = ({ href, children, isScrolled }: { href: string; children: React.ReactNode; isScrolled: boolean }) => (
+  <Link 
+    to={href} 
+    className={cn(
+      "px-4 py-3 font-medium border-b transition-colors",
+      isScrolled 
+        ? "text-irs-darkGray hover:text-irs-blue border-irs-lightGray" 
+        : "text-white hover:text-irs-lightBlue border-irs-darkBlue"
+    )}
+  >
+    {children}
+  </Link>
+);

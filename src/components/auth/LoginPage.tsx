@@ -1,61 +1,27 @@
 
 import React, { useState, useEffect } from 'react';
 import { Header } from '@/components/Header';
+import { useAuth } from '@/contexts/auth';
 import LoginContainer from './LoginContainer';
 import UserLoginForm from './UserLoginForm';
 import AdminLoginForm from './AdminLoginForm';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/auth';
-import AuthLoading from '@/components/auth/AuthLoading';
-import { Footer } from '@/components/Footer';
+import { useLoginRedirect } from '@/hooks/useLoginRedirect';
 
 const LoginPage = () => {
   const [isAdmin, setIsAdmin] = useState(false);
-  const navigate = useNavigate();
-  const { user, isAdmin: userIsAdmin, isLoading, signIn } = useAuth();
-  const [isRedirecting, setIsRedirecting] = useState(false);
+  const { signIn, user } = useAuth();
+  const { isRedirecting, setIsRedirecting } = useLoginRedirect();
   
   const toggleAdminMode = () => {
     setIsAdmin(!isAdmin);
   };
 
-  // Redirect if already authenticated
+  // Pre-set redirecting if user is already authenticated to avoid flicker
   useEffect(() => {
     if (user && !isRedirecting) {
       setIsRedirecting(true);
-      
-      setTimeout(() => {
-        if (userIsAdmin) {
-          navigate('/admin-dashboard', { replace: true });
-        } else {
-          navigate('/dashboard', { replace: true });
-        }
-      }, 50);
     }
-  }, [user, userIsAdmin, isRedirecting, navigate]);
-
-  const handleAdminLogin = async (values: { email: string; password: string }) => {
-    // For admin login, we'll use the same signIn method but handle redirection here
-    try {
-      const result = await signIn(values.email, values.password);
-      
-      if (!result.error) {
-        setIsRedirecting(true);
-        navigate('/admin-dashboard', { replace: true });
-        return true;
-      }
-      
-      return false;
-    } catch (error) {
-      console.error("Error during admin login:", error);
-      return false;
-    }
-  };
-
-  // Show loading state while checking authentication
-  if (isLoading) {
-    return <AuthLoading />;
-  }
+  }, [user, isRedirecting, setIsRedirecting]);
 
   return (
     <div className="min-h-screen bg-irs-gray">
@@ -66,19 +32,17 @@ const LoginPage = () => {
             {isAdmin ? (
               <AdminLoginForm 
                 onToggleMode={toggleAdminMode} 
-                onAdminLogin={handleAdminLogin}
                 setIsRedirecting={setIsRedirecting} 
               />
             ) : (
               <UserLoginForm 
-                onToggleMode={toggleAdminMode}
-                signIn={signIn}
+                onToggleMode={toggleAdminMode} 
+                signIn={signIn} 
               />
             )}
           </LoginContainer>
         </div>
       </div>
-      <Footer />
     </div>
   );
 };

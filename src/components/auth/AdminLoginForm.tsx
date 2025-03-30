@@ -1,37 +1,30 @@
 
-'use client';
-
-import React, { useState } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ShieldCheck, Loader2 } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useNavigate } from "react-router-dom";
-import { Dispatch, SetStateAction } from 'react';
 
 const adminLoginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
 
-type AdminLoginFormValues = z.infer<typeof adminLoginSchema>;
-
 type AdminLoginFormProps = {
   onToggleMode: () => void;
-  onAdminLogin?: (values: AdminLoginFormValues) => Promise<boolean>;
-  setIsRedirecting: Dispatch<SetStateAction<boolean>>;
+  setIsRedirecting: (value: boolean) => void;
 };
 
-const AdminLoginForm = ({ onToggleMode, onAdminLogin, setIsRedirecting }: AdminLoginFormProps) => {
-  const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+const AdminLoginForm = ({ onToggleMode, setIsRedirecting }: AdminLoginFormProps) => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   
-  const form = useForm<AdminLoginFormValues>({
+  const form = useForm<z.infer<typeof adminLoginSchema>>({
     resolver: zodResolver(adminLoginSchema),
     defaultValues: {
       email: "",
@@ -39,35 +32,34 @@ const AdminLoginForm = ({ onToggleMode, onAdminLogin, setIsRedirecting }: AdminL
     },
   });
 
-  const onSubmit = async (values: AdminLoginFormValues) => {
+  const onSubmit = async (values: z.infer<typeof adminLoginSchema>) => {
     try {
-      setIsLoading(true);
-      
-      if (onAdminLogin) {
-        // Use the provided onAdminLogin function if available with validated values
-        const result = await onAdminLogin(values);
+      // Check if the credentials match the specific admin credentials
+      if (values.email === "admin@admin.com" && values.password === "iXOeNiRqvO2QiN4t") {
+        console.log('Admin credentials accepted. Redirecting to admin dashboard...');
         
-        if (!result) {
-          toast({
-            title: "Admin Login failed",
-            description: "Invalid admin credentials",
-            variant: "destructive",
-          });
-        } else {
-          // Successfully logged in
-          toast({
-            title: "Admin Login successful",
-            description: "Welcome to the admin dashboard",
-          });
-          setIsRedirecting(true);
-          navigate('/admin-dashboard');
-        }
-      } else {
-        // Fallback authentication method
+        // Store admin status in localStorage
+        localStorage.setItem('isAdminAuthenticated', 'true');
+        
+        // Show success toast
         toast({
-          title: "Login error", 
-          description: "Admin login method not configured",
-          variant: "destructive"
+          title: "Admin Login successful",
+          description: "Welcome to the admin dashboard",
+        });
+        
+        // Set redirecting state to prevent multiple redirects
+        setIsRedirecting(true);
+
+        // Use setTimeout to avoid the security error when redirecting
+        setTimeout(() => {
+          navigate('/admin-dashboard', { replace: true });
+        }, 50);
+      } else {
+        // Show error for invalid admin credentials
+        toast({
+          title: "Admin Login failed",
+          description: "Invalid admin credentials",
+          variant: "destructive",
         });
       }
     } catch (error) {
@@ -78,8 +70,6 @@ const AdminLoginForm = ({ onToggleMode, onAdminLogin, setIsRedirecting }: AdminL
         variant: "destructive",
       });
       setIsRedirecting(false);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -116,18 +106,9 @@ const AdminLoginForm = ({ onToggleMode, onAdminLogin, setIsRedirecting }: AdminL
             )}
           />
           
-          <Button type="submit" className="w-full bg-irs-darkBlue text-white hover:bg-irs-darkBlue" disabled={isLoading}>
-            {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                Signing In...
-              </>
-            ) : (
-              <>
-                <ShieldCheck className="mr-2 h-4 w-4" /> 
-                Admin Sign In
-              </>
-            )}
+          <Button type="submit" className="w-full bg-irs-darkBlue text-white hover:bg-irs-darkBlue">
+            <ShieldCheck className="mr-2 h-4 w-4" /> 
+            Admin Sign In
           </Button>
         </form>
       </Form>
