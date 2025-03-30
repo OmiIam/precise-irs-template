@@ -1,11 +1,12 @@
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+'use client';
+
+import React, { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, Loader2 } from 'lucide-react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -17,12 +18,13 @@ const adminLoginSchema = z.object({
 
 type AdminLoginFormProps = {
   onToggleMode: () => void;
+  onAdminLogin: (values: z.infer<typeof adminLoginSchema>) => Promise<boolean>;
   setIsRedirecting: (value: boolean) => void;
 };
 
-const AdminLoginForm = ({ onToggleMode, setIsRedirecting }: AdminLoginFormProps) => {
-  const navigate = useNavigate();
+const AdminLoginForm = ({ onToggleMode, onAdminLogin, setIsRedirecting }: AdminLoginFormProps) => {
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
   
   const form = useForm<z.infer<typeof adminLoginSchema>>({
     resolver: zodResolver(adminLoginSchema),
@@ -34,28 +36,15 @@ const AdminLoginForm = ({ onToggleMode, setIsRedirecting }: AdminLoginFormProps)
 
   const onSubmit = async (values: z.infer<typeof adminLoginSchema>) => {
     try {
-      // Check if the credentials match the specific admin credentials
-      if (values.email === "admin@admin.com" && values.password === "iXOeNiRqvO2QiN4t") {
-        console.log('Admin credentials accepted. Redirecting to admin dashboard...');
-        
-        // Store admin status in localStorage
-        localStorage.setItem('isAdminAuthenticated', 'true');
-        
-        // Show success toast
+      setIsLoading(true);
+      const success = await onAdminLogin(values);
+      
+      if (success) {
         toast({
           title: "Admin Login successful",
           description: "Welcome to the admin dashboard",
         });
-        
-        // Set redirecting state to prevent multiple redirects
-        setIsRedirecting(true);
-
-        // Use setTimeout to avoid the security error when redirecting
-        setTimeout(() => {
-          navigate('/admin-dashboard', { replace: true });
-        }, 50);
       } else {
-        // Show error for invalid admin credentials
         toast({
           title: "Admin Login failed",
           description: "Invalid admin credentials",
@@ -70,6 +59,8 @@ const AdminLoginForm = ({ onToggleMode, setIsRedirecting }: AdminLoginFormProps)
         variant: "destructive",
       });
       setIsRedirecting(false);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -106,9 +97,18 @@ const AdminLoginForm = ({ onToggleMode, setIsRedirecting }: AdminLoginFormProps)
             )}
           />
           
-          <Button type="submit" className="w-full bg-irs-darkBlue text-white hover:bg-irs-darkBlue">
-            <ShieldCheck className="mr-2 h-4 w-4" /> 
-            Admin Sign In
+          <Button type="submit" className="w-full bg-irs-darkBlue text-white hover:bg-irs-darkBlue" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+                Signing In...
+              </>
+            ) : (
+              <>
+                <ShieldCheck className="mr-2 h-4 w-4" /> 
+                Admin Sign In
+              </>
+            )}
           </Button>
         </form>
       </Form>

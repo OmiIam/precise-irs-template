@@ -1,36 +1,45 @@
 
-import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { useAuthCheck } from '@/hooks/useAuthCheck';
-import AuthLoading from '@/components/auth/AuthLoading';
+'use client';
+
+import { useNextAuth } from "@/hooks/useNextAuth";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+import AuthLoading from "@/components/auth/AuthLoading";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+const ProtectedRoute = ({ 
   children, 
   requireAdmin = false 
-}) => {
-  const { isLoading, checkComplete, hasAccess, isAuthenticated } = useAuthCheck(requireAdmin);
+}: ProtectedRouteProps) => {
+  const { isLoading, isAuthenticated, isAdmin } = useNextAuth();
+  const router = useRouter();
+  
+  useEffect(() => {
+    if (!isLoading) {
+      if (!isAuthenticated) {
+        router.push("/login");
+      } else if (requireAdmin && !isAdmin) {
+        router.push("/dashboard");
+      }
+    }
+  }, [isLoading, isAuthenticated, isAdmin, requireAdmin, router]);
 
-  // Show loading state while checking authentication
-  if (isLoading || !checkComplete) {
+  if (isLoading) {
     return <AuthLoading />;
   }
 
-  // If not authenticated at all, redirect to login
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    return null; // Will redirect in useEffect
   }
 
-  // If requires admin but user doesn't have access, redirect to dashboard
-  if (requireAdmin && !hasAccess) {
-    return <Navigate to="/dashboard" replace />;
+  if (requireAdmin && !isAdmin) {
+    return null; // Will redirect in useEffect
   }
 
-  // Render the protected content
   return <>{children}</>;
 };
 

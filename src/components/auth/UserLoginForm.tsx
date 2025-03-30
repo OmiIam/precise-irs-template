@@ -1,6 +1,8 @@
 
+'use client';
+
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
@@ -9,6 +11,7 @@ import { LogIn, ShieldCheck, Loader2 } from 'lucide-react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useRouter } from "next/navigation";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -23,6 +26,7 @@ type UserLoginFormProps = {
 const UserLoginForm = ({ onToggleMode, signIn }: UserLoginFormProps) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
   
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -44,13 +48,10 @@ const UserLoginForm = ({ onToggleMode, signIn }: UserLoginFormProps) => {
         console.error('Error during sign in:', error);
         
         let errorMessage = "Check your email and password and try again";
-        if (error.message) {
-          if (error.message.includes("Invalid login")) {
-            // This could be due to email verification not being completed
-            errorMessage = "Invalid email or password. If you just signed up, please check your email for verification instructions or try again later.";
-          } else {
-            errorMessage = error.message;
-          }
+        if (typeof error === 'string') {
+          errorMessage = error;
+        } else if (error.message) {
+          errorMessage = error.message;
         }
         
         toast({
@@ -61,11 +62,13 @@ const UserLoginForm = ({ onToggleMode, signIn }: UserLoginFormProps) => {
         return;
       }
       
-      // Auth state change will handle redirection for regular users
       toast({
         title: "Login successful",
         description: "Welcome back!",
       });
+      
+      // NextAuth will handle the redirect
+      router.push('/dashboard');
     } catch (error) {
       console.error('Login submission error:', error);
       toast({
@@ -129,7 +132,7 @@ const UserLoginForm = ({ onToggleMode, signIn }: UserLoginFormProps) => {
       </Form>
       
       <div className="mt-4 text-center text-sm">
-        <Link to="/forgot-password" className="text-irs-blue hover:text-irs-darkBlue">
+        <Link href="/forgot-password" className="text-irs-blue hover:text-irs-darkBlue">
           Forgot your password?
         </Link>
       </div>
