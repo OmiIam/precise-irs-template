@@ -1,10 +1,16 @@
 
-import React from 'react';
+'use client';
 
-const AuthLoading: React.FC = () => {
+import React from 'react';
+import { Loader2 } from 'lucide-react';
+
+const AuthLoading = () => {
   return (
-    <div className="flex justify-center items-center min-h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-irs-blue"></div>
+    <div className="flex items-center justify-center min-h-screen bg-irs-gray">
+      <div className="flex flex-col items-center space-y-4">
+        <Loader2 className="h-12 w-12 animate-spin text-irs-blue" />
+        <p className="text-irs-darkGray font-medium">Loading...</p>
+      </div>
     </div>
   );
 };

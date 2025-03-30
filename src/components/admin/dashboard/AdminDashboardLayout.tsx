@@ -1,8 +1,9 @@
 
+'use client';
+
 import React from 'react';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
-import { User } from '@/components/admin/user-list/types';
 
 interface AdminDashboardLayoutProps {
   activePage: string;

@@ -21,6 +21,7 @@ export async function middleware(req: NextRequest) {
     // If no token is found, redirect to login
     if (!token) {
       const url = new URL('/login', req.url);
+      url.searchParams.append('callbackUrl', path);
       return NextResponse.redirect(url);
     }
     

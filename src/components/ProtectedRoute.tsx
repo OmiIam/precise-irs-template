@@ -3,7 +3,7 @@
 
 import { useNextAuth } from "@/hooks/useNextAuth";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import AuthLoading from "@/components/auth/AuthLoading";
 
 interface ProtectedRouteProps {
@@ -17,9 +17,12 @@ const ProtectedRoute = ({
 }: ProtectedRouteProps) => {
   const { isLoading, isAuthenticated, isAdmin } = useNextAuth();
   const router = useRouter();
+  const [isChecking, setIsChecking] = useState(true);
   
   useEffect(() => {
     if (!isLoading) {
+      setIsChecking(false);
+      
       if (!isAuthenticated) {
         router.push("/login");
       } else if (requireAdmin && !isAdmin) {
@@ -28,7 +31,7 @@ const ProtectedRoute = ({
     }
   }, [isLoading, isAuthenticated, isAdmin, requireAdmin, router]);
 
-  if (isLoading) {
+  if (isLoading || isChecking) {
     return <AuthLoading />;
   }
 
