@@ -68,11 +68,16 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       
       // Get the session for authorization or fallback to admin auth
       const { data: sessionData } = await supabase.auth.getSession();
-      let accessToken = sessionData?.session?.access_token;
       
-      // If no regular session token, check for admin-specific authentication
-      if (!accessToken) {
-        console.log("No standard auth session found, checking for admin authentication");
+      // Prepare authorization header
+      let authHeader = '';
+      let adminAuthHeader = 'false';
+      
+      // If we have a regular session, use it
+      if (sessionData?.session?.access_token) {
+        authHeader = `Bearer ${sessionData.session.access_token}`;
+      } else {
+        // Check for admin-specific authentication
         const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated') === 'true';
         
         if (!isAdminAuthenticated) {
@@ -84,18 +89,9 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
           return false;
         }
         
-        // For admin-only authentication, we'll use a special header but need a token
-        // Use the API URL directly instead of trying to access the protected supabaseKey
-        accessToken = 'ADMIN_MODE'; // Just a placeholder, the real auth happens via the X-Admin-Auth header
-      }
-      
-      if (!accessToken) {
-        toast({
-          title: "Authorization Error",
-          description: "No valid authentication token found. Please log in again.",
-          variant: "destructive"
-        });
-        return false;
+        // For admin-only authentication, we'll use a special header
+        authHeader = 'Bearer ADMIN_MODE';
+        adminAuthHeader = 'true';
       }
       
       // Create the user with admin auth endpoint which directly creates a confirmed user
@@ -103,9 +99,8 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-          // Add a special header for admin-only authentication
-          'X-Admin-Auth': localStorage.getItem('isAdminAuthenticated') === 'true' ? 'true' : 'false'
+          'Authorization': authHeader,
+          'X-Admin-Auth': adminAuthHeader
         },
         body: JSON.stringify({
           userData: {
