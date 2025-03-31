@@ -50,38 +50,38 @@ serve(async (req) => {
     const authHeader = req.headers.get('Authorization') || '';
     const isAdminAuth = req.headers.get('X-Admin-Auth') === 'true';
     
-    if (authHeader.startsWith('Bearer ')) {
+    // Special case: If using admin-only auth mode with the special header
+    if (isAdminAuth) {
+      console.log("Admin-only authentication detected via X-Admin-Auth header");
+      isAuthorized = true;
+    } 
+    // Regular case: Check user session token
+    else if (authHeader.startsWith('Bearer ') && authHeader !== 'Bearer ADMIN_MODE') {
       const token = authHeader.substring(7);
       
-      // If it's admin-only authentication (from localStorage flag)
-      if (isAdminAuth) {
-        console.log("Admin-only authentication detected");
-        isAuthorized = true;
-      } else {
-        // Verify the JWT token from a normal user session
-        try {
-          const { data, error } = await supabase.auth.getUser(token);
-          if (!error && data.user) {
-            // Check if the user has admin role
-            const { data: profileData } = await supabase
-              .from('profiles')
-              .select('role')
-              .eq('id', data.user.id)
-              .single();
-              
-            isAuthorized = profileData?.role === 'Admin';
+      // Verify the JWT token from a normal user session
+      try {
+        const { data, error } = await supabase.auth.getUser(token);
+        if (!error && data.user) {
+          // Check if the user has admin role
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', data.user.id)
+            .single();
             
-            if (!isAuthorized) {
-              console.log("User authenticated but not an admin:", data.user.id);
-            } else {
-              console.log("Admin user authenticated:", data.user.id);
-            }
+          isAuthorized = profileData?.role === 'Admin';
+          
+          if (!isAuthorized) {
+            console.log("User authenticated but not an admin:", data.user.id);
           } else {
-            console.error("Invalid authentication token:", error);
+            console.log("Admin user authenticated:", data.user.id);
           }
-        } catch (error) {
-          console.error("Error verifying authentication:", error);
+        } else {
+          console.error("Invalid authentication token:", error);
         }
+      } catch (error) {
+        console.error("Error verifying authentication:", error);
       }
     }
     

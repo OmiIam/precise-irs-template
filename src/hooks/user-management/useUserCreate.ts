@@ -84,8 +84,9 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
           return false;
         }
         
-        // For admin-only authentication, we'll use the anon key but with a special header
-        accessToken = supabase.supabaseKey;
+        // For admin-only authentication, we'll use a special header but need a token
+        // Use the API URL directly instead of trying to access the protected supabaseKey
+        accessToken = 'ADMIN_MODE'; // Just a placeholder, the real auth happens via the X-Admin-Auth header
       }
       
       if (!accessToken) {
