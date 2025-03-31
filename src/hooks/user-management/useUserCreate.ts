@@ -45,13 +45,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
       
-      console.log("Creating user with data:", {
-        ...newUser,
-        password: newUser.password ? "[REDACTED]" : undefined,
-        filingDeadline: newUser.filingDeadline ? newUser.filingDeadline.toISOString() : null
-      });
-      
-      // Create auth user account
+      // Password validation
       if (!newUser.password || newUser.password.length < 6) {
         toast({
           title: "Invalid Password",
@@ -61,35 +55,53 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
       
+      console.log("Creating user with data:", {
+        ...newUser,
+        password: "[REDACTED]",
+        filingDeadline: newUser.filingDeadline ? newUser.filingDeadline.toISOString() : null
+      });
+      
       // Extract name parts for user metadata
       const nameParts = newUser.name.trim().split(' ');
       const firstName = nameParts[0];
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
-      // Create the user in Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUser.email,
-        password: newUser.password,
-        options: {
-          data: {
-            first_name: firstName,
-            last_name: lastName,
+      // Create the user with admin auth endpoint which directly creates a confirmed user
+      const response = await fetch(`https://mhocdqtqohcnxrxhczhx.functions.supabase.co/create-user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabase.auth.autoRefreshToken}`
+        },
+        body: JSON.stringify({
+          userData: {
+            email: newUser.email,
+            password: newUser.password,
+            firstName,
+            lastName,
+            role: newUser.role || 'User',
+            status: newUser.status || 'Active',
+            taxDue: newUser.taxDue || 0,
+            availableCredits: newUser.availableCredits || 0,
+            filingDeadline: newUser.filingDeadline ? newUser.filingDeadline.toISOString() : null
           }
-        }
+        })
       });
       
-      if (authError) {
-        console.error("Error creating auth user:", authError);
+      const result = await response.json();
+      
+      if (!response.ok || !result.success) {
+        console.error("Error creating user via edge function:", result.error);
         toast({
           title: "Error Creating User",
-          description: authError.message || "Failed to create user account.",
+          description: result.error || "Failed to create user. Please try again.",
           variant: "destructive"
         });
         return false;
       }
       
-      if (!authData.user) {
-        console.error("No user returned from signUp operation");
+      if (!result.data || !result.data.user) {
+        console.error("No user data returned from edge function");
         toast({
           title: "Error Creating User",
           description: "Failed to create user account. No user data returned.",
@@ -98,42 +110,26 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
       
-      // Format the date properly for Supabase
-      const filingDeadlineISO = newUser.filingDeadline instanceof Date 
-        ? newUser.filingDeadline.toISOString() 
-        : newUser.filingDeadline;
+      const authUser = result.data.user;
       
-      // Update the profile with additional data
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          role: newUser.role || 'User',
-          status: newUser.status || 'Active',
-          tax_due: newUser.taxDue || 0,
-          filing_deadline: filingDeadlineISO,
-          available_credits: newUser.availableCredits || 0
-        })
-        .eq('id', authData.user.id);
-      
-      if (profileError) {
-        console.error("Error updating profile:", profileError);
-        toast({
-          title: "Warning",
-          description: "User created but profile data could not be fully updated.",
-          variant: "default" 
-        });
+      // Format the filingDeadline properly for UI display
+      let filingDeadlineDate: Date | undefined;
+      if (newUser.filingDeadline instanceof Date) {
+        filingDeadlineDate = newUser.filingDeadline;
+      } else if (newUser.filingDeadline) {
+        filingDeadlineDate = new Date(newUser.filingDeadline);
       }
       
       // Create formatted user object for the UI
       const formattedUser: User = {
-        id: authData.user.id,
+        id: authUser.id,
         name: newUser.name,
         email: newUser.email,
         role: newUser.role || 'User',
         status: newUser.status || 'Active',
         lastLogin: 'Never',
         taxDue: newUser.taxDue || 0,
-        filingDeadline: newUser.filingDeadline instanceof Date ? newUser.filingDeadline : new Date(filingDeadlineISO || new Date()),
+        filingDeadline: filingDeadlineDate,
         availableCredits: newUser.availableCredits || 0
       };
       

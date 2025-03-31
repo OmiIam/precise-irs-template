@@ -11,11 +11,11 @@ export async function createAuthUser(supabase: any, userData: any): Promise<{ au
   try {
     console.log("Creating auth user with email:", userData.email);
     
-    // Create user in Auth
+    // Create user in Auth with email already confirmed
     const { data, error } = await supabase.auth.admin.createUser({
       email: userData.email,
       password: userData.password,
-      email_confirm: true,
+      email_confirm: true, // This is crucial - confirms the email automatically
       user_metadata: {
         first_name: userData.firstName,
         last_name: userData.lastName || ''
@@ -74,6 +74,16 @@ export async function createUserProfile(supabase: any, userId: string, userData:
     
     console.log("Creating user profile for user ID:", userId);
     
+    // Format date for PostgreSQL if present
+    let filingDeadline = null;
+    if (userData.filingDeadline) {
+      try {
+        filingDeadline = new Date(userData.filingDeadline).toISOString();
+      } catch (e) {
+        console.error("Invalid date format for filingDeadline:", userData.filingDeadline);
+      }
+    }
+    
     // Prepare profile data
     const profileData = {
       id: userId,
@@ -83,6 +93,7 @@ export async function createUserProfile(supabase: any, userId: string, userData:
       role: userData.role || 'User',
       status: userData.status || 'Active',
       tax_due: userData.taxDue || 0,
+      filing_deadline: filingDeadline,
       available_credits: userData.availableCredits || 0,
       created_at: new Date().toISOString()
     };
@@ -92,7 +103,7 @@ export async function createUserProfile(supabase: any, userId: string, userData:
     // Insert profile record
     const { data, error } = await supabase
       .from('profiles')
-      .insert([profileData])
+      .upsert([profileData])
       .select()
       .single();
     

@@ -46,8 +46,7 @@ const UserLoginForm = ({ onToggleMode, signIn }: UserLoginFormProps) => {
         let errorMessage = "Check your email and password and try again";
         if (error.message) {
           if (error.message.includes("Invalid login")) {
-            // This could be due to email verification not being completed
-            errorMessage = "Invalid email or password. If you just signed up, please check your email for verification instructions or try again later.";
+            errorMessage = "Invalid email or password. Please check your credentials and try again.";
           } else {
             errorMessage = error.message;
           }

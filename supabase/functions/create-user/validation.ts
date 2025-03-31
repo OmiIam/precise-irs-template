@@ -1,47 +1,37 @@
 
 /**
- * Validates required user data fields
- * @param userData The user data to validate
- * @returns Error message string if validation fails, null if validation passes
+ * Validates user data to ensure all required fields are present and correctly formatted
+ * @param userData User data to validate
+ * @returns Error message if validation fails, null if validation passes
  */
 export function validateUserData(userData: any): string | null {
   if (!userData) {
-    return "No user data provided";
+    return "User data is required";
   }
   
   // Check required fields
-  if (!userData.email || !userData.firstName) {
-    console.error("Missing required fields:", { 
-      hasEmail: !!userData.email,
-      hasFirstName: !!userData.firstName,
-      hasPassword: !!userData.password
-    });
-    
-    return "Required fields missing: email, first name, and password are required";
+  if (!userData.email) {
+    return "Email is required";
+  }
+  
+  if (!userData.password) {
+    return "Password is required";
+  }
+  
+  if (userData.password.length < 6) {
+    return "Password must be at least 6 characters long";
   }
   
   // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(userData.email)) {
-    console.error("Invalid email format:", userData.email);
-    return "Please provide a valid email address";
+    return "Invalid email format";
   }
   
-  // Validate password
-  if (typeof userData.password !== 'string' || userData.password.length < 6) {
-    console.error("Invalid password format:", { 
-      passwordType: typeof userData.password,
-      passwordLength: userData.password ? userData.password.length : 0
-    });
-    
-    return "Valid password is required (minimum 6 characters)";
-  }
-  
-  // Validate names
-  if (typeof userData.firstName !== 'string' || userData.firstName.trim().length === 0) {
-    console.error("Invalid first name:", userData.firstName);
+  // First name validation
+  if (!userData.firstName || userData.firstName.trim() === '') {
     return "First name is required";
   }
   
-  return null;
+  return null; // Validation passed
 }
