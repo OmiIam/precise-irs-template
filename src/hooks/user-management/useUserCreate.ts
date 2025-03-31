@@ -66,12 +66,25 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       const firstName = nameParts[0];
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
+      // Get the session for authorization
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+      
+      if (!accessToken) {
+        toast({
+          title: "Authorization Error",
+          description: "You must be logged in to create users.",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
       // Create the user with admin auth endpoint which directly creates a confirmed user
       const response = await fetch(`https://mhocdqtqohcnxrxhczhx.functions.supabase.co/create-user`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.autoRefreshToken}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({
           userData: {

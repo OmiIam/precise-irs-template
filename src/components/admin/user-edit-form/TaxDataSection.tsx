@@ -1,10 +1,18 @@
 
 import React from 'react';
-import DatePicker from 'react-datepicker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { UserFormData } from './types';
-import "react-datepicker/dist/react-datepicker.css";
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 type TaxDataSectionProps = {
   formData: UserFormData;
@@ -65,14 +73,30 @@ const TaxDataSection = ({
           <Label htmlFor="filingDeadline">Filing Deadline</Label>
         </div>
         <div className="col-span-3">
-          <DatePicker
-            id="filingDeadline"
-            selected={formData.filingDeadline instanceof Date ? formData.filingDeadline : null}
-            onChange={(date: Date) => handleDateChange(date)}
-            className="w-full border border-gray-300 px-4 py-2 rounded"
-            dateFormat="MM/dd/yyyy"
-            placeholderText="Select a date"
-          />
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                id="filingDeadline"
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !formData.filingDeadline && "text-muted-foreground"
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {formData.filingDeadline ? format(formData.filingDeadline, "PPP") : <span>Select a date</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={formData.filingDeadline instanceof Date ? formData.filingDeadline : undefined}
+                onSelect={handleDateChange}
+                initialFocus
+                className="pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
       
