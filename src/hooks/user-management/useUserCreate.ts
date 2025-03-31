@@ -66,14 +66,32 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       const firstName = nameParts[0];
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
-      // Get the session for authorization
+      // Get the session for authorization or fallback to admin auth
       const { data: sessionData } = await supabase.auth.getSession();
-      const accessToken = sessionData?.session?.access_token;
+      let accessToken = sessionData?.session?.access_token;
+      
+      // If no regular session token, check for admin-specific authentication
+      if (!accessToken) {
+        console.log("No standard auth session found, checking for admin authentication");
+        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated') === 'true';
+        
+        if (!isAdminAuthenticated) {
+          toast({
+            title: "Authorization Error",
+            description: "You must be logged in with admin privileges to create users.",
+            variant: "destructive"
+          });
+          return false;
+        }
+        
+        // For admin-only authentication, we'll use the anon key but with a special header
+        accessToken = supabase.supabaseKey;
+      }
       
       if (!accessToken) {
         toast({
           title: "Authorization Error",
-          description: "You must be logged in to create users.",
+          description: "No valid authentication token found. Please log in again.",
           variant: "destructive"
         });
         return false;
@@ -84,7 +102,9 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
+          'Authorization': `Bearer ${accessToken}`,
+          // Add a special header for admin-only authentication
+          'X-Admin-Auth': localStorage.getItem('isAdminAuthenticated') === 'true' ? 'true' : 'false'
         },
         body: JSON.stringify({
           userData: {

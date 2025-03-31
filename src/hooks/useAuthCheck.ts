@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,10 +20,12 @@ export const useAuthCheck = (requireAdmin = false) => {
           if (user) {
             const { data: { session } } = await supabase.auth.getSession();
             if (!session) {
-              // Clear invalid admin auth if no valid session exists
-              localStorage.removeItem('isAdminAuthenticated');
-              setIsAdminAuthenticated(false);
+              console.log("No valid session found for user, but admin auth exists");
+              // We keep the admin auth even if the session is invalid
+              // This allows admin-only access without a regular user session
             }
+          } else {
+            console.log("No user, but admin auth is set - allowing admin-only access");
           }
         } catch (error) {
           console.error("Error validating session:", error);

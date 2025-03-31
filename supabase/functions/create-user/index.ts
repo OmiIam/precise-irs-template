@@ -45,6 +45,60 @@ serve(async (req) => {
       );
     }
     
+    // Check for admin authentication or valid user session
+    let isAuthorized = false;
+    const authHeader = req.headers.get('Authorization') || '';
+    const isAdminAuth = req.headers.get('X-Admin-Auth') === 'true';
+    
+    if (authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      
+      // If it's admin-only authentication (from localStorage flag)
+      if (isAdminAuth) {
+        console.log("Admin-only authentication detected");
+        isAuthorized = true;
+      } else {
+        // Verify the JWT token from a normal user session
+        try {
+          const { data, error } = await supabase.auth.getUser(token);
+          if (!error && data.user) {
+            // Check if the user has admin role
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', data.user.id)
+              .single();
+              
+            isAuthorized = profileData?.role === 'Admin';
+            
+            if (!isAuthorized) {
+              console.log("User authenticated but not an admin:", data.user.id);
+            } else {
+              console.log("Admin user authenticated:", data.user.id);
+            }
+          } else {
+            console.error("Invalid authentication token:", error);
+          }
+        } catch (error) {
+          console.error("Error verifying authentication:", error);
+        }
+      }
+    }
+    
+    if (!isAuthorized) {
+      console.error("Unauthorized access attempt");
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: "You must be an admin to create users"
+        }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
+    }
+    
     console.log("Create user request received with data:", {
       email: userData.email,
       firstName: userData.firstName,
