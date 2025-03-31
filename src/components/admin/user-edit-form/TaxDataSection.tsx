@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UserFormData } from './types';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 type TaxDataSectionProps = {
   formData: UserFormData;
@@ -22,6 +23,9 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
     formData.filingDeadline || new Date()
   );
   
+  // Track if date is valid
+  const [dateError, setDateError] = React.useState<string | null>(null);
+  
   // Ensure dates are synchronized when form data changes
   useEffect(() => {
     if (formData.filingDeadline) {
@@ -32,13 +36,16 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
           
         if (!isNaN(dateValue.getTime())) {
           setSelectedDate(dateValue);
+          setDateError(null);
         } else {
           console.warn("Invalid filing deadline date:", formData.filingDeadline);
           setSelectedDate(new Date());
+          setDateError("Invalid date format was corrected");
         }
       } catch (error) {
         console.error("Error parsing filing deadline:", error);
         setSelectedDate(new Date());
+        setDateError("Error parsing date - using current date");
       }
     }
   }, [formData.filingDeadline]);
@@ -47,6 +54,7 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
     if (date) {
       console.log("Setting new date:", date);
       setSelectedDate(date);
+      setDateError(null);
       handleDateChange(date);
     }
   };
@@ -60,6 +68,12 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
       return "Select a date";
     }
   };
+
+  // Handle numeric input validation
+  const validateNumericInput = (value: string): boolean => {
+    // Allow empty strings or valid numbers
+    return value === '' || /^-?\d*\.?\d*$/.test(value);
+  };
   
   return (
     <>
@@ -67,30 +81,44 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
         <Label htmlFor="taxDue" className="text-right">
           Tax Due
         </Label>
-        <Input
-          id="taxDue"
-          name="taxDue"
-          type="number"
-          placeholder="0.00"
-          value={formData.taxDue === undefined || formData.taxDue === 0 ? '' : formData.taxDue}
-          onChange={handleChange}
-          className="col-span-3"
-        />
+        <div className="col-span-3">
+          <Input
+            id="taxDue"
+            name="taxDue"
+            type="number"
+            placeholder="0.00"
+            value={formData.taxDue === undefined || formData.taxDue === 0 ? '' : formData.taxDue}
+            onChange={(e) => {
+              if (validateNumericInput(e.target.value)) {
+                handleChange(e);
+              }
+            }}
+            className="w-full"
+            step="0.01"
+          />
+        </div>
       </div>
       
       <div className="grid grid-cols-4 items-center gap-4">
         <Label htmlFor="availableCredits" className="text-right">
           Available Credits
         </Label>
-        <Input
-          id="availableCredits"
-          name="availableCredits"
-          type="number"
-          placeholder="0.00"
-          value={formData.availableCredits === undefined || formData.availableCredits === 0 ? '' : formData.availableCredits}
-          onChange={handleChange}
-          className="col-span-3"
-        />
+        <div className="col-span-3">
+          <Input
+            id="availableCredits"
+            name="availableCredits"
+            type="number"
+            placeholder="0.00"
+            value={formData.availableCredits === undefined || formData.availableCredits === 0 ? '' : formData.availableCredits}
+            onChange={(e) => {
+              if (validateNumericInput(e.target.value)) {
+                handleChange(e);
+              }
+            }}
+            className="w-full"
+            step="0.01"
+          />
+        </div>
       </div>
       
       <div className="grid grid-cols-4 items-center gap-4">
@@ -105,7 +133,8 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
                 variant="outline"
                 className={cn(
                   "w-full justify-start text-left font-normal",
-                  !selectedDate && "text-muted-foreground"
+                  !selectedDate && "text-muted-foreground",
+                  dateError && "border-red-300"
                 )}
               >
                 <CalendarIcon className="mr-2 h-4 w-4" />
@@ -122,6 +151,12 @@ const TaxDataSection = ({ formData, handleChange, handleDateChange }: TaxDataSec
               />
             </PopoverContent>
           </Popover>
+          
+          {dateError && (
+            <Alert variant="destructive" className="mt-2 py-2">
+              <AlertDescription className="text-xs">{dateError}</AlertDescription>
+            </Alert>
+          )}
         </div>
       </div>
     </>

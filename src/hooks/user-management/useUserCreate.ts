@@ -47,7 +47,8 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       
       console.log("Creating user with data:", {
         ...newUser,
-        password: newUser.password ? "[REDACTED]" : undefined
+        password: newUser.password ? "[REDACTED]" : undefined,
+        filingDeadline: newUser.filingDeadline ? newUser.filingDeadline.toISOString() : null
       });
       
       // Create auth user account
@@ -97,6 +98,11 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
       
+      // Format the date properly for Supabase
+      const filingDeadlineISO = newUser.filingDeadline instanceof Date 
+        ? newUser.filingDeadline.toISOString() 
+        : newUser.filingDeadline;
+      
       // Update the profile with additional data
       const { error: profileError } = await supabase
         .from('profiles')
@@ -104,7 +110,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
           role: newUser.role || 'User',
           status: newUser.status || 'Active',
           tax_due: newUser.taxDue || 0,
-          filing_deadline: newUser.filingDeadline?.toISOString(),
+          filing_deadline: filingDeadlineISO,
           available_credits: newUser.availableCredits || 0
         })
         .eq('id', authData.user.id);
@@ -127,7 +133,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         status: newUser.status || 'Active',
         lastLogin: 'Never',
         taxDue: newUser.taxDue || 0,
-        filingDeadline: newUser.filingDeadline,
+        filingDeadline: newUser.filingDeadline instanceof Date ? newUser.filingDeadline : new Date(filingDeadlineISO || new Date()),
         availableCredits: newUser.availableCredits || 0
       };
       
