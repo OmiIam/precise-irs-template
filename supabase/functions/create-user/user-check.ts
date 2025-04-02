@@ -12,12 +12,12 @@ export async function checkExistingUser(supabase: any, email: string): Promise<{
       return { exists: false, error: "Email is required to check for existing users" };
     }
     
-    // Check if email already exists in auth users
+    // Check if email already exists in auth users - this is the most reliable check
     console.log("Checking if email exists in auth users:", email);
     try {
       const { data: authData, error: authCheckError } = await supabase.auth.admin.listUsers({
         filter: {
-          email: email
+          email: email.toLowerCase().trim()
         }
       });
       
@@ -33,13 +33,13 @@ export async function checkExistingUser(supabase: any, email: string): Promise<{
       // Continue to profile check instead of failing immediately
     }
     
-    // Check if email already exists in profiles
+    // Also check in profiles table as a fallback
     try {
       console.log("Checking if email exists in profiles:", email);
       const { data: existingProfiles, error: profileCheckError } = await supabase
         .from('profiles')
         .select('email')
-        .eq('email', email)
+        .ilike('email', email.toLowerCase().trim())
         .limit(1);
         
       if (profileCheckError) {
@@ -57,6 +57,23 @@ export async function checkExistingUser(supabase: any, email: string): Promise<{
     } catch (profileError) {
       console.error("Error during profile check:", profileError);
       return { exists: false, error: "Error checking profiles: " + profileError.message };
+    }
+    
+    // As a last resort, check in the old users table if it exists
+    try {
+      const { data: oldUsers, error: oldUsersError } = await supabase
+        .from('users')
+        .select('email')
+        .ilike('email', email.toLowerCase().trim())
+        .limit(1);
+        
+      if (!oldUsersError && oldUsers && oldUsers.length > 0) {
+        console.log("User with email already exists in old users table:", email);
+        return { exists: true, error: null };
+      }
+    } catch (error) {
+      // If the table doesn't exist or other error, just ignore it
+      console.log("Error or non-existent users table, continuing:", error);
     }
     
     console.log("No existing user found with email:", email);

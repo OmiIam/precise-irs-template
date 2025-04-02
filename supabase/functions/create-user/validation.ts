@@ -22,7 +22,8 @@ export function validateUserData(userData: any): string | null {
     return "Password must be at least 6 characters long";
   }
   
-  // Validate email format
+  // Normalize and validate email format
+  userData.email = userData.email.toLowerCase().trim();
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(userData.email)) {
     return "Invalid email format";

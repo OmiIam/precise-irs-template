@@ -11,9 +11,32 @@ export async function createAuthUser(supabase: any, userData: any): Promise<{ au
   try {
     console.log("Creating auth user with email:", userData.email);
     
+    // Make sure email is normalized
+    const email = userData.email.toLowerCase().trim();
+    
+    // Double-check if the user already exists (safeguard)
+    try {
+      const { data: existingUsers } = await supabase.auth.admin.listUsers({
+        filter: {
+          email: email
+        }
+      });
+      
+      if (existingUsers?.users && existingUsers.users.length > 0) {
+        console.error("User already exists in auth system:", email);
+        return { 
+          authUser: null, 
+          error: "This email is already registered in the system." 
+        };
+      }
+    } catch (checkError) {
+      console.error("Error checking for existing users before creation:", checkError);
+      // Continue with creation attempt despite error
+    }
+    
     // Create user in Auth with email already confirmed
     const { data, error } = await supabase.auth.admin.createUser({
-      email: userData.email,
+      email: email,
       password: userData.password,
       email_confirm: true, // This is crucial - confirms the email automatically
       user_metadata: {
@@ -84,12 +107,30 @@ export async function createUserProfile(supabase: any, userId: string, userData:
       }
     }
     
+    // Ensure email is normalized
+    const email = userData.email.toLowerCase().trim();
+    
+    // Check for duplicate email in profiles table
+    const { data: existingProfiles, error: checkError } = await supabase
+      .from('profiles')
+      .select('id')
+      .ilike('email', email)
+      .limit(1);
+      
+    if (!checkError && existingProfiles && existingProfiles.length > 0) {
+      console.error("A profile with this email already exists:", email);
+      return { 
+        profile: null, 
+        error: "A profile with this email already exists" 
+      };
+    }
+    
     // Prepare profile data
     const profileData = {
       id: userId,
       first_name: userData.firstName,
       last_name: userData.lastName || '',
-      email: userData.email,
+      email: email,
       role: userData.role || 'User',
       status: userData.status || 'Active',
       tax_due: userData.taxDue || 0,

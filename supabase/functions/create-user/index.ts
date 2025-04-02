@@ -99,6 +99,7 @@ serve(async (req) => {
       );
     }
     
+    // Log our request for debugging
     console.log("Create user request received with data:", {
       email: userData.email,
       firstName: userData.firstName,
@@ -122,7 +123,11 @@ serve(async (req) => {
       );
     }
     
-    // 2. Check if user already exists
+    // 2. Normalize the email address
+    userData.email = userData.email.toLowerCase().trim();
+    
+    // 3. Check if user already exists
+    console.log("Checking if user email already exists:", userData.email);
     const { exists: userExists, error: checkError } = await checkExistingUser(supabase, userData.email);
     
     if (checkError) {
@@ -151,7 +156,7 @@ serve(async (req) => {
       );
     }
     
-    // 3. Create auth user
+    // 4. Create auth user
     const { authUser, error: authError } = await createAuthUser(supabase, userData);
     
     if (authError) {
@@ -181,7 +186,7 @@ serve(async (req) => {
     
     console.log("Successfully created auth user with ID:", authUser.id);
     
-    // 4. Create user profile
+    // 5. Create user profile
     const { profile, error: profileError } = await createUserProfile(supabase, authUser.id, userData);
     
     if (profileError) {

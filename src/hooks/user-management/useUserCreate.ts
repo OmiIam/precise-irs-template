@@ -18,12 +18,29 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
 
-      // Check if the email already exists
+      // Normalize email
+      newUser.email = newUser.email.toLowerCase().trim();
+      
+      // Check if the email already exists locally (faster pre-check)
+      const emailExists = users.some(user => 
+        user.email.toLowerCase() === newUser.email.toLowerCase()
+      );
+      
+      if (emailExists) {
+        toast({
+          title: "User Already Exists",
+          description: "A user with this email address already exists.",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      // Check if the email already exists in the database (slower but more reliable)
       console.log("Checking if user email already exists:", newUser.email);
       const { data: existingUsers, error: checkError } = await supabase
         .from('profiles')
         .select('email')
-        .eq('email', newUser.email)
+        .ilike('email', newUser.email)
         .limit(1);
       
       if (checkError) {
