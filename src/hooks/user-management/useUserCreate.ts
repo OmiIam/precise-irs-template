@@ -21,52 +21,11 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       // Normalize email
       newUser.email = newUser.email.toLowerCase().trim();
       
-      // Check if the email already exists locally (faster pre-check)
-      const emailExists = users.some(user => 
-        user.email.toLowerCase() === newUser.email.toLowerCase()
-      );
-      
-      if (emailExists) {
-        toast({
-          title: "User Already Exists",
-          description: "A user with this email address already exists.",
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      // Check if the email already exists in the database (slower but more reliable)
-      console.log("Checking if user email already exists:", newUser.email);
-      const { data: existingProfiles, error: checkError } = await supabase
-        .from('profiles')
-        .select('email')
-        .ilike('email', newUser.email)
-        .limit(1);
-      
-      if (checkError) {
-        console.error("Error checking for existing user:", checkError);
-        toast({
-          title: "Error",
-          description: "Failed to check if user already exists. Please try again.",
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      if (existingProfiles && existingProfiles.length > 0) {
-        toast({
-          title: "User Already Exists",
-          description: "A user with this email address already exists.",
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      // Password validation
-      if (!newUser.password || newUser.password.length < 6) {
+      // Password validation - simple check
+      if (!newUser.password) {
         toast({
           title: "Invalid Password",
-          description: "Password must be at least 6 characters long.",
+          description: "Password is required.",
           variant: "destructive"
         });
         return false;
@@ -75,7 +34,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       console.log("Creating user with data:", {
         ...newUser,
         password: "[REDACTED]",
-        filingDeadline: newUser.filingDeadline ? newUser.filingDeadline.toISOString() : null
+        filingDeadline: newUser.filingDeadline ? new Date(newUser.filingDeadline).toISOString() : null
       });
       
       // Extract name parts for user metadata
@@ -83,43 +42,13 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       const firstName = nameParts[0];
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
-      // Get the session for authorization or fallback to admin auth
-      const { data: sessionData } = await supabase.auth.getSession();
-      
-      // Prepare authorization header
-      let authHeader = '';
-      let adminAuthHeader = 'false';
-      
-      // If we have a regular session, use it
-      if (sessionData?.session?.access_token) {
-        authHeader = `Bearer ${sessionData.session.access_token}`;
-      } else {
-        // Check for admin-specific authentication
-        const isAdminAuthenticated = localStorage.getItem('isAdminAuthenticated') === 'true';
-        
-        if (!isAdminAuthenticated) {
-          toast({
-            title: "Authorization Error",
-            description: "You must be logged in with admin privileges to create users.",
-            variant: "destructive"
-          });
-          return false;
-        }
-        
-        // For admin-only authentication, we'll use a special header
-        authHeader = 'Bearer ADMIN_MODE';
-        adminAuthHeader = 'true';
-      }
-      
-      // Create the user with admin auth endpoint which directly creates a confirmed user
+      // Send to edge function
       const response = await fetch(`https://mhocdqtqohcnxrxhczhx.functions.supabase.co/create-user`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': authHeader,
-          'X-Admin-Auth': adminAuthHeader,
           'Access-Control-Allow-Origin': '*',
-          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-auth'
+          'Access-Control-Allow-Headers': '*'
         },
         body: JSON.stringify({
           userData: {
@@ -133,44 +62,86 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
             status: newUser.status || 'Active',
             tax_due: newUser.taxDue || 0,
             available_credits: newUser.availableCredits || 0,
-            filing_deadline: newUser.filingDeadline ? newUser.filingDeadline.toISOString() : null
+            filing_deadline: newUser.filingDeadline ? new Date(newUser.filingDeadline).toISOString() : null
           }
         })
       });
       
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Error response from edge function:", errorText);
-        try {
-          const errorJson = JSON.parse(errorText);
-          toast({
-            title: "Error Creating User",
-            description: errorJson.error || "Failed to create user. Please try again.",
-            variant: "destructive"
-          });
-        } catch (e) {
-          toast({
-            title: "Error Creating User",
-            description: "Failed to create user. Server returned: " + errorText,
-            variant: "destructive"
-          });
-        }
+      const responseText = await response.text();
+      console.log("Raw response from edge function:", responseText);
+      
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (e) {
+        console.error("Error parsing response:", e);
+        toast({
+          title: "Error Creating User",
+          description: "Invalid response from server: " + responseText.substring(0, 100),
+          variant: "destructive"
+        });
         return false;
       }
       
-      const result = await response.json();
-      
-      if (!result.success || !result.data || !result.data.user) {
-        console.error("Error creating user via edge function:", result.error || "No user data returned");
+      if (!response.ok) {
+        console.error("Error response from edge function:", result);
         toast({
           title: "Error Creating User",
-          description: result.error || "Failed to create user. No data returned.",
+          description: result.error || "Failed to create user. Please try again.",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      if (!result.success) {
+        console.error("Error creating user via edge function:", result.error || "No success flag in response");
+        toast({
+          title: "Error Creating User",
+          description: result.error || "Failed to create user. Server reported an error.",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      // Handle partial success case where we have an auth user but profile creation failed
+      if (result.partialSuccess && result.authUser) {
+        console.log("Partial success - auth user created but profile failed");
+        toast({
+          title: "Partial Success",
+          description: "User account created but profile could not be fully set up. User can still log in.",
+        });
+        
+        // Format a user object from the partial data
+        const partialUser: User = {
+          id: result.authUser.id,
+          name: `${firstName} ${lastName}`.trim(),
+          email: newUser.email,
+          role: newUser.role || 'User',
+          status: newUser.status || 'Active',
+          lastLogin: 'Never',
+          taxDue: newUser.taxDue || 0,
+          filingDeadline: newUser.filingDeadline,
+          availableCredits: newUser.availableCredits || 0
+        };
+        
+        // Update UI
+        setUsers(prevUsers => [...prevUsers, partialUser]);
+        return true;
+      }
+      
+      // Check if we have the expected data structure
+      if (!result.data || !result.data.user || !result.data.profile) {
+        console.error("Unexpected data structure in successful response:", result);
+        toast({
+          title: "Error Creating User",
+          description: "User created but unexpected data returned from server.",
           variant: "destructive"
         });
         return false;
       }
       
       const authUser = result.data.user;
+      const profile = result.data.profile;
       
       // Format the filingDeadline properly for UI display
       let filingDeadlineDate: Date | undefined;
@@ -183,7 +154,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       // Create formatted user object for the UI
       const formattedUser: User = {
         id: authUser.id,
-        name: newUser.name,
+        name: `${firstName} ${lastName}`.trim(),
         email: newUser.email,
         role: newUser.role || 'User',
         status: newUser.status || 'Active',
