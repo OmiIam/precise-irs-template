@@ -34,14 +34,18 @@ export async function createAuthUser(supabase: any, userData: any): Promise<{ au
       // Continue with creation attempt despite error
     }
     
+    // Process user metadata to ensure we have the correct field names
+    const firstName = userData.firstName || userData.first_name || '';
+    const lastName = userData.lastName || userData.last_name || '';
+
     // Create user in Auth with email already confirmed
     const { data, error } = await supabase.auth.admin.createUser({
       email: email,
       password: userData.password,
       email_confirm: true, // This is crucial - confirms the email automatically
       user_metadata: {
-        first_name: userData.firstName,
-        last_name: userData.lastName || ''
+        first_name: firstName,
+        last_name: lastName
       }
     });
     
@@ -97,13 +101,21 @@ export async function createUserProfile(supabase: any, userId: string, userData:
     
     console.log("Creating user profile for user ID:", userId);
     
+    // Use either the snake_case or camelCase versions of fields
+    const firstName = userData.first_name || userData.firstName || '';
+    const lastName = userData.last_name || userData.lastName || '';
+    const taxDue = userData.tax_due !== undefined ? userData.tax_due : (userData.taxDue !== undefined ? userData.taxDue : 0);
+    const availableCredits = userData.available_credits !== undefined ? userData.available_credits : 
+                             (userData.availableCredits !== undefined ? userData.availableCredits : 0);
+    
     // Format date for PostgreSQL if present
     let filingDeadline = null;
-    if (userData.filingDeadline) {
+    if (userData.filing_deadline || userData.filingDeadline) {
       try {
-        filingDeadline = new Date(userData.filingDeadline).toISOString();
+        const deadline = userData.filing_deadline || userData.filingDeadline;
+        filingDeadline = new Date(deadline).toISOString();
       } catch (e) {
-        console.error("Invalid date format for filingDeadline:", userData.filingDeadline);
+        console.error("Invalid date format for filingDeadline:", userData.filing_deadline || userData.filingDeadline);
       }
     }
     
@@ -128,14 +140,14 @@ export async function createUserProfile(supabase: any, userId: string, userData:
     // Prepare profile data
     const profileData = {
       id: userId,
-      first_name: userData.firstName,
-      last_name: userData.lastName || '',
+      first_name: firstName,
+      last_name: lastName,
       email: email,
       role: userData.role || 'User',
       status: userData.status || 'Active',
-      tax_due: userData.taxDue || 0,
+      tax_due: taxDue,
       filing_deadline: filingDeadline,
-      available_credits: userData.availableCredits || 0,
+      available_credits: availableCredits,
       created_at: new Date().toISOString()
     };
     

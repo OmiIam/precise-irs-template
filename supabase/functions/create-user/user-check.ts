@@ -12,12 +12,15 @@ export async function checkExistingUser(supabase: any, email: string): Promise<{
       return { exists: false, error: "Email is required to check for existing users" };
     }
     
+    // Normalize email before any checks
+    const normalizedEmail = email.toLowerCase().trim();
+    console.log("Checking if email exists in auth users:", normalizedEmail);
+    
     // Check if email already exists in auth users - this is the most reliable check
-    console.log("Checking if email exists in auth users:", email);
     try {
       const { data: authData, error: authCheckError } = await supabase.auth.admin.listUsers({
         filter: {
-          email: email.toLowerCase().trim()
+          email: normalizedEmail
         }
       });
       
@@ -25,7 +28,7 @@ export async function checkExistingUser(supabase: any, email: string): Promise<{
         console.error("Error checking for existing auth users:", authCheckError);
         // Continue to profile check instead of failing immediately
       } else if (authData?.users && authData.users.length > 0) {
-        console.log("User with email already exists in auth:", email);
+        console.log("User with email already exists in auth:", normalizedEmail);
         return { exists: true, error: null };
       }
     } catch (authError) {
@@ -35,11 +38,11 @@ export async function checkExistingUser(supabase: any, email: string): Promise<{
     
     // Also check in profiles table as a fallback
     try {
-      console.log("Checking if email exists in profiles:", email);
+      console.log("Checking if email exists in profiles:", normalizedEmail);
       const { data: existingProfiles, error: profileCheckError } = await supabase
         .from('profiles')
         .select('email')
-        .ilike('email', email.toLowerCase().trim())
+        .ilike('email', normalizedEmail)
         .limit(1);
         
       if (profileCheckError) {
@@ -51,7 +54,7 @@ export async function checkExistingUser(supabase: any, email: string): Promise<{
       }
       
       if (existingProfiles && existingProfiles.length > 0) {
-        console.log("User with email already exists in profiles:", email);
+        console.log("User with email already exists in profiles:", normalizedEmail);
         return { exists: true, error: null };
       }
     } catch (profileError) {
@@ -61,14 +64,15 @@ export async function checkExistingUser(supabase: any, email: string): Promise<{
     
     // As a last resort, check in the old users table if it exists
     try {
+      console.log("Checking if email exists in users table:", normalizedEmail);
       const { data: oldUsers, error: oldUsersError } = await supabase
         .from('users')
         .select('email')
-        .ilike('email', email.toLowerCase().trim())
+        .ilike('email', normalizedEmail)
         .limit(1);
         
       if (!oldUsersError && oldUsers && oldUsers.length > 0) {
-        console.log("User with email already exists in old users table:", email);
+        console.log("User with email already exists in old users table:", normalizedEmail);
         return { exists: true, error: null };
       }
     } catch (error) {
@@ -76,7 +80,7 @@ export async function checkExistingUser(supabase: any, email: string): Promise<{
       console.log("Error or non-existent users table, continuing:", error);
     }
     
-    console.log("No existing user found with email:", email);
+    console.log("No existing user found with email:", normalizedEmail);
     return { exists: false, error: null };
   } catch (error) {
     console.error("Unexpected error in checkExistingUser:", error);

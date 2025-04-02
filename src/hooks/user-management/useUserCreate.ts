@@ -37,7 +37,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       
       // Check if the email already exists in the database (slower but more reliable)
       console.log("Checking if user email already exists:", newUser.email);
-      const { data: existingUsers, error: checkError } = await supabase
+      const { data: existingProfiles, error: checkError } = await supabase
         .from('profiles')
         .select('email')
         .ilike('email', newUser.email)
@@ -53,7 +53,7 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         return false;
       }
       
-      if (existingUsers && existingUsers.length > 0) {
+      if (existingProfiles && existingProfiles.length > 0) {
         toast({
           title: "User Already Exists",
           description: "A user with this email address already exists.",
@@ -117,40 +117,54 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         headers: {
           'Content-Type': 'application/json',
           'Authorization': authHeader,
-          'X-Admin-Auth': adminAuthHeader
+          'X-Admin-Auth': adminAuthHeader,
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-auth'
         },
         body: JSON.stringify({
           userData: {
             email: newUser.email,
             password: newUser.password,
-            firstName,
+            first_name: firstName,
+            last_name: lastName,
+            firstName, // Include both formats to ensure compatibility
             lastName,
             role: newUser.role || 'User',
             status: newUser.status || 'Active',
-            taxDue: newUser.taxDue || 0,
-            availableCredits: newUser.availableCredits || 0,
-            filingDeadline: newUser.filingDeadline ? newUser.filingDeadline.toISOString() : null
+            tax_due: newUser.taxDue || 0,
+            available_credits: newUser.availableCredits || 0,
+            filing_deadline: newUser.filingDeadline ? newUser.filingDeadline.toISOString() : null
           }
         })
       });
       
-      const result = await response.json();
-      
-      if (!response.ok || !result.success) {
-        console.error("Error creating user via edge function:", result.error);
-        toast({
-          title: "Error Creating User",
-          description: result.error || "Failed to create user. Please try again.",
-          variant: "destructive"
-        });
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Error response from edge function:", errorText);
+        try {
+          const errorJson = JSON.parse(errorText);
+          toast({
+            title: "Error Creating User",
+            description: errorJson.error || "Failed to create user. Please try again.",
+            variant: "destructive"
+          });
+        } catch (e) {
+          toast({
+            title: "Error Creating User",
+            description: "Failed to create user. Server returned: " + errorText,
+            variant: "destructive"
+          });
+        }
         return false;
       }
       
-      if (!result.data || !result.data.user) {
-        console.error("No user data returned from edge function");
+      const result = await response.json();
+      
+      if (!result.success || !result.data || !result.data.user) {
+        console.error("Error creating user via edge function:", result.error || "No user data returned");
         toast({
           title: "Error Creating User",
-          description: "Failed to create user account. No user data returned.",
+          description: result.error || "Failed to create user. No data returned.",
           variant: "destructive"
         });
         return false;

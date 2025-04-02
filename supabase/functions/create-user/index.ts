@@ -102,13 +102,34 @@ serve(async (req) => {
     // Log our request for debugging
     console.log("Create user request received with data:", {
       email: userData.email,
-      firstName: userData.firstName,
-      lastName: userData.lastName,
+      firstName: userData.firstName || userData.first_name,
+      lastName: userData.lastName || userData.last_name,
       role: userData.role,
       status: userData.status,
       hasPassword: !!userData.password,
-      passwordLength: userData.password ? userData.password.length : 0
+      passwordLength: userData.password ? userData.password.length : 0,
+      taxDue: userData.tax_due || userData.taxDue,
+      availableCredits: userData.available_credits || userData.availableCredits,
+      filingDeadline: userData.filing_deadline || userData.filingDeadline
     });
+
+    // 0. Process and normalize data to ensure compatibility with different field formats
+    // Transform form field names to match database schema if needed
+    if (userData.firstName && !userData.first_name) {
+      userData.first_name = userData.firstName;
+    }
+    if (userData.lastName && !userData.last_name) {
+      userData.last_name = userData.lastName;
+    }
+    if (userData.taxDue !== undefined && userData.tax_due === undefined) {
+      userData.tax_due = userData.taxDue;
+    }
+    if (userData.availableCredits !== undefined && userData.available_credits === undefined) {
+      userData.available_credits = userData.availableCredits;
+    }
+    if (userData.filingDeadline && !userData.filing_deadline) {
+      userData.filing_deadline = userData.filingDeadline;
+    }
     
     // 1. Validate user data
     const validationError = validateUserData(userData);

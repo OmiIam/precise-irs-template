@@ -29,9 +29,16 @@ export function validateUserData(userData: any): string | null {
     return "Invalid email format";
   }
   
-  // First name validation
-  if (!userData.firstName || userData.firstName.trim() === '') {
+  // First name validation - Changed from firstName to first_name to match database schema
+  if (!userData.firstName && !userData.first_name) {
     return "First name is required";
+  }
+  
+  // Ensure we have either firstName or first_name
+  if (!userData.firstName && userData.first_name) {
+    userData.firstName = userData.first_name;
+  } else if (userData.firstName && !userData.first_name) {
+    userData.first_name = userData.firstName;
   }
   
   return null; // Validation passed
