@@ -19,10 +19,5 @@ export function validateUserData(userData: any): string | null {
     return "Password is required";
   }
   
-  // Ensure we have either firstName or first_name
-  if (!userData.firstName && !userData.first_name) {
-    return "First name is required";
-  }
-  
   return null; // Validation passed
 }

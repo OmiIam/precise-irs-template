@@ -93,7 +93,6 @@ const TaxDataSection = ({
                 selected={formData.filingDeadline instanceof Date ? formData.filingDeadline : undefined}
                 onSelect={handleDateChange}
                 initialFocus
-                className="pointer-events-auto"
               />
             </PopoverContent>
           </Popover>
