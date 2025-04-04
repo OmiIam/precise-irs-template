@@ -13,11 +13,9 @@ export const useAuthCheck = (requireAdmin = false) => {
       // Check for special admin authentication
       const adminAuth = localStorage.getItem('isAdminAuthenticated');
       
-      // Only consider admin auth valid if we're not requiring an admin role
-      // or if we check and it's still valid
+      // Only consider admin auth valid if we're requiring admin access
       if (adminAuth === 'true' && requireAdmin) {
         // For admin routes, we need to validate on every visit
-        // This ensures the admin auth token is cleared if invalid
         try {
           // Add timestamp check to ensure admin session hasn't expired
           const adminAuthTimestamp = localStorage.getItem('adminAuthTimestamp');
@@ -50,6 +48,7 @@ export const useAuthCheck = (requireAdmin = false) => {
           const { data: { session } } = await supabase.auth.getSession();
           if (!session) {
             console.log("No valid session found for user");
+            // Don't do anything here, the auth context will handle the logout
           }
         } catch (error) {
           console.error("Error validating session:", error);

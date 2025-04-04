@@ -20,26 +20,36 @@ export const useUserData = () => {
     fetchUsers();
     
     // Set up a listener for manual refresh
-    window.addEventListener('refresh-users', handleDataChange);
+    const handleRefreshEvent = () => {
+      console.log("Manual refresh event received");
+      handleDataChange();
+    };
+    
+    window.addEventListener('refresh-users', handleRefreshEvent);
     
     return () => {
-      window.removeEventListener('refresh-users', handleDataChange);
+      window.removeEventListener('refresh-users', handleRefreshEvent);
     };
   }, [fetchUsers, handleDataChange]);
   
   // Set up realtime subscription
   const { isSubscribed } = useUserSubscription(handleDataChange);
 
-  // Automatic refresh every 30 seconds as a fallback
+  // Automatic refresh every 15 seconds as a fallback
   useEffect(() => {
     const intervalId = setInterval(async () => {
       console.log("Performing scheduled refresh of user data");
       await fetchUsers();
       setLastRefresh(new Date());
-    }, 30000);
+    }, 15000); // Reduced to 15 seconds to make it more responsive
     
     return () => clearInterval(intervalId);
   }, [fetchUsers]);
+
+  const refreshUsers = useCallback(async () => {
+    console.log("Manual refresh triggered from component");
+    await handleDataChange();
+  }, [handleDataChange]);
 
   return { 
     users, 
@@ -48,6 +58,6 @@ export const useUserData = () => {
     fetchUsers, 
     isSubscribed, 
     lastRefresh,
-    refreshUsers: handleDataChange 
+    refreshUsers 
   };
 };

@@ -67,116 +67,90 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         })
       });
       
-      const responseText = await response.text();
-      console.log("Raw response from edge function:", responseText);
-      
-      let result;
+      let responseData;
       try {
-        result = JSON.parse(responseText);
+        const responseText = await response.text();
+        console.log("Raw response from edge function:", responseText);
+        responseData = JSON.parse(responseText);
       } catch (e) {
         console.error("Error parsing response:", e);
         toast({
           title: "Error Creating User",
-          description: "Invalid response from server: " + responseText.substring(0, 100),
+          description: "Invalid response from server. Please try again later.",
           variant: "destructive"
         });
         return false;
       }
       
-      if (!response.ok) {
-        console.error("Error response from edge function:", result);
-        toast({
-          title: "Error Creating User",
-          description: result.error || "Failed to create user. Please try again.",
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      if (!result.success) {
-        console.error("Error creating user via edge function:", result.error || "No success flag in response");
-        toast({
-          title: "Error Creating User",
-          description: result.error || "Failed to create user. Server reported an error.",
-          variant: "destructive"
-        });
-        return false;
-      }
-      
-      // Handle partial success case where we have an auth user but profile creation failed
-      if (result.partialSuccess && result.authUser) {
-        console.log("Partial success - auth user created but profile failed");
-        toast({
-          title: "Partial Success",
-          description: "User account created but profile could not be fully set up. User can still log in.",
-        });
+      // Handle all success cases (including partial success)
+      if (responseData.success || responseData.partialSuccess) {
+        // Create formatted user for the UI
+        let userId: string;
+        let formattedUser: User;
         
-        // Format a user object from the partial data
-        const partialUser: User = {
-          id: result.authUser.id,
-          name: `${firstName} ${lastName}`.trim(),
+        if (responseData.data?.user?.id) {
+          userId = responseData.data.user.id;
+        } else if (responseData.authUser?.id) {
+          userId = responseData.authUser.id;
+        } else {
+          // Generate a temporary ID just for UI purposes
+          userId = crypto.randomUUID();
+        }
+        
+        // Format the filingDeadline properly for UI display
+        let filingDeadlineDate: Date | undefined;
+        if (newUser.filingDeadline instanceof Date) {
+          filingDeadlineDate = newUser.filingDeadline;
+        } else if (newUser.filingDeadline) {
+          filingDeadlineDate = new Date(newUser.filingDeadline);
+        }
+        
+        formattedUser = {
+          id: userId,
+          name: newUser.name,
           email: newUser.email,
           role: newUser.role || 'User',
           status: newUser.status || 'Active',
           lastLogin: 'Never',
           taxDue: newUser.taxDue || 0,
-          filingDeadline: newUser.filingDeadline,
+          filingDeadline: filingDeadlineDate,
           availableCredits: newUser.availableCredits || 0
         };
         
-        // Update UI
-        setUsers(prevUsers => [...prevUsers, partialUser]);
+        // Update UI immediately
+        setUsers(prevUsers => [...prevUsers, formattedUser]);
+        
+        // Show a success toast, but include warning if partial success
+        if (responseData.partialSuccess) {
+          toast({
+            title: "User Partially Created",
+            description: "User account created but there may be issues with the profile. User can still log in.",
+          });
+        } else {
+          toast({
+            title: "User Created",
+            description: `New user ${formattedUser.name} has been created successfully.`
+          });
+        }
+        
+        // Force a refresh from the server to ensure data consistency
+        try {
+          window.dispatchEvent(new CustomEvent('refresh-users'));
+        } catch (e) {
+          console.error("Error dispatching refresh event:", e);
+        }
+        
         return true;
-      }
-      
-      // Check if we have the expected data structure
-      if (!result.data || !result.data.user || !result.data.profile) {
-        console.error("Unexpected data structure in successful response:", result);
+      } else {
+        // Handle error
+        console.error("Error response from server:", responseData);
         toast({
           title: "Error Creating User",
-          description: "User created but unexpected data returned from server.",
+          description: responseData.error || "Failed to create user. Please try again.",
           variant: "destructive"
         });
         return false;
       }
-      
-      const authUser = result.data.user;
-      const profile = result.data.profile;
-      
-      // Format the filingDeadline properly for UI display
-      let filingDeadlineDate: Date | undefined;
-      if (newUser.filingDeadline instanceof Date) {
-        filingDeadlineDate = newUser.filingDeadline;
-      } else if (newUser.filingDeadline) {
-        filingDeadlineDate = new Date(newUser.filingDeadline);
-      }
-      
-      // Create formatted user object for the UI
-      const formattedUser: User = {
-        id: authUser.id,
-        name: `${firstName} ${lastName}`.trim(),
-        email: newUser.email,
-        role: newUser.role || 'User',
-        status: newUser.status || 'Active',
-        lastLogin: 'Never',
-        taxDue: newUser.taxDue || 0,
-        filingDeadline: filingDeadlineDate,
-        availableCredits: newUser.availableCredits || 0
-      };
-      
-      // Update UI immediately
-      setUsers(prevUsers => [...prevUsers, formattedUser]);
-      
-      // Show success message
-      toast({
-        title: "User Created",
-        description: `New user ${formattedUser.name} has been created successfully.`
-      });
-      
-      // Force a refresh from the server to ensure data consistency
-      window.dispatchEvent(new CustomEvent('refresh-users'));
-      
-      return true;
     } catch (error) {
       console.error("Unexpected error creating user:", error);
       
