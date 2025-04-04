@@ -27,7 +27,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // If requires admin but user doesn't have access, redirect to dashboard
   if (requireAdmin && !hasAccess) {
-    return <Navigate to="/dashboard" replace />;
+    // Clear any potential admin authentication since access is denied
+    localStorage.removeItem('isAdminAuthenticated');
+    return <Navigate to="/login" replace />;
   }
 
   // Render the protected content

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Users, 
@@ -12,6 +11,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Sidebar,
   SidebarContent,
@@ -72,15 +72,18 @@ const AdminSidebar = ({ activePage }: AdminSidebarProps) => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const handleLogout = () => {
-    // Clear the admin authentication flag
+  const handleLogout = async () => {
+    // Clear all admin authentication flags
     localStorage.removeItem('isAdminAuthenticated');
+    
+    // Also sign out from Supabase to ensure complete logout
+    await supabase.auth.signOut();
     
     toast({
       title: "Logged out",
       description: "You have been logged out of the admin panel",
     });
-    navigate('/login', { replace: true });
+    navigate('/', { replace: true });
   };
 
   return (

@@ -12,12 +12,39 @@ export const useAuthCheck = (requireAdmin = false) => {
     const checkAuthentication = async () => {
       // Check for special admin authentication
       const adminAuth = localStorage.getItem('isAdminAuthenticated');
-      setIsAdminAuthenticated(adminAuth === 'true');
       
-      // If admin auth is set but we need to validate it for admin routes
+      // Only consider admin auth valid if we're not requiring an admin role
+      // or if we check and it's still valid
       if (adminAuth === 'true' && requireAdmin) {
-        console.log("Admin-only authentication enabled");
-      } else if (user) {
+        // For admin routes, we need to validate on every visit
+        // This ensures the admin auth token is cleared if invalid
+        try {
+          // Add timestamp check to ensure admin session hasn't expired
+          const adminAuthTimestamp = localStorage.getItem('adminAuthTimestamp');
+          const currentTime = new Date().getTime();
+          const adminAuthTime = adminAuthTimestamp ? parseInt(adminAuthTimestamp) : 0;
+          
+          // Admin session expires after 1 hour (3600000 ms)
+          if (!adminAuthTimestamp || (currentTime - adminAuthTime > 3600000)) {
+            console.log("Admin session expired");
+            localStorage.removeItem('isAdminAuthenticated');
+            localStorage.removeItem('adminAuthTimestamp');
+            setIsAdminAuthenticated(false);
+          } else {
+            console.log("Admin-only authentication valid");
+            setIsAdminAuthenticated(true);
+          }
+        } catch (error) {
+          console.error("Error validating admin auth:", error);
+          localStorage.removeItem('isAdminAuthenticated');
+          localStorage.removeItem('adminAuthTimestamp');
+          setIsAdminAuthenticated(false);
+        }
+      } else {
+        setIsAdminAuthenticated(false);
+      }
+      
+      if (user) {
         try {
           // Validate the current session is still valid if we have a user
           const { data: { session } } = await supabase.auth.getSession();

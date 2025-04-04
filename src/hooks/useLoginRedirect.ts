@@ -14,10 +14,17 @@ export const useLoginRedirect = () => {
     
     const handleRedirect = () => {
       try {
+        // Check if we're on the admin dashboard path
+        const isAdminPath = window.location.hash.includes('/admin-dashboard');
+        
         // Check for special admin authentication first
         const adminAuth = localStorage.getItem('isAdminAuthenticated');
         
-        if (adminAuth === 'true') {
+        // Only redirect to admin dashboard if:
+        // 1. Admin auth is valid AND
+        // 2. We're already on an admin page 
+        // This prevents automatic redirection to admin dashboard from other pages
+        if (adminAuth === 'true' && isAdminPath) {
           setIsRedirecting(true);
           console.log('Redirecting to admin dashboard from admin auth');
           // Use a slight delay to avoid the security error
@@ -33,7 +40,7 @@ export const useLoginRedirect = () => {
           console.log('Redirecting based on user role:', isAdmin ? 'admin' : 'regular user');
           // Use a slight delay to avoid the security error
           setTimeout(() => {
-            if (isAdmin) {
+            if (isAdmin && isAdminPath) {
               navigate('/admin-dashboard', { replace: true });
             } else {
               navigate('/dashboard', { replace: true });

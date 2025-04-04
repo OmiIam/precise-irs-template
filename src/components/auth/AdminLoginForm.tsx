@@ -38,8 +38,9 @@ const AdminLoginForm = ({ onToggleMode, setIsRedirecting }: AdminLoginFormProps)
       if (values.email === "admin@admin.com" && values.password === "iXOeNiRqvO2QiN4t") {
         console.log('Admin credentials accepted. Redirecting to admin dashboard...');
         
-        // Store admin status in localStorage
+        // Store admin status in localStorage with timestamp
         localStorage.setItem('isAdminAuthenticated', 'true');
+        localStorage.setItem('adminAuthTimestamp', new Date().getTime().toString());
         
         // Show success toast
         toast({
