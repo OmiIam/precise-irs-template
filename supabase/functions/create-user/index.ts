@@ -53,7 +53,8 @@ serve(async (req) => {
       hasPassword: !!userData.password,
       taxDue: userData.tax_due || userData.taxDue,
       availableCredits: userData.available_credits || userData.availableCredits,
-      filingDeadline: userData.filing_deadline || userData.filingDeadline
+      filingDeadline: userData.filing_deadline || userData.filingDeadline,
+      createdBy: userData.created_by
     });
 
     // Process and normalize data
@@ -163,6 +164,48 @@ serve(async (req) => {
     }
     
     console.log("Successfully created user profile for user:", authUser.id);
+    
+    // Log activity with proper user_id and optional admin user who created it
+    try {
+      const activityDetails = {
+        timestamp: new Date().toISOString(),
+        action: "USER_CREATED"
+      };
+      
+      if (userData.created_by) {
+        // If created by admin, log it with admin as user_id
+        await supabase
+          .from('activity_logs')
+          .insert({
+            user_id: userData.created_by,
+            action: 'ADMIN_CREATED_USER',
+            details: {
+              ...activityDetails,
+              target_user_id: authUser.id,
+              target_user_email: userData.email
+            }
+          });
+      }
+      
+      // Also add a generic entry for the new user in activity_logs
+      await supabase
+        .from('activity_logs')
+        .insert({
+          user_id: null, // Using null since the user hasn't logged in yet
+          action: 'USER_CREATED',
+          details: {
+            ...activityDetails,
+            user_id: authUser.id,
+            email: userData.email,
+            created_by: userData.created_by || "self"
+          }
+        });
+        
+      console.log("Successfully created activity logs for user creation");
+    } catch (logError) {
+      console.error("Error logging activity (non-critical):", logError);
+      // Continue regardless of logging errors
+    }
     
     // Return success response with created user data
     return new Response(

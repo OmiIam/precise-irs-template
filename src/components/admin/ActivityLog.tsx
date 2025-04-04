@@ -6,7 +6,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 
 type ActivityLogItem = {
   id: string;
-  user_id: string;
+  user_id: string | null;
   action: string;
   details: any;
   created_at: string;
@@ -24,6 +24,28 @@ const ActivityLog = () => {
     const fetchActivities = async () => {
       setIsLoading(true);
       try {
+        // First check if user has admin access
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          console.log("No authenticated user found");
+          setIsLoading(false);
+          return;
+        }
+
+        // Check if user is admin
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+          
+        if (profileError || profileData?.role !== 'Admin') {
+          console.log("User is not an admin or couldn't get profile");
+          setIsLoading(false);
+          return;
+        }
+        
         // Fetch the most recent 10 activities
         const { data, error } = await supabase
           .from('activity_logs')
@@ -36,6 +58,16 @@ const ActivityLog = () => {
         // Fetch user details for each activity
         const activitiesWithUsers = await Promise.all(
           data.map(async (activity) => {
+            if (!activity.user_id) {
+              return {
+                ...activity,
+                user: { 
+                  name: 'System', 
+                  email: 'system@example.com' 
+                }
+              };
+            }
+            
             const { data: userData, error: userError } = await supabase
               .from('profiles')
               .select('first_name, last_name, email')
@@ -80,6 +112,7 @@ const ActivityLog = () => {
         schema: 'public',
         table: 'activity_logs'
       }, (payload) => {
+        console.log("New activity log detected:", payload);
         fetchActivities(); // Refresh data when new activity is added
       })
       .subscribe();
@@ -92,12 +125,17 @@ const ActivityLog = () => {
   const getActivityIcon = (action: string) => {
     switch (action) {
       case 'USER_LOGIN':
+      case 'ADMIN_LOGIN':
         return <User className="h-4 w-4 text-green-500" />;
       case 'USER_SIGNUP':
+      case 'USER_CREATED':
+      case 'ADMIN_CREATED_USER':
         return <User className="h-4 w-4 text-blue-500" />;
       case 'ID_VERIFICATION_COMPLETED':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'ROLE_UPDATED':
+      case 'USER_ROLE_CHANGED_TO_ADMIN':
+      case 'USER_ROLE_CHANGED_TO_USER':
         return <Shield className="h-4 w-4 text-purple-500" />;
       case 'DOCUMENT_UPLOADED':
         return <FileText className="h-4 w-4 text-indigo-500" />;
@@ -114,12 +152,25 @@ const ActivityLog = () => {
     switch (activity.action) {
       case 'USER_LOGIN':
         return `${userName} logged in`;
+      case 'ADMIN_LOGIN':
+        return `${userName} logged in as admin`;
       case 'USER_SIGNUP':
         return `${userName} signed up`;
+      case 'USER_CREATED':
+        if (activity.details?.created_by && activity.details.created_by !== 'self') {
+          return `User ${activity.details?.email || ''} was created by admin`;
+        }
+        return `${activity.details?.email || 'New user'} was created`;
+      case 'ADMIN_CREATED_USER':
+        return `${userName} created user ${activity.details?.target_user_email || ''}`;
       case 'ID_VERIFICATION_COMPLETED':
         return `${userName} completed ID verification`;
       case 'ROLE_UPDATED':
         return `User role updated for ${userName}`;
+      case 'USER_ROLE_CHANGED_TO_ADMIN':
+        return `${userName} was promoted to admin`;
+      case 'USER_ROLE_CHANGED_TO_USER':
+        return `${userName} was changed to regular user`;
       case 'DOCUMENT_UPLOADED':
         return `${userName} uploaded a document`;
       case 'ERROR':

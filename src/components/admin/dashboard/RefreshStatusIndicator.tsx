@@ -1,8 +1,9 @@
 
 import React from 'react';
+import { RefreshCw, Wifi, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface RefreshStatusIndicatorProps {
   isSubscribed: boolean;
@@ -18,30 +19,36 @@ const RefreshStatusIndicator: React.FC<RefreshStatusIndicatorProps> = ({
   isRefreshing
 }) => {
   return (
-    <div className="flex items-center gap-2 text-sm">
-      <div className="flex items-center gap-1 mr-2">
-        <div 
-          className={`w-2 h-2 rounded-full ${isSubscribed ? 'bg-green-500' : 'bg-gray-400'}`} 
-        />
-        <span className="text-xs text-gray-500">
-          {isSubscribed ? 'Live updates' : 'Offline mode'}
-        </span>
-      </div>
-      
-      <span className="text-xs text-gray-500 hidden sm:inline">
-        Last updated: {formatDistanceToNow(lastRefresh, { addSuffix: true })}
-      </span>
+    <div className="flex items-center gap-3">
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center text-xs text-irs-darkGray">
+              <span className="mr-1">Last updated: {formatDistanceToNow(lastRefresh)} ago</span>
+              {isSubscribed ? (
+                <Wifi className="h-3 w-3 text-green-500" />
+              ) : (
+                <WifiOff className="h-3 w-3 text-red-500" />
+              )}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{isSubscribed 
+              ? "Realtime updates are enabled" 
+              : "Realtime updates are disconnected"}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       
       <Button 
-        variant="ghost" 
+        variant="outline" 
         size="sm" 
         onClick={onRefresh}
         disabled={isRefreshing}
-        className="ml-1 p-1 h-8 w-8"
+        className={isRefreshing ? "opacity-50" : ""}
       >
-        <RefreshCw 
-          className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} 
-        />
+        <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing ? "animate-spin" : ""}`} />
+        Refresh
       </Button>
     </div>
   );

@@ -42,6 +42,10 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       const firstName = nameParts[0];
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
+      // Get the current admin user's ID for activity logging
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      const adminId = currentUser?.id;
+      
       // Send to edge function
       const response = await fetch(`https://mhocdqtqohcnxrxhczhx.functions.supabase.co/create-user`, {
         method: 'POST',
@@ -62,7 +66,8 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
             status: newUser.status || 'Active',
             tax_due: newUser.taxDue || 0,
             available_credits: newUser.availableCredits || 0,
-            filing_deadline: newUser.filingDeadline ? new Date(newUser.filingDeadline).toISOString() : null
+            filing_deadline: newUser.filingDeadline ? new Date(newUser.filingDeadline).toISOString() : null,
+            created_by: adminId // Add the admin ID who created this user
           }
         })
       });

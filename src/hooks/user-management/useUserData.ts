@@ -6,12 +6,18 @@ import { useUserSubscription } from './useUserSubscription';
 export const useUserData = () => {
   const { users, setUsers, isLoading, fetchUsers } = useFetchUsers();
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Update handleDataChange to be async and return a Promise
   const handleDataChange = useCallback(async () => {
     console.log("Data change detected, refreshing users");
-    await fetchUsers();
-    setLastRefresh(new Date());
+    setIsRefreshing(true);
+    try {
+      await fetchUsers();
+      setLastRefresh(new Date());
+    } finally {
+      setIsRefreshing(false);
+    }
   }, [fetchUsers]);
   
   // Initial data fetch
@@ -39,16 +45,26 @@ export const useUserData = () => {
   useEffect(() => {
     const intervalId = setInterval(async () => {
       console.log("Performing scheduled refresh of user data");
-      await fetchUsers();
-      setLastRefresh(new Date());
-    }, 15000); // Reduced to 15 seconds to make it more responsive
+      setIsRefreshing(true);
+      try {
+        await fetchUsers();
+        setLastRefresh(new Date());
+      } finally {
+        setIsRefreshing(false);
+      }
+    }, 15000); // 15 seconds
     
     return () => clearInterval(intervalId);
   }, [fetchUsers]);
 
   const refreshUsers = useCallback(async () => {
     console.log("Manual refresh triggered from component");
-    await handleDataChange();
+    setIsRefreshing(true);
+    try {
+      await handleDataChange();
+    } finally {
+      setIsRefreshing(false);
+    }
   }, [handleDataChange]);
 
   return { 
@@ -58,6 +74,7 @@ export const useUserData = () => {
     fetchUsers, 
     isSubscribed, 
     lastRefresh,
-    refreshUsers 
+    refreshUsers,
+    isRefreshing
   };
 };
