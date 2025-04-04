@@ -1,238 +1,152 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.4";
-import { validateUserData } from "./validation.ts";
-import { createAuthUser, createUserProfile } from "./user-creation.ts";
-import { corsHeaders } from "./cors.ts";
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+import { corsHeaders } from './cors.ts'
+import { checkExistingUser } from './user-check.ts'
+import { validateUserData } from './validation.ts'
+import { createUserAndProfile } from './user-creation.ts'
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
+const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || ''
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 
 serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+  // Handle CORS preflight request
+  if (req.method === 'OPTIONS') {
+    return new Response(null, {
+      headers: corsHeaders,
+      status: 204,
+    })
   }
 
   try {
-    // Create a Supabase client with the service role key (admin privileges)
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-    
-    if (!supabaseServiceKey) {
-      console.error("Missing SUPABASE_SERVICE_ROLE_KEY environment variable");
-      return new Response(
-        JSON.stringify({ success: false, error: "Server configuration error" }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+    // Create Supabase clients
+    const supabaseAdmin = createClient(
+      SUPABASE_URL,
+      SUPABASE_SERVICE_ROLE_KEY,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
         }
-      );
-    }
+      }
+    )
     
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
+    const anonClient = createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY,
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    )
+
     // Parse request body
-    const requestData = await req.json();
-    const { userData } = requestData;
-    
-    if (!userData) {
-      console.error("Missing userData in request body");
-      return new Response(
-        JSON.stringify({ error: "User data is required", success: false }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
-    }
-    
-    console.log("Create user request received with data:", {
-      email: userData.email,
-      firstName: userData.firstName || userData.first_name,
-      lastName: userData.lastName || userData.last_name,
-      role: userData.role,
-      status: userData.status,
-      hasPassword: !!userData.password,
-      taxDue: userData.tax_due || userData.taxDue,
-      availableCredits: userData.available_credits || userData.availableCredits,
-      filingDeadline: userData.filing_deadline || userData.filingDeadline,
-      createdBy: userData.created_by
-    });
+    const requestData = await req.json()
+    const { userData } = requestData
+    console.log("Received user data:", { ...userData, password: '[REDACTED]' })
 
-    // Process and normalize data
-    if (userData.firstName && !userData.first_name) {
-      userData.first_name = userData.firstName;
-    }
-    if (userData.lastName && !userData.last_name) {
-      userData.last_name = userData.lastName;
-    }
-    if (userData.taxDue !== undefined && userData.tax_due === undefined) {
-      userData.tax_due = userData.taxDue;
-    }
-    if (userData.availableCredits !== undefined && userData.available_credits === undefined) {
-      userData.available_credits = userData.availableCredits;
-    }
-    if (userData.filingDeadline && !userData.filing_deadline) {
-      userData.filing_deadline = userData.filingDeadline;
-    }
-    
-    // Simple validation
-    if (!userData.email) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Email is required" }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
-    }
-    
-    if (!userData.password) {
-      return new Response(
-        JSON.stringify({ success: false, error: "Password is required" }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
-    }
-    
-    // Normalize the email address
-    userData.email = userData.email.toLowerCase().trim();
-
-    // Try to create auth user first
-    const { authUser, error: authError } = await createAuthUser(supabase, userData);
-    
-    if (authError) {
-      console.error("Error creating auth user:", authError);
-      return new Response(
-        JSON.stringify({ success: false, error: authError }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
-        }
-      );
-    }
-    
-    if (!authUser || !authUser.id) {
-      console.error("Auth user creation failed - no user ID returned");
+    // Validate the input data
+    const validationErrors = validateUserData(userData)
+    if (validationErrors.length > 0) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: "User creation failed - no user ID returned from auth system" 
+          error: `Validation failed: ${validationErrors.join(', ')}` 
         }),
         { 
-          status: 500, 
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400 
         }
-      );
+      )
     }
-    
-    console.log("Successfully created auth user with ID:", authUser.id);
-    
-    // Create user profile
-    const { profile, error: profileError } = await createUserProfile(supabase, authUser.id, userData);
-    
-    if (profileError) {
-      console.error("Error creating user profile:", profileError);
+
+    // Check if user exists
+    const existingUser = await checkExistingUser(supabaseAdmin, userData.email)
+    if (existingUser) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: profileError,
-          partialSuccess: true,
-          authUser: authUser
+          error: 'A user with this email already exists' 
         }),
         { 
-          status: 200, // Change to 200 to ensure client receives the response
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 409 
         }
-      );
+      )
     }
-    
-    if (!profile) {
-      console.error("Profile creation failed - no profile data returned");
+
+    // Create user and profile
+    const { authUser, profileData, error, partialSuccess } = await createUserAndProfile(
+      supabaseAdmin,
+      userData
+    )
+
+    if (error && !partialSuccess) {
+      console.error("Failed to create user:", error)
       return new Response(
         JSON.stringify({ 
-          success: true, // Change to true to ensure client treats it as success
-          error: "Profile creation failed - no profile data returned",
-          partialSuccess: true,
-          authUser: authUser
+          success: false, 
+          error: `Failed to create user: ${error.message || 'Unknown error'}` 
         }),
         { 
-          status: 200, // Change to 200 to ensure client receives the response
-          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500
         }
-      );
+      )
     }
-    
-    console.log("Successfully created user profile for user:", authUser.id);
-    
-    // Log activity with proper user_id and optional admin user who created it
+
+    // Log the user creation activity
     try {
-      const activityDetails = {
-        timestamp: new Date().toISOString(),
-        action: "USER_CREATED"
-      };
-      
-      if (userData.created_by) {
-        // If created by admin, log it with admin as user_id
-        await supabase
+      if (authUser && userData.created_by) {
+        await supabaseAdmin
           .from('activity_logs')
           .insert({
-            user_id: userData.created_by,
-            action: 'ADMIN_CREATED_USER',
+            user_id: userData.created_by, // The admin who created this user
+            action: 'USER_CREATED',
             details: {
-              ...activityDetails,
-              target_user_id: authUser.id,
-              target_user_email: userData.email
+              timestamp: new Date().toISOString(),
+              email: userData.email,
+              created_by: userData.created_by ? 'admin' : 'self',
+              new_user_id: authUser.id
             }
-          });
+          })
       }
-      
-      // Also add a generic entry for the new user in activity_logs
-      await supabase
-        .from('activity_logs')
-        .insert({
-          user_id: null, // Using null since the user hasn't logged in yet
-          action: 'USER_CREATED',
-          details: {
-            ...activityDetails,
-            user_id: authUser.id,
-            email: userData.email,
-            created_by: userData.created_by || "self"
-          }
-        });
-        
-      console.log("Successfully created activity logs for user creation");
     } catch (logError) {
-      console.error("Error logging activity (non-critical):", logError);
-      // Continue regardless of logging errors
+      console.error("Error logging user creation:", logError)
+      // Don't fail the overall operation if logging fails
     }
-    
-    // Return success response with created user data
+
+    // Return success response
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        data: { 
-          user: authUser,
-          profile: profile
-        } 
+      JSON.stringify({
+        success: true,
+        partialSuccess,
+        message: partialSuccess 
+          ? 'User created successfully but there were some issues with the profile data' 
+          : 'User created successfully',
+        authUser,
+        data: profileData
       }),
       { 
-        status: 200, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 201 
       }
-    );
+    )
   } catch (error) {
-    console.error("Uncaught error in create-user function:", error);
+    console.error("Unexpected error:", error)
     
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: "Server error: " + (error.message || "Unknown error")
+      JSON.stringify({
+        success: false,
+        error: error.message || 'An unexpected error occurred'
       }),
       { 
-        status: 500, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500 
       }
-    );
+    )
   }
-});
+})

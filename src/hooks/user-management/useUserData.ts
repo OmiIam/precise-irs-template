@@ -2,11 +2,14 @@
 import { useEffect, useCallback, useState } from 'react';
 import { useFetchUsers } from './useFetchUsers';
 import { useUserSubscription } from './useUserSubscription';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export const useUserData = () => {
   const { users, setUsers, isLoading, fetchUsers } = useFetchUsers();
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const { toast } = useToast();
   
   // Update handleDataChange to be async and return a Promise
   const handleDataChange = useCallback(async () => {
@@ -15,15 +18,34 @@ export const useUserData = () => {
     try {
       await fetchUsers();
       setLastRefresh(new Date());
+    } catch (error) {
+      console.error("Error refreshing users:", error);
+      toast({
+        title: "Error refreshing users",
+        description: "Failed to refresh user data. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsRefreshing(false);
     }
-  }, [fetchUsers]);
+  }, [fetchUsers, toast]);
   
   // Initial data fetch
   useEffect(() => {
     console.log("Initial data fetch in useUserData");
-    fetchUsers();
+    
+    // Check authentication first
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.warn("User not authenticated, cannot fetch user data");
+        return;
+      }
+      
+      fetchUsers();
+    };
+    
+    checkAuth();
     
     // Set up a listener for manual refresh
     const handleRefreshEvent = () => {
@@ -45,10 +67,20 @@ export const useUserData = () => {
   useEffect(() => {
     const intervalId = setInterval(async () => {
       console.log("Performing scheduled refresh of user data");
+      
+      // Check authentication before refreshing
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.warn("User not authenticated, skipping scheduled refresh");
+        return;
+      }
+      
       setIsRefreshing(true);
       try {
         await fetchUsers();
         setLastRefresh(new Date());
+      } catch (error) {
+        console.error("Error during scheduled refresh:", error);
       } finally {
         setIsRefreshing(false);
       }
@@ -59,13 +91,33 @@ export const useUserData = () => {
 
   const refreshUsers = useCallback(async () => {
     console.log("Manual refresh triggered from component");
+    
+    // Check authentication before refreshing
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.warn("User not authenticated, cannot refresh");
+      toast({
+        title: "Authentication required",
+        description: "You must be logged in to refresh user data.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsRefreshing(true);
     try {
       await handleDataChange();
+    } catch (error) {
+      console.error("Error during manual refresh:", error);
+      toast({
+        title: "Error refreshing data",
+        description: "Failed to refresh user data. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsRefreshing(false);
     }
-  }, [handleDataChange]);
+  }, [handleDataChange, toast]);
 
   return { 
     users, 

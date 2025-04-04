@@ -2,9 +2,11 @@
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@/components/admin/user-list/types';
+import { useAuth } from '@/contexts/auth';
 
 export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetStateAction<User[]>>) => {
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
 
   const handleCreateUser = async (newUser: User) => {
     try {
@@ -43,7 +45,6 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
       const lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
       
       // Get the current admin user's ID for activity logging
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
       const adminId = currentUser?.id;
       
       // Send to edge function
@@ -124,6 +125,26 @@ export const useUserCreate = (users: User[], setUsers: React.Dispatch<React.SetS
         
         // Update UI immediately
         setUsers(prevUsers => [...prevUsers, formattedUser]);
+        
+        // Log activity using current user's session - safely handle activity logging
+        try {
+          if (adminId) {
+            await supabase
+              .from('activity_logs')
+              .insert({
+                user_id: adminId,
+                action: 'ADMIN_CREATED_USER',
+                details: {
+                  timestamp: new Date().toISOString(),
+                  target_user_email: newUser.email,
+                  target_user_id: userId
+                }
+              });
+          }
+        } catch (logError) {
+          console.error("Error logging user creation activity:", logError);
+          // Don't fail the overall operation if logging fails
+        }
         
         // Show a success toast, but include warning if partial success
         if (responseData.partialSuccess) {

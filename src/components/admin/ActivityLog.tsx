@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { Clock, AlertCircle, CheckCircle, User, FileText, Shield } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { format, formatDistanceToNow } from 'date-fns';
+import { useAuth } from '@/contexts/auth';
+import { useToast } from '@/hooks/use-toast';
 
 type ActivityLogItem = {
   id: string;
@@ -19,14 +21,14 @@ type ActivityLogItem = {
 const ActivityLog = () => {
   const [activities, setActivities] = useState<ActivityLogItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+  const { user, isAdmin } = useAuth();
 
   useEffect(() => {
     const fetchActivities = async () => {
       setIsLoading(true);
       try {
-        // First check if user has admin access
-        const { data: { user } } = await supabase.auth.getUser();
-        
+        // Check if user exists and is authenticated
         if (!user) {
           console.log("No authenticated user found");
           setIsLoading(false);
@@ -34,14 +36,8 @@ const ActivityLog = () => {
         }
 
         // Check if user is admin
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-          
-        if (profileError || profileData?.role !== 'Admin') {
-          console.log("User is not an admin or couldn't get profile");
+        if (!isAdmin) {
+          console.log("User is not an admin");
           setIsLoading(false);
           return;
         }
@@ -53,7 +49,16 @@ const ActivityLog = () => {
           .order('created_at', { ascending: false })
           .limit(10);
 
-        if (error) throw error;
+        if (error) {
+          console.error("Error fetching activity logs:", error);
+          toast({
+            title: "Error fetching activity logs",
+            description: error.message,
+            variant: "destructive"
+          });
+          setIsLoading(false);
+          return;
+        }
 
         // Fetch user details for each activity
         const activitiesWithUsers = await Promise.all(
@@ -97,6 +102,11 @@ const ActivityLog = () => {
         setActivities(activitiesWithUsers);
       } catch (error) {
         console.error("Error fetching activity logs:", error);
+        toast({
+          title: "Error fetching activity logs",
+          description: "An unexpected error occurred",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
@@ -104,23 +114,28 @@ const ActivityLog = () => {
 
     fetchActivities();
 
-    // Set up realtime subscription for activity logs
-    const channel = supabase
-      .channel('public:activity_logs')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'activity_logs'
-      }, (payload) => {
-        console.log("New activity log detected:", payload);
-        fetchActivities(); // Refresh data when new activity is added
-      })
-      .subscribe();
+    // Set up realtime subscription for activity logs only if authenticated and admin
+    let channel;
+    if (user && isAdmin) {
+      channel = supabase
+        .channel('public:activity_logs')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'activity_logs'
+        }, (payload) => {
+          console.log("New activity log detected:", payload);
+          fetchActivities(); // Refresh data when new activity is added
+        })
+        .subscribe();
+    }
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
-  }, []);
+  }, [user, isAdmin, toast]);
 
   const getActivityIcon = (action: string) => {
     switch (action) {
